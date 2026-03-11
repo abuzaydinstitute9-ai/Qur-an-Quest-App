@@ -499,29 +499,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 }
 
 /* ── RESPONSIVE NAV ── */
-/* Hide pill row & auth on mobile/tablet; show hamburger */
+/* Desktop (>900px): show pills, hide hamburger */
+.nav-pill-row{display:flex!important;}
+.hamburger{display:none!important;}
+/* Mobile/tablet (<=900px): hide pills, show hamburger */
 @media(max-width:900px){
   .nav-pill-row{display:none!important;}
-  .hamburger{display:flex;}
+  .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
   .nav-auth{display:none;}
   .nav-reciter-btn{display:none;}
   .nav-actions{gap:4px;}
 }
-@media(min-width:901px){
-  .nav-pill-row{display:flex!important;}
-  .hamburger{display:none!important;}
-}
-
-@media(min-width:901px){
-  .nav-pill-row{display:flex!important;}
-  .hamburger{display:none!important;}
-}
-/* Shrink identity bar slightly on small desktop */
+/* Shrink pills on smaller desktop */
 @media(max-width:1100px) and (min-width:901px){
   .nav-register-btn{font-size:10px;padding:5px 10px;}
   .nav-pill{font-size:10px;padding:4px 10px;}
-  .nav-pill-row{display:flex!important;}
 }
 
 
@@ -2208,7 +2201,7 @@ function submitAuthNew(){
   const pass2    = !isLogin ? (($('af-pass2')||{value:''}).value) : '';
   const classVal = !isLogin && isStu  ? (($('af-class')||{value:''}).value.trim()) : '';
   const school   = !isLogin && !isStu ? (($('af-school')||{value:''}).value.trim()) : '';
-  const remember = isLogin ? (($('af-remember')||{checked:true}).checked) : true;
+  const remember = true; // Always remember login
 
   // Validate
   function err(msg){ errEl.innerHTML=`<div class="err-box" style="margin-bottom:12px;">⚠️ ${msg}</div>`; }
@@ -5373,27 +5366,46 @@ function getMyAssignments(){
 
 function submitAssignment(assignId){
   if(!myClassCode){ showToast('You are not in a class'); return; }
+  if(!assignId){ showToast('Assignment ID missing'); return; }
   const studentName = currentUser?.name||'Student';
-  fbGetClass(myClassCode, function(cls){
-    if(!cls) return;
-    const assignments = cls.assignments||{};
-    if(!assignments[assignId]){ showToast('Assignment not found'); return; }
-    const subs = assignments[assignId].submissions||{};
-    const key = studentName.replace(/[.#$/\[\]]/g,'_');
-    if(subs[key]){ showToast('Already submitted!'); return; }
-    fbSubmitAssignment(myClassCode, assignId, studentName).then(function(){
-      showToast('✅ Assignment submitted!');
-      renderDashboard();
-    });
-  });
+  const subKey = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+  // Check locally first
+  const cls = _liveClassData || _fbClassCache[myClassCode];
+  if(cls && cls.assignments && cls.assignments[assignId]){
+    const subs = cls.assignments[assignId].submissions||{};
+    if(subs[subKey]){ showToast('Already submitted!'); return; }
+  }
+  _fbSet('classes/'+myClassCode+'/assignments/'+assignId+'/submissions/'+subKey, {
+    name: studentName,
+    date: new Date().toISOString().slice(0,10),
+    score: null,
+    marked: false
+  }).then(function(){
+    showToast('✅ Assignment submitted!');
+    // Update local cache
+    if(_liveClassData && _liveClassData.assignments && _liveClassData.assignments[assignId]){
+      if(!_liveClassData.assignments[assignId].submissions) _liveClassData.assignments[assignId].submissions={};
+      _liveClassData.assignments[assignId].submissions[subKey]={name:studentName,date:new Date().toISOString().slice(0,10),score:null,marked:false};
+    }
+    renderDashboard();
+  }).catch(function(){ showToast('❌ Failed to submit. Check internet.'); });
 }
 
 // Teacher: mark student assignment
 function markAssignment(code, assignId, studentName, score){
-  fbMarkAssignment(code, assignId, studentName, score).then(function(){
+  const subKey = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+  _fbUpdate('classes/'+code+'/assignments/'+assignId+'/submissions/'+subKey, {
+    score: parseInt(score),
+    marked: true
+  }).then(function(){
     showToast('✅ Marked: '+studentName+' — '+score+'%');
+    // Update local cache so UI refreshes immediately
+    if(_fbClassCache[code] && _fbClassCache[code].assignments && _fbClassCache[code].assignments[assignId]){
+      const subs = _fbClassCache[code].assignments[assignId].submissions||{};
+      if(subs[subKey]){ subs[subKey].score=parseInt(score); subs[subKey].marked=true; }
+    }
     renderDashboard();
-  });
+  }).catch(function(){ showToast('❌ Failed to grade. Check internet.'); });
 }
 
 // Teacher: send assignment to class
@@ -5412,12 +5424,37 @@ function sendAnnouncement(code, message){
   });
 }
 
+// ── Firebase class data cache (teacher + student) ──
+var _fbClassCache = {}; // code -> class data
+
 // Auto-resume class listener when app loads (if student was already in a class)
 (function resumeClassListener(){
   setTimeout(function(){
     if(myClassCode){ _startClassListener(myClassCode); }
+    // Teacher: start polling all their classes
+    _startTeacherPolling();
   }, 1500);
 })();
+
+// Teacher: poll all class codes every 6 seconds for live data
+var _teacherPollTimer = null;
+function _startTeacherPolling(){
+  if(_teacherPollTimer) clearInterval(_teacherPollTimer);
+  function doPoll(){
+    const codes = teacherGroups.map(function(g){ return g.code; }).filter(Boolean);
+    codes.forEach(function(code){
+      _fbGet('classes/'+code, function(data){
+        if(data){
+          _fbClassCache[code] = data;
+          // Also update _liveClassData if this user is a student in this class
+          if(myClassCode === code) _liveClassData = data;
+        }
+      });
+    });
+  }
+  doPoll(); // immediate
+  _teacherPollTimer = setInterval(doPoll, 6000);
+}
 
 function saveTData(){
   try{ localStorage.setItem('qq_tgroups', JSON.stringify(teacherGroups)); }catch(e){}
@@ -5481,12 +5518,13 @@ function renderStudentDashboard(){
   const total = HIFDH_SURAHS.length;
   const quizAvg = getQuizAvg();
   const streak = getStreak();
-  const tabs=[['progress','📊 Progress'],['beginner','🌱 Beginner'],['salah','🕌 Salah Times'],['reminders','⏰ Reminders'],['class','🎓 My Class']];
+  const tabs=[['progress','📊 Progress'],['beginner','🌱 Beginner'],['salah','🕌 Salah Times'],['reminders','⏰ Reminders'],['class','📚 My Class'],['call','📞 Call Teacher']];
   let inner='';
   if(_sstab==='progress') inner=renderProgressTab(done,total,quizAvg,streak);
   else if(_sstab==='beginner') inner=renderBeginnerDashTab();
   else if(_sstab==='salah') inner=renderSalahTab();
   else if(_sstab==='reminders') inner=renderRemindersTab();
+  else if(_sstab==='call') inner=renderStudentCallTab();
   else inner=renderStudentClassTab();
   return `
     <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
@@ -6162,60 +6200,97 @@ function toggleReminderDay(el, day, rid){
 }
 
 function renderStudentClassTab(){
-  const classes=(()=>{try{return JSON.parse(localStorage.getItem('qq_classes')||'{}')}catch(e){return{}}})();
-  const myClass=myClassCode?classes[myClassCode]:null;
-  const myAssignments=getMyAssignments();
-  const studentName=currentUser?.name||'Student';
-  const notifs=(()=>{try{const n=JSON.parse(localStorage.getItem('qq_notifs')||'{}');return(n[studentName]||[]).slice(0,5);}catch(e){return [];}})();
-  const unreadNotifs=notifs.filter(n=>!n.read);
-  const pendingCount=myAssignments.filter(a=>{const sub=(a.submissions||[]).find(s=>s.name===studentName);return !sub;}).length;
-  const markedCount=myAssignments.filter(a=>{const sub=(a.submissions||[]).find(s=>s.name===studentName);return sub?.marked;}).length;
+  // Use live Firebase data
+  const liveClass = _liveClassData || (myClassCode ? _fbClassCache[myClassCode] : null);
+  const myAssignments = liveClass ? Object.values(liveClass.assignments||{}) : [];
+  const studentName = currentUser?.name||'Student';
+
+  // Get messages: both student->teacher and teacher->student replies
+  const allMessages = liveClass ? Object.values(liveClass.messages||{}) : [];
+  const myMessages = allMessages.filter(function(m){
+    return m.from === studentName || m.to === studentName;
+  }).sort(function(a,b){ return (b.time||'').localeCompare(a.time||''); });
+  const teacherReplies = myMessages.filter(function(m){ return m.type==='teacher-reply' && !m.read; });
+
+  // Announcements
+  const announcements = liveClass ? Object.values(liveClass.announcements||{}) : [];
+  announcements.sort(function(a,b){ return (b.time||'').localeCompare(a.time||''); });
+
+  const pendingCount = myAssignments.filter(function(a){
+    const subs = a.submissions||{};
+    const key = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+    return !subs[key];
+  }).length;
+  const markedAssigns = myAssignments.filter(function(a){
+    const subs = a.submissions||{};
+    const key = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+    return subs[key] && subs[key].marked;
+  });
+  const avgScore = markedAssigns.length ? Math.round(markedAssigns.reduce(function(t,a){
+    const key=studentName.replace(/[.#$\/\[\]\s]/g,'_');
+    return t+(a.submissions[key].score||0);
+  },0)/markedAssigns.length) : null;
+
   return `
-    <!-- Student notifications banner -->
-    ${unreadNotifs.length>0?`
-    <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-      <div style="color:var(--goldl);font-size:11px;font-weight:700;margin-bottom:6px;">📩 ${unreadNotifs.length} new notification${unreadNotifs.length>1?'s':''} from your teacher</div>
-      ${unreadNotifs.slice(0,2).map(n=>`<div style="color:var(--grey);font-size:12px;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);">${n.msg}</div>`).join('')}
+    <!-- New reply banner -->
+    ${teacherReplies.length>0?`
+    <div style="background:rgba(26,122,60,.1);border:1px solid rgba(46,204,113,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:20px;">📩</div>
+      <div>
+        <div style="color:var(--emb);font-size:11px;font-weight:700;">New reply from your teacher!</div>
+        <div style="color:var(--grey);font-size:12px;">"${teacherReplies[0].msg.slice(0,60)}${teacherReplies[0].msg.length>60?'...':''}"</div>
+      </div>
+    </div>`:''}
+    <!-- Announcements -->
+    ${announcements.length>0?`
+    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+      <div style="color:var(--goldl);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">📢 Announcements</div>
+      ${announcements.slice(0,3).map(function(a){ return `<div style="color:var(--grey);font-size:12px;padding:4px 0;border-top:1px solid rgba(201,168,76,.1);">${a.message} <span style="color:var(--greyd);font-size:10px;">— ${a.from||'Teacher'}</span></div>`; }).join('')}
     </div>`:''}
     <!-- Quick stats -->
-    ${myClass?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:18px;">
-      <div class="stat-card" style="text-align:center;"><div style="font-size:16px;margin-bottom:4px;">📋</div><div class="dp" style="color:var(--em);font-size:18px;font-weight:700;">${myAssignments.length}</div><div style="color:var(--greyd);font-size:9px;text-transform:uppercase;">Assignments</div></div>
-      <div class="stat-card" style="text-align:center;"><div style="font-size:16px;margin-bottom:4px;">⏳</div><div class="dp" style="color:#e67e22;font-size:18px;font-weight:700;">${pendingCount}</div><div style="color:var(--greyd);font-size:9px;text-transform:uppercase;">Pending</div></div>
-      <div class="stat-card" style="text-align:center;"><div style="font-size:16px;margin-bottom:4px;">✅</div><div class="dp" style="color:var(--emb);font-size:18px;font-weight:700;">${myAssignments.length-pendingCount}</div><div style="color:var(--greyd);font-size:9px;text-transform:uppercase;">Submitted</div></div>
-      <div class="stat-card" style="text-align:center;"><div style="font-size:16px;margin-bottom:4px;">🌟</div><div class="dp" style="color:var(--gold);font-size:18px;font-weight:700;">${markedCount}</div><div style="color:var(--greyd);font-size:9px;text-transform:uppercase;">Marked</div></div>
+    ${liveClass?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="stat-card" style="text-align:center;"><div style="font-size:18px;margin-bottom:4px;">📋</div><div class="stat-val">${myAssignments.length}</div><div class="stat-lbl">Assignments</div></div>
+      <div class="stat-card" style="text-align:center;"><div style="font-size:18px;margin-bottom:4px;">⏳</div><div class="stat-val">${pendingCount}</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-card" style="text-align:center;"><div style="font-size:18px;margin-bottom:4px;">✅</div><div class="stat-val">${myAssignments.length-pendingCount}</div><div class="stat-lbl">Submitted</div></div>
+      <div class="stat-card" style="text-align:center;"><div style="font-size:18px;margin-bottom:4px;">🌟</div><div class="stat-val">${avgScore!==null?avgScore+'%':'—'}</div><div class="stat-lbl">Avg Score</div></div>
     </div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" class="grid2">
-      <!-- Class info -->
+      <!-- Class info card -->
       <div class="card" style="padding:22px;">
         <h3 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">🎓 My Class</h3>
-        ${myClass?`
-          <div style="background:rgba(26,122,60,.12);border:1px solid rgba(46,204,113,.3);border-radius:10px;padding:14px;margin-bottom:14px;">
-            <div style="color:var(--emb);font-size:11px;font-weight:700;margin-bottom:4px;">✅ Enrolled</div>
-            <div style="color:var(--white);font-size:18px;font-weight:700;letter-spacing:3px;margin-bottom:4px;">${myClassCode}</div>
-            <div style="color:var(--greyd);font-size:11px;">Teacher: <strong style="color:var(--goldl);">${myClass.teacher}</strong></div>
-            <div style="color:var(--greyd);font-size:11px;">${(myClass.students||[]).length} classmates · ${myAssignments.length} assignments</div>
+        ${liveClass?`
+          <div style="background:rgba(26,122,60,.12);border:1px solid rgba(46,204,113,.3);border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="color:var(--emb);font-size:10px;font-weight:700;margin-bottom:4px;">✅ Enrolled</div>
+            <div style="color:var(--white);font-size:20px;font-weight:700;letter-spacing:3px;margin-bottom:4px;">${myClassCode}</div>
+            <div style="color:var(--greyd);font-size:11px;">Teacher: <strong style="color:var(--goldl);">${liveClass.teacher||'—'}</strong></div>
+            <div style="color:var(--greyd);font-size:11px;">${Object.keys(liveClass.students||{}).length} classmates · ${myAssignments.length} assignments</div>
           </div>
-          <button class="btn btn-r btn-sm" style="width:100%;" onclick="myClassCode='';saveAppState();renderDashboard()">Leave Class</button>
+          <button class="btn btn-r btn-sm" style="width:100%;" onclick="myClassCode='';_liveClassData=null;saveAppState();renderDashboard()">Leave Class</button>
         `:`
-          <p style="color:var(--greyd);font-size:12px;line-height:1.7;margin-bottom:12px;">Ask your teacher for a class code to join and receive assignments.</p>
+          <p style="color:var(--greyd);font-size:12px;line-height:1.7;margin-bottom:12px;">Ask your teacher for a class code and enter it below to join.</p>
           <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <input class="inp" id="join-code-input" placeholder="e.g. QQ-AB12" style="flex:1;font-size:14px;text-transform:uppercase;letter-spacing:3px;text-align:center;" maxlength="8" onkeydown="if(event.key==='Enter')joinClassByCode()">
-            <button onclick="var el=document.getElementById('join-code-input');if(el){el.value=el.value.slice(0,-1);el.focus();}" title="Backspace" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--grey);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:15px;flex-shrink:0;">⌫</button>
-            <button onclick="var el=document.getElementById('join-code-input');if(el){el.value='';el.focus();}" title="Clear" style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);color:#e74c3c;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>
+            <input class="inp" id="join-code-input" placeholder="e.g. QQ-AB12" style="flex:1;font-size:14px;text-transform:uppercase;letter-spacing:2px;">
           </div>
           <button class="btn btn-g" style="width:100%;" onclick="joinClassByCode()">Join Class →</button>
         `}
       </div>
-      <!-- Send message to teacher -->
+      <!-- Message teacher card -->
       <div class="card" style="padding:22px;">
         <h3 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">💬 Message Teacher</h3>
-        ${myClass?`
-          <textarea class="inp" id="student-msg" rows="4" placeholder="Write a message to your teacher…" style="resize:vertical;margin-bottom:10px;font-size:13px;"></textarea>
+        ${liveClass?`
+          <textarea class="inp" id="student-msg" rows="3" placeholder="Write a message to your teacher…" style="resize:vertical;width:100%;font-size:12px;margin-bottom:8px;"></textarea>
           <button class="btn btn-g" style="width:100%;" onclick="sendMessageToTeacher()">📩 Send Message</button>
-          ${notifs.length>0?`
-          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-            <div style="color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Past Notifications</div>
-            ${notifs.slice(0,3).map(n=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--grey);font-size:11px;line-height:1.5;">${n.msg}<div style="color:var(--greyd);font-size:9px;margin-top:2px;">${n.date}</div></div>`).join('')}
+          ${myMessages.length>0?`
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
+            <div style="color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Recent messages</div>
+            ${myMessages.slice(0,4).map(function(m){ return `
+              <div style="padding:6px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;">
+                  <span style="color:${m.type==='teacher-reply'?'var(--goldl)':'var(--emb)'};font-size:10px;font-weight:700;">${m.type==='teacher-reply'?'↩ Teacher':'→ You'}</span>
+                  <span style="color:var(--greyd);font-size:10px;">${m.time||m.date||''}</span>
+                </div>
+                <div style="color:var(--grey);font-size:11px;margin-top:2px;">${(m.msg||'').slice(0,70)}${(m.msg||'').length>70?'...':''}</div>
+              </div>`; }).join('')}
           </div>`:''}`:`
           <div style="text-align:center;padding:20px 0;color:var(--greyd);">
             <div style="font-size:28px;margin-bottom:8px;">💬</div>
@@ -6225,46 +6300,46 @@ function renderStudentClassTab(){
     </div>
     <!-- Assignments list -->
     <div class="card" style="padding:22px;">
-      <h3 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">📋 Assignments</h3>
+      <h3 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">📋 My Assignments</h3>
       ${myAssignments.length===0?`
         <div style="text-align:center;padding:24px 0;color:var(--greyd);">
           <div style="font-size:32px;margin-bottom:8px;">📋</div>
-          <p style="font-size:12px;">${myClass?'No assignments yet — check back soon.':'Join a class to get started.'}</p>
+          <p style="font-size:12px;">${liveClass?'No assignments yet — check back soon.':'Join a class to receive assignments.'}</p>
         </div>
-      `:myAssignments.map(a=>{
-        const sub=(a.submissions||[]).find(s=>s.name===studentName);
-        const overdue=a.dueDate&&new Date(a.dueDate)<new Date()&&!sub;
-        const dueSoon=a.dueDate&&!overdue&&(new Date(a.dueDate)-new Date())<3*86400000;
-        const typeIcons={quiz:'💡',hifdh:'📿',tajweed:'🎵',ayah:'✨',general:'📋'};
-        return`
+      `:myAssignments.map(function(a){
+        const subKey = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+        const sub = (a.submissions||{})[subKey];
+        const overdue = a.dueDate && new Date(a.dueDate)<new Date() && !sub;
+        const dueSoon = a.dueDate && !overdue && (new Date(a.dueDate)-new Date())<3*86400000;
+        const typeIcons = {quiz:'💡',hifdh:'📿',tajweed:'🎵',ayah:'✨',general:'📋'};
+        return `
         <div style="padding:14px;border:1px solid ${overdue?'rgba(231,76,60,.3)':dueSoon?'rgba(230,126,34,.3)':'var(--border)'};border-radius:10px;margin-bottom:10px;background:${overdue?'rgba(231,76,60,.04)':dueSoon?'rgba(230,126,34,.04)':'rgba(255,255,255,.02)'};">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
                 <span style="font-size:16px;">${typeIcons[a.type]||'📋'}</span>
-                <span style="color:var(--white);font-size:13px;font-weight:600;">${a.title}</span>
+                <span style="color:var(--white);font-size:13px;font-weight:600;">${a.title||'Assignment'}</span>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-                <span style="color:${overdue?'#e74c3c':dueSoon?'#e67e22':'var(--greyd)'};font-size:10px;">${overdue?'⚠ Overdue':dueSoon?'🔔 Due Soon':''} ${a.dueDate?'Due: '+a.dueDate:''}</span>
+                ${a.dueDate?`<span style="color:${overdue?'#e74c3c':dueSoon?'#e67e22':'var(--greyd)'};font-size:10px;">${overdue?'⚠ Overdue':'Due: '+a.dueDate}</span>`:''}
+                <span style="color:var(--greyd);font-size:10px;">Sent: ${a.sentDate||'—'}</span>
               </div>
-              <p style="color:var(--grey);font-size:11px;line-height:1.5;">${(a.desc||'').slice(0,80)}${(a.desc||'').length>80?'…':''}</p>
+              <p style="color:var(--grey);font-size:11px;line-height:1.5;">${(a.desc||'').slice(0,100)}${(a.desc||'').length>100?'...':''}</p>
             </div>
             <div style="flex-shrink:0;text-align:right;">
               ${sub?`
-                <div style="background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);border-radius:20px;padding:4px 12px;display:inline-block;">
+                <div style="background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);border-radius:20px;padding:4px 10px;margin-bottom:4px;">
                   <span style="color:var(--emb);font-size:11px;font-weight:700;">✅ Submitted</span>
                 </div>
-                ${sub.marked?`<div style="color:${(sub.score||0)>=70?'var(--emb)':(sub.score||0)>=50?'var(--gold)':'#e74c3c'};font-size:14px;font-weight:700;margin-top:4px;">${sub.score}% ${(sub.score||0)>=70?'🌟':(sub.score||0)>=50?'👍':'📚'}</div>`:'<div style="color:var(--greyd);font-size:11px;margin-top:4px;">Awaiting mark</div>'}
-              `:`<button class="btn btn-g btn-sm" onclick="submitAssignment(${a.id})">Submit →</button>`}
+                ${sub.marked?`<div style="color:${(sub.score||0)>=70?'var(--emb)':(sub.score||0)>=50?'var(--gold)':'#e74c3c'};font-size:14px;font-weight:700;text-align:center;">${sub.score||0}%</div><div style="color:var(--greyd);font-size:10px;text-align:center;">Marked ✓</div>`:'<div style="color:var(--greyd);font-size:10px;">Awaiting grade</div>'}`:`
+                <button class="btn btn-g btn-sm" onclick="submitAssignment('${a.id||Object.keys(_liveClassData&&_liveClassData.assignments?_liveClassData.assignments:{}).find(k=>(_liveClassData.assignments[k].title||'')===(a.title||''))||''}')">Submit →</button>`}
             </div>
           </div>
         </div>`;}).join('')}
     </div>`;
 }
 
-// ═══════════════════════════════════════
-// ── DOWNLOAD REPORT ──
-// ═══════════════════════════════════════
+
 function downloadReport(){
   const done = HIFDH_SURAHS.filter(s=>(hifdhProgress[s.n]||0)>=100).length;
   const total = HIFDH_SURAHS.length;
@@ -6330,6 +6405,7 @@ function renderTeacherDashboard(){
   if(teacherSubTab==='view-group') return renderViewGroup(teacherViewId);
   if(teacherSubTab==='reminders') return renderTeacherReminders();
   if(teacherSubTab==='messages') return renderTeacherMessages();
+  if(teacherSubTab==='call') return renderTeacherCallTab();
   return renderTeacherOverview();
 }
 
@@ -6338,6 +6414,7 @@ function renderTeacherNavTabs(){
   const tabs=[
     ['overview','📊 Overview'],['groups','👥 Groups'],['assignments','📋 Assignments'],
     ['messages', unread>0?`💬 Messages <span style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:2px;">${unread}</span>`:'💬 Messages'],
+    ['call','📞 Live Call'],
     ['reminders','⏰ Reminders']
   ];
   return `<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">${tabs.map(([id,lb])=>`<button class="tab ${teacherSubTab===id?'on':''}" onclick="teacherSubTab='${id}';renderDashboard()">${lb}</button>`).join('')}</div>`;
@@ -6939,65 +7016,258 @@ function saveTeacherReminders(){
 }
 
 // ── Teacher Messages ──
-function renderTeacherMessages(){
-  const unread=teacherMessages.filter(m=>!m.read).length;
+function renderTeacherCallTab(){
+  maybeStartCallPoller();
+  var allStudents = [...new Set(teacherGroups.flatMap(function(g){return g.students;}))];
+  var classCodes = teacherGroups.filter(function(g){return g.code;});
+
   return `
     ${renderTeacherNavTabs()}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-      <div>
-        <h3 class="dp" style="color:var(--white);font-size:16px;">💬 Messages</h3>
-        <p style="color:var(--greyd);font-size:11px;margin-top:3px;">${unread>0?unread+' unread message'+(unread>1?'s':''):'All caught up!'}</p>
-      </div>
-      <button class="btn btn-g btn-sm" onclick="broadcastAllStudents()">📢 Broadcast to All</button>
+    <div style="margin-bottom:20px;">
+      <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:4px;">📞 Live Call with Students</h3>
+      <p style="color:var(--greyd);font-size:12px;">Start a voice or video call with any student in your class. Students will see a notification and can answer from their dashboard.</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid2">
-      <div class="card" style="padding:20px;">
-        <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">Inbox</h4>
-        ${teacherMessages.length===0?`<div style="text-align:center;padding:30px;color:var(--greyd);"><div style="font-size:28px;margin-bottom:8px;">📭</div><p>No messages yet.</p></div>`:''}
-        ${teacherMessages.map((m,i)=>`
-          <div style="padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;${!m.read?'background:rgba(201,168,76,.04);':''};" onclick="teacherMsgReply=${i};teacherMessages[${i}].read=true;renderDashboard()">
-            <div style="display:flex;align-items:flex-start;gap:10px;">
-              <div style="width:30px;height:30px;border-radius:50%;background:${!m.read?'linear-gradient(135deg,var(--em),var(--gold))':'rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">${m.from[0]}</div>
-              <div style="flex:1;min-width:0;">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                  <span style="color:${!m.read?'var(--white)':'var(--grey)'};font-size:13px;font-weight:${!m.read?700:400};">${m.from}</span>
-                  <span style="color:var(--greyd);font-size:10px;flex-shrink:0;">${m.date}</span>
-                </div>
-                <div style="color:var(--greyd);font-size:11px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.msg}</div>
-                ${!m.read?'<span style="background:var(--em);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;">NEW</span>':''}
+
+    ${classCodes.length===0?`
+    <div class="card" style="padding:30px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+      <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">No Class Code Generated</h4>
+      <p style="color:var(--greyd);font-size:13px;margin-bottom:16px;">Generate a class code first so students can join and receive calls.</p>
+      <button class="btn btn-g" onclick="teacherSubTab='groups';renderDashboard()">👥 Go to Groups →</button>
+    </div>
+    `:`
+    <!-- How it works -->
+    <div class="card" style="padding:18px;margin-bottom:16px;background:rgba(26,122,60,.06);border-color:rgba(46,204,113,.2);">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span style="font-size:24px;">ℹ️</span>
+        <div>
+          <div style="color:var(--emb);font-size:12px;font-weight:700;margin-bottom:6px;">How Calls Work</div>
+          <div style="color:var(--grey);font-size:12px;line-height:1.7;">
+            1. Click a call button below &nbsp;→&nbsp; allow microphone/camera when prompted<br>
+            2. Student sees an incoming call notification on their dashboard<br>
+            3. Both devices connect directly — no server in the middle<br>
+            4. Works best on the same WiFi network or with a stable internet connection
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call students -->
+    <div class="card" style="padding:22px;margin-bottom:16px;">
+      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">📋 Call a Student</h4>
+      ${allStudents.length===0?`
+        <div style="text-align:center;padding:24px;color:var(--greyd);">
+          <div style="font-size:32px;margin-bottom:8px;">👥</div>
+          <p style="font-size:12px;">No students have joined your class yet.</p>
+        </div>
+      `:allStudents.map(function(s){
+        var grp = teacherGroups.find(function(g){return g.students.includes(s)&&g.code;});
+        var code = grp ? grp.code : null;
+        return `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--eml));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;">${s[0].toUpperCase()}</div>
+          <div style="flex:1;">
+            <div style="color:var(--white);font-size:13px;font-weight:600;">${s}</div>
+            <div style="color:var(--greyd);font-size:10px;">${code?'Class: '+code:'No class linked'}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            ${code?`
+            <button class="call-start-btn" onclick="callStart('${s}','${code}','voice')" title="Voice call">
+              📞 Voice
+            </button>
+            <button class="call-start-btn video-call" onclick="callStart('${s}','${code}','video')" title="Video call">
+              📹 Video
+            </button>
+            `:`<span style="color:var(--greyd);font-size:11px;">No class code</span>`}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Group call / broadcast call info -->
+    <div class="card" style="padding:22px;">
+      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">📢 Class Broadcast Call</h4>
+      <p style="color:var(--greyd);font-size:12px;line-height:1.7;margin-bottom:14px;">
+        To hold a group lesson, use the voice/video call with one student at a time. For larger classes, share your screen via the video call — students can watch while you teach from the Hifdh or Tajweed module.
+      </p>
+      ${classCodes.map(function(g){return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
+        <span style="font-size:18px;">🏫</span>
+        <div style="flex:1;">
+          <div style="color:var(--white);font-size:13px;font-weight:600;">${g.name}</div>
+          <div style="color:var(--greyd);font-size:10px;">${g.students.length} student${g.students.length!==1?'s':''} · Code: <strong style="color:var(--goldl);letter-spacing:2px;">${g.code}</strong></div>
+        </div>
+        <button class="call-start-btn" onclick="sendGroupCallNotification('${g.code}','${g.name}')">📢 Notify All</button>
+      </div>`;}).join('')}
+    </div>
+    `}`;
+}
+
+function sendGroupCallNotification(classCode, className){
+  var teacherName = currentUser ? currentUser.name : 'Teacher';
+  _fbPush('classes/'+classCode+'/messages', {
+    from: teacherName, role: 'teacher', to: 'all',
+    msg: '📞 ' + teacherName + ' is starting a class session for ' + className + '! Open your dashboard to join.',
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString(),
+    read: false, isCallNotice: true
+  }).then(function(){ showToast('📢 All students in '+className+' have been notified!'); });
+}
+
+function renderStudentCallTab(){
+  maybeStartCallPoller();
+  var hasClass = !!myClassCode;
+  var classData = _liveClassData;
+  var teacherName = classData ? classData.teacher : null;
+
+  return `
+    <div style="margin-bottom:20px;">
+      <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:4px;">📞 Call Your Teacher</h3>
+      <p style="color:var(--greyd);font-size:12px;">Start a live voice or video session with your teacher. Your teacher can also call you directly.</p>
+    </div>
+
+    ${!hasClass?`
+    <div class="card" style="padding:30px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+      <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">Join a Class First</h4>
+      <p style="color:var(--greyd);font-size:13px;margin-bottom:16px;">You need to join a class before you can call your teacher.</p>
+      <button class="btn btn-g" onclick="_sstab='class';renderDashboard()">📚 Join a Class →</button>
+    </div>
+    `:`
+    <!-- How it works -->
+    <div class="card" style="padding:18px;margin-bottom:16px;background:rgba(26,122,60,.06);border-color:rgba(46,204,113,.2);">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span style="font-size:24px;">ℹ️</span>
+        <div>
+          <div style="color:var(--emb);font-size:12px;font-weight:700;margin-bottom:6px;">How Calls Work</div>
+          <div style="color:var(--grey);font-size:12px;line-height:1.7;">
+            • Tap a call button to request a session with your teacher<br>
+            • Your teacher will see the call on their dashboard and can answer<br>
+            • Allow microphone access when your browser asks<br>
+            • Works best with headphones to avoid echo
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call teacher -->
+    <div class="card" style="padding:28px;text-align:center;margin-bottom:16px;">
+      <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#c9a84c);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;border:2px solid var(--gold);">🏫</div>
+      <h4 style="color:var(--white);font-size:16px;margin-bottom:4px;">${teacherName||'Your Teacher'}</h4>
+      <div style="color:var(--greyd);font-size:11px;margin-bottom:20px;">Class: <strong style="color:var(--goldl);letter-spacing:2px;">${myClassCode}</strong></div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="call-start-btn" style="padding:12px 22px;font-size:13px;" onclick="callStart('${teacherName||'Teacher'}','${myClassCode}','voice')">
+          📞 Voice Call
+        </button>
+        <button class="call-start-btn video-call" style="padding:12px 22px;font-size:13px;" onclick="callStart('${teacherName||'Teacher'}','${myClassCode}','video')">
+          📹 Video Call
+        </button>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card" style="padding:18px;">
+      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">💡 Tips for Your Session</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="grid2">
+        ${[
+          ['🎙','Speak Clearly','Recite slowly so your teacher can correct your tajweed'],
+          ['📿','Have Your Mushaf','Keep your Qur\'an open to the surah you\'re studying'],
+          ['🔇','Find a Quiet Spot','Reduce background noise for better audio quality'],
+          ['🕐','Be On Time','Join at your scheduled lesson time']
+        ].map(function(t){return `
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.03);border-radius:8px;">
+          <span style="font-size:18px;flex-shrink:0;">${t[0]}</span>
+          <div>
+            <div style="color:var(--white);font-size:12px;font-weight:600;margin-bottom:2px;">${t[1]}</div>
+            <div style="color:var(--greyd);font-size:11px;">${t[2]}</div>
+          </div>
+        </div>`;}).join('')}
+      </div>
+    </div>
+    `}`;
+}
+
+function renderTeacherMessages(){
+  // Get messages from live Firebase class data for each teacher class
+  const myClasses = teacherGroups.filter(g=>g.code);
+  let allMessages = [];
+  myClasses.forEach(function(g){
+    const cls = _fbClassCache[g.code];
+    if(cls && cls.messages){
+      Object.entries(cls.messages).forEach(function([key,m]){
+        allMessages.push(Object.assign({},m,{_key:key,_code:g.code,_className:g.name}));
+      });
+    }
+  });
+  allMessages.sort(function(a,b){ return (b.time||'').localeCompare(a.time||''); });
+  const unread = allMessages.filter(function(m){ return !m.read; }).length;
+  return `
+    ${renderTeacherNavTabs()}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h2 style="color:var(--white);font-size:18px;font-weight:700;margin-bottom:4px;">💬 Student Messages</h2>
+        <p style="color:var(--greyd);font-size:12px;">Messages from students in your classes (live via Firebase)</p>
+      </div>
+      ${unread>0?`<div style="background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:20px;padding:4px 12px;color:#e74c3c;font-size:11px;font-weight:700;">${unread} unread</div>`:''}
+    </div>
+    <div class="card" style="padding:22px;">
+      ${allMessages.length===0?`
+        <div style="text-align:center;padding:40px 0;color:var(--greyd);">
+          <div style="font-size:40px;margin-bottom:12px;">💬</div>
+          <p style="font-size:13px;">No messages yet. Students can message you from their dashboard.</p>
+          <p style="font-size:11px;margin-top:6px;color:var(--greyd);">Messages appear here in real-time once students are in your class.</p>
+        </div>
+      `:''}
+      ${allMessages.map(function(m,i){ return `
+        <div style="padding:14px;border-bottom:1px solid var(--border);${!m.read?'background:rgba(201,168,76,.04);border-left:3px solid var(--gold);':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--eml));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--white);">${(m.from||'?')[0].toUpperCase()}</div>
+              <div>
+                <div style="color:var(--white);font-size:13px;font-weight:600;">${m.from||'Student'}</div>
+                <div style="color:var(--greyd);font-size:10px;">${m._className||''} · ${m.date||''} ${m.time||''}</div>
               </div>
             </div>
-          </div>`).join('')}
-      </div>
-      <div class="card" style="padding:20px;">
-        ${teacherMsgReply!==null&&teacherMessages[teacherMsgReply]?`
-          <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">Reply to ${teacherMessages[teacherMsgReply].from}</h4>
-          <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;">
-            <p style="color:var(--grey);font-size:13px;line-height:1.6;">${teacherMessages[teacherMsgReply].msg}</p>
-            <div style="color:var(--greyd);font-size:10px;margin-top:6px;">${teacherMessages[teacherMsgReply].from} · ${teacherMessages[teacherMsgReply].date}</div>
+            ${!m.read?`<button onclick="teacherMarkMsgRead('${m._code}','${m._key}')" style="background:none;border:1px solid var(--border);color:var(--greyd);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;">Mark read</button>`:'<span style="color:var(--greyd);font-size:10px;">✓ read</span>'}
           </div>
-          <textarea class="inp" id="reply-text" rows="4" placeholder="Write your reply…" style="resize:vertical;margin-bottom:10px;"></textarea>
-          <button class="btn btn-g" style="width:100%;" onclick="sendTeacherReply(${teacherMsgReply})">📩 Send Reply</button>
-        `:`
-          <div style="text-align:center;padding:40px;color:var(--greyd);">
-            <div style="font-size:40px;margin-bottom:10px;">💬</div>
-            <p style="font-size:13px;">Select a message to reply</p>
+          <p style="color:var(--grey);font-size:12px;line-height:1.6;margin-bottom:8px;">${m.msg||''}</p>
+          <div id="reply-box-${i}" style="display:none;margin-top:8px;">
+            <textarea class="inp" id="reply-text-${i}" rows="2" placeholder="Reply to ${m.from}..." style="resize:vertical;width:100%;font-size:12px;margin-bottom:6px;"></textarea>
+            <button class="btn btn-g btn-sm" onclick="teacherReplyToStudent('${m._code}','${m.from}','reply-text-${i}')">Send Reply</button>
           </div>
-        `}
-      </div>
-    </div>
-    <!-- Send new message -->
-    <div class="card" style="padding:20px;margin-top:16px;">
-      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">📢 Send Message to Group</h4>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <select class="inp" id="msg-group" style="flex:1;min-width:160px;">
-          <option value="0">All Students</option>
-          ${teacherGroups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('')}
-        </select>
-        <input class="inp" id="msg-text" placeholder="Type your message…" style="flex:2;min-width:200px;">
-        <button class="btn btn-g" onclick="sendGroupMessage()">📩 Send</button>
-      </div>
-    </div>`;}
+          <button onclick="document.getElementById('reply-box-${i}').style.display=document.getElementById('reply-box-${i}').style.display==='none'?'block':'none'" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer;padding:0;">↩ Reply</button>
+        </div>`;}).join('')}
+    </div>`;
+}
+
+function teacherMarkMsgRead(code, key){
+  _fbUpdate('classes/'+code+'/messages/'+key, {read:true}).then(function(){
+    // Update local cache
+    if(_fbClassCache[code] && _fbClassCache[code].messages && _fbClassCache[code].messages[key]){
+      _fbClassCache[code].messages[key].read = true;
+    }
+    renderDashboard();
+  });
+}
+
+function teacherReplyToStudent(code, studentName, inputId){
+  const txt = ($(''+inputId)||{value:''}).value.trim();
+  if(!txt){ showToast('Enter a reply'); return; }
+  const teacherName = currentUser?.name||'Teacher';
+  _fbPush('classes/'+code+'/messages', {
+    from: teacherName,
+    to: studentName,
+    msg: txt,
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString(),
+    read: false,
+    type: 'teacher-reply'
+  }).then(function(){
+    showToast('✅ Reply sent to '+studentName+'!');
+    renderDashboard();
+  }).catch(function(){ showToast('❌ Failed. Check internet.'); });
+}
+
 
 function sendTeacherReply(idx){
   const m=teacherMessages[idx];const txt=($('reply-text')||{value:''}).value.trim();
@@ -7095,46 +7365,74 @@ function checkStudentNotifs(){
 }
 
 function renderTeacherClassCodes(){
-  const classes=(()=>{try{return JSON.parse(localStorage.getItem('qq_classes')||'{}')}catch(e){return{}}})();
-  const myCodes = Object.entries(classes).filter(([code,cls])=>cls.teacher===(currentUser?.name||''));
+  const myClassGroups = teacherGroups.filter(function(g){ return g.code; });
   return `
-    <div class="card" style="padding:20px;margin-top:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div>
-          <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;">My Class Codes</h4>
-          <p style="color:var(--greyd);font-size:11px;margin-top:3px;">Share these codes with students to join your class</p>
-        </div>
+    <div class="card" style="padding:20px;margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <h3 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;">🔑 My Live Class Codes</h3>
         <button class="btn btn-g btn-sm" onclick="generateClassCode()">+ New Code</button>
       </div>
-      ${myCodes.length===0?`
-        <div style="text-align:center;padding:20px;color:var(--greyd);">
+      ${myClassGroups.length===0?`
+        <div style="text-align:center;padding:20px 0;color:var(--greyd);">
           <div style="font-size:28px;margin-bottom:8px;">🔑</div>
-          <p style="font-size:12px;">Generate a class code for students to join</p>
+          <p style="font-size:12px;">No classes yet. Generate a code to share with students.</p>
           <button class="btn btn-g" style="margin-top:10px;" onclick="generateClassCode()">Generate Class Code</button>
-        </div>`:
-        myCodes.map(([code,cls])=>`
-          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);">
-            <div style="background:rgba(26,122,60,.15);border:1px solid var(--em);border-radius:8px;padding:8px 16px;text-align:center;">
-              <div class="dp" style="color:var(--emb);font-size:16px;letter-spacing:3px;font-weight:700;">${code}</div>
+        </div>
+      `:myClassGroups.map(function(g){
+        const cls = _fbClassCache[g.code] || {};
+        const studentCount = Object.keys(cls.students||{}).length;
+        const assignCount = Object.keys(cls.assignments||{}).length;
+        const msgCount = Object.values(cls.messages||{}).filter(function(m){ return !m.read && m.type!=='teacher-reply'; }).length;
+        return `
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="color:var(--white);font-size:16px;font-weight:700;letter-spacing:3px;margin-bottom:2px;">${g.code}</div>
+              <div style="color:var(--greyd);font-size:11px;">${g.name} · ${studentCount} student${studentCount!==1?'s':''} · ${assignCount} assignment${assignCount!==1?'s':''}</div>
             </div>
-            <div style="flex:1;">
-              <div style="color:var(--white);font-size:13px;">${(cls.students||[]).length} students enrolled</div>
-              <div style="color:var(--greyd);font-size:11px;">Created ${cls.created}</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              ${msgCount>0?`<div style="background:rgba(231,76,60,.15);border-radius:20px;padding:2px 8px;color:#e74c3c;font-size:10px;font-weight:700;">${msgCount} new msg${msgCount>1?'s':''}</div>`:''}
+              <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${g.code}').then(function(){showToast('Code copied!');})" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--goldl);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">📋 Copy</button>
+              <button onclick="teacherSendAnnouncement('${g.code}')" style="background:rgba(26,122,60,.1);border:1px solid rgba(46,204,113,.3);color:var(--emb);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">📢 Announce</button>
             </div>
-            <button class="btn btn-gold btn-sm" onclick="navigator.clipboard?.writeText('${code}').then(()=>showToast('✅ Code copied!'))">📋 Copy</button>
-          </div>`).join('')}
+          </div>
+          ${studentCount>0?`
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+            <div style="color:var(--greyd);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Students</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${Object.values(cls.students||{}).map(function(s){ return `<span style="background:rgba(26,122,60,.15);border:1px solid rgba(46,204,113,.2);border-radius:20px;padding:3px 10px;color:var(--white);font-size:11px;">👤 ${s.name||s}</span>`; }).join('')}
+            </div>
+          </div>`:''}
+        </div>`;}).join('')}
     </div>`;
 }
+
+function teacherSendAnnouncement(code){
+  const msg = prompt('Announcement to class ' + code + ':');
+  if(!msg || !msg.trim()) return;
+  sendAnnouncement(code, msg);
+}
+
+
 function sendMessageToTeacher(){
   const txt=($('student-msg')||{value:''}).value.trim();
   if(!txt){showToast('Please enter a message.');return;}
+  if(!myClassCode){showToast('Join a class first!');return;}
   const studentName=currentUser?.name||'Student';
-  // Store in teacher messages
-  const newId=Math.max(0,...teacherMessages.map(m=>m.id))+1;
-  teacherMessages.unshift({id:newId,from:studentName,group:0,msg:txt,date:new Date().toISOString().slice(0,10),read:false});
-  showToast('✅ Message sent to teacher!');
-  if($('student-msg'))$('student-msg').value='';
-  renderDashboard();
+  // Save to Firebase so teacher sees it live
+  _fbPush('classes/'+myClassCode+'/messages', {
+    from: studentName,
+    msg: txt,
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString(),
+    read: false,
+    type: 'student'
+  }).then(function(){
+    showToast('✅ Message sent to teacher!');
+    if($('student-msg'))$('student-msg').value='';
+  }).catch(function(){
+    showToast('❌ Failed to send. Check internet.');
+  });
 }
 
 function markAllComplete(id){
@@ -8513,46 +8811,63 @@ function renderTPAssignDetail(id){
 }
 
 function renderTPGrading(){
-  const pendingList = tpAssignments.flatMap(a=>(a.submissions||[]).filter(s=>!s.marked).map(s=>({...s,assignTitle:a.title,assignId:a.id,points:a.points})));
-  const recentlyGraded = tpAssignments.flatMap(a=>(a.submissions||[]).filter(s=>s.marked).map(s=>({...s,assignTitle:a.title,assignId:a.id}))).sort((a,b)=>b.date>a.date?1:-1).slice(0,5);
-  return `
-    <h3 class="dp" style="color:var(--white);font-size:18px;letter-spacing:1px;margin-bottom:18px;">Grading Centre</h3>
-    ${pendingList.length===0?`
-      <div style="text-align:center;padding:50px;"><div style="font-size:48px;margin-bottom:14px;">🎉</div><p style="color:var(--grey);font-size:15px;">All submissions are graded!</p></div>`
-    :`
-      <div style="margin-bottom:6px;color:var(--greyd);font-size:12px;">⏳ ${pendingList.length} submission${pendingList.length!==1?'s':''} need grading</div>
-      ${pendingList.map(s=>`
-        <div class="card" style="padding:18px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <div style="width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.15);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--goldl);">${s.student[0]}</div>
-            <div style="flex:1;">
-              <div style="color:var(--white);font-size:14px;font-weight:700;">${s.student}</div>
-              <div style="color:var(--greyd);font-size:11px;">${s.assignTitle} · Submitted ${s.date} · ⭐ ${s.points} pts</div>
-            </div>
-          </div>
-          ${s.notes?`<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px;color:var(--grey);font-size:12px;font-style:italic;">"${s.notes}"</div>`:''}
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input id="grade-score-${s.assignId}-${s.student.replace(/\s/g,'_')}" type="number" min="0" max="100" placeholder="Score (0–100)" style="width:130px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--white);font-size:13px;outline:none;">
-            <textarea id="grade-notes-${s.assignId}-${s.student.replace(/\s/g,'_')}" placeholder="Teacher feedback…" rows="1" style="flex:1;min-width:160px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--white);font-size:13px;outline:none;resize:none;"></textarea>
-            <button class="btn btn-g" onclick="tpMarkSubmission(${s.assignId},'${s.student}',document.getElementById('grade-score-${s.assignId}-${s.student.replace(/\s/g,'_')}').value,document.getElementById('grade-notes-${s.assignId}-${s.student.replace(/\s/g,'_')}').value)">✓ Submit Grade</button>
-          </div>
-        </div>`).join('')}`}
+  // Pull submissions from Firebase class cache
+  var pendingList = [];
+  var recentlyGraded = [];
+  teacherGroups.filter(function(g){ return g.code; }).forEach(function(g){
+    const cls = _fbClassCache[g.code];
+    if(!cls || !cls.assignments) return;
+    Object.entries(cls.assignments).forEach(function([assignId, a]){
+      Object.entries(a.submissions||{}).forEach(function([subKey, s]){
+        const item = Object.assign({}, s, {assignTitle:a.title, assignId:assignId, classCode:g.code, className:g.name, points:a.points||100});
+        if(!s.marked) pendingList.push(item);
+        else recentlyGraded.push(item);
+      });
+    });
+  });
+  recentlyGraded.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  recentlyGraded = recentlyGraded.slice(0, 5);
 
-    ${recentlyGraded.length>0?`
-      <div style="margin-top:24px;">
-        <div class="divE"></div>
-        <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Recently Graded</h4>
-        ${recentlyGraded.map(s=>`
-          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--emb);">${s.student[0]}</div>
-            <div style="flex:1;">
-              <div style="color:var(--white);font-size:12px;font-weight:600;">${s.student}</div>
-              <div style="color:var(--greyd);font-size:10px;">${s.assignTitle}</div>
+  return `
+    <h3 class="dp" style="color:var(--white);font-size:16px;letter-spacing:1px;margin-bottom:4px;">✅ Grade Submissions</h3>
+    <p style="color:var(--greyd);font-size:12px;margin-bottom:18px;">Submissions from Firebase — live data from your classes</p>
+    ${pendingList.length===0?`
+      <div class="card" style="padding:30px;text-align:center;color:var(--greyd);">
+        <div style="font-size:36px;margin-bottom:12px;">🎉</div>
+        <p style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;">All caught up!</p>
+        <p style="font-size:12px;">No pending submissions. Students' work will appear here automatically when they submit.</p>
+      </div>
+    `:`
+      <div class="card" style="padding:22px;margin-bottom:16px;">
+        <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">⏳ Needs Grading (${pendingList.length})</h4>
+        ${pendingList.map(function(s){ return `
+          <div style="padding:14px;border:1px solid rgba(230,126,34,.3);border-radius:10px;margin-bottom:10px;background:rgba(230,126,34,.04);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+              <div>
+                <div style="color:var(--white);font-size:13px;font-weight:600;">${s.name}</div>
+                <div style="color:var(--greyd);font-size:11px;">📋 ${s.assignTitle} · ${s.className} · Submitted ${s.date||'—'}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <input type="number" min="0" max="100" placeholder="Score%" id="score-${s.assignId}-${s.name.replace(/\s/g,'_')}" style="width:80px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--white);font-size:12px;text-align:center;">
+                <button class="btn btn-g btn-sm" onclick="(function(){var inp=document.getElementById('score-${s.assignId}-${s.name.replace(/\s/g,'_')}');var sc=parseInt(inp?inp.value:'');if(isNaN(sc)||sc<0||sc>100){showToast('Enter 0-100');return;}markAssignment('${s.classCode}','${s.assignId}','${s.name}',sc);})()">Grade ✓</button>
+              </div>
             </div>
-            <span style="color:${s.score>=70?'var(--emb)':'#e74c3c'};font-size:14px;font-weight:700;">${s.score}%</span>
-          </div>`).join('')}
+          </div>`;}).join('')}
+      </div>`}
+    ${recentlyGraded.length>0?`
+      <div class="card" style="padding:22px;">
+        <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">✅ Recently Graded</h4>
+        ${recentlyGraded.map(function(s){ return `
+          <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <div>
+              <div style="color:var(--white);font-size:12px;font-weight:600;">${s.name}</div>
+              <div style="color:var(--greyd);font-size:10px;">📋 ${s.assignTitle} · ${s.date||'—'}</div>
+            </div>
+            <div style="background:rgba(${(s.score||0)>=70?'46,204,113':(s.score||0)>=50?'201,168,76':'231,76,60'},.15);border-radius:20px;padding:4px 12px;color:${(s.score||0)>=70?'var(--emb)':(s.score||0)>=50?'var(--goldl)':'#e74c3c'};font-size:13px;font-weight:700;">${s.score||0}%</div>
+          </div>`;}).join('')}
       </div>`:''}`;
 }
+
 
 function renderTPReminders(){
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -15491,6 +15806,33 @@ thead th{padding:10px;font-size:11px;text-align:left;text-transform:uppercase;le
 tbody tr:nth-child(even){background:#f8f5e8;}
 td{padding:8px 10px;font-size:12px;}
 .print-btn{position:fixed;bottom:20px;right:20px;background:#1a7a3c;color:#fff;border:none;border-radius:10px;padding:12px 24px;cursor:pointer;font-size:13px;font-weight:700;}
+/* ═══════════════════════════════════════════
+   LIVE CALL SYSTEM — WebRTC + Firebase Signaling
+═══════════════════════════════════════════ */
+#call-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);}
+#call-overlay.hidden{display:none!important;}
+.call-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:520px;width:90%;text-align:center;position:relative;}
+.call-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--eml));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;border:3px solid var(--gold);}
+.call-avatar.ringing{animation:callPulse 1s ease-in-out infinite;}
+@keyframes callPulse{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.5);}50%{box-shadow:0 0 0 20px rgba(46,204,113,0);}}
+.call-btn{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;font-size:22px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;margin:0 8px;}
+.call-btn.accept{background:linear-gradient(135deg,#27ae60,#2ecc71);box-shadow:0 4px 16px rgba(46,204,113,.4);}
+.call-btn.accept:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(46,204,113,.5);}
+.call-btn.decline,.call-btn.end{background:linear-gradient(135deg,#c0392b,#e74c3c);box-shadow:0 4px 16px rgba(231,76,60,.4);}
+.call-btn.decline:hover,.call-btn.end:hover{transform:scale(1.1);}
+.call-btn.mute{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);}
+.call-btn.mute.active{background:rgba(231,76,60,.2);border-color:rgba(231,76,60,.5);color:#e74c3c;}
+.call-btn.cam{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);}
+.call-btn.cam.active{background:rgba(231,76,60,.2);border-color:rgba(231,76,60,.5);color:#e74c3c;}
+.call-videos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;border-radius:12px;overflow:hidden;}
+.call-videos video{width:100%;height:160px;object-fit:cover;background:#000;border-radius:10px;}
+.call-status{color:var(--greyd);font-size:12px;margin-top:6px;letter-spacing:.5px;}
+.call-timer{color:var(--emb);font-size:14px;font-weight:700;margin-top:4px;font-family:monospace;}
+.call-start-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--em),var(--eml));color:#fff;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.5px;transition:all .2s;}
+.call-start-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(46,204,113,.4);}
+.call-start-btn.video-call{background:linear-gradient(135deg,#2980b9,#3498db);}
+.call-start-btn.video-call:hover{box-shadow:0 4px 12px rgba(52,152,219,.4);}
+
 </style></head><body>
 <div class="page">
   <div class="cert">
@@ -17882,6 +18224,645 @@ console.log('[QQ v13] Teacher Mode system loaded. Toggle with 🏫 Teacher butto
 </div>
 <!-- Marker / highlighter canvas -->
 <canvas id="bq-mark-canvas"></canvas>
+
+
+<!-- ════════════════════════════════════════
+     LIVE CALL OVERLAY (Voice & Video)
+     WebRTC peer-to-peer, Firebase signaling
+════════════════════════════════════════ -->
+<div id="call-overlay" class="hidden">
+  <div class="call-box" id="call-box">
+    <!-- Ringing / Outgoing state -->
+    <div id="call-state-ringing">
+      <div class="call-avatar ringing" id="call-avatar-emoji">📞</div>
+      <h3 id="call-title" style="color:var(--white);font-size:18px;margin-bottom:6px;">Incoming Call</h3>
+      <p id="call-subtitle" style="color:var(--greyd);font-size:13px;margin-bottom:20px;">from Teacher</p>
+      <div class="call-status" id="call-status-text">Ringing...</div>
+      <div style="margin-top:20px;display:flex;justify-content:center;gap:24px;" id="call-action-btns">
+        <!-- Buttons injected by JS -->
+      </div>
+    </div>
+    <!-- Active call state -->
+    <div id="call-state-active" style="display:none;">
+      <div class="call-videos" id="call-videos" style="display:none;">
+        <div style="position:relative;">
+          <video id="local-video" autoplay muted playsinline style="width:100%;height:160px;object-fit:cover;border-radius:10px;background:#111;"></video>
+          <div style="position:absolute;bottom:6px;left:8px;color:#fff;font-size:10px;background:rgba(0,0,0,.5);padding:2px 7px;border-radius:10px;">You</div>
+        </div>
+        <div style="position:relative;">
+          <video id="remote-video" autoplay playsinline style="width:100%;height:160px;object-fit:cover;border-radius:10px;background:#111;"></video>
+          <div style="position:absolute;bottom:6px;left:8px;color:#fff;font-size:10px;background:rgba(0,0,0,.5);padding:2px 7px;border-radius:10px;" id="remote-label">Teacher</div>
+        </div>
+      </div>
+      <!-- Voice only — avatar -->
+      <div id="call-voice-avatar" class="call-avatar" style="width:90px;height:90px;font-size:36px;border-color:var(--emb);">🎙</div>
+      <h3 id="call-active-name" style="color:var(--white);font-size:17px;margin:12px 0 4px;">Connected</h3>
+      <div class="call-timer" id="call-timer">00:00</div>
+      <div class="call-status" id="call-active-status">Call in progress</div>
+      <div style="margin-top:20px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <button class="call-btn mute" id="btn-mute" onclick="callToggleMute()" title="Mute/Unmute">🎤</button>
+        <button class="call-btn cam" id="btn-cam" onclick="callToggleCam()" title="Camera on/off" style="display:none;">📷</button>
+        <button class="call-btn end" onclick="callEnd()" title="End call">📵</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   QUR'AN QUEST — LIVE CALL ENGINE
+   WebRTC peer-to-peer audio/video
+   Firebase Realtime DB used as signaling server
+   
+   Firebase paths used:
+     calls/{callId}/offer       — SDP offer from caller
+     calls/{callId}/answer      — SDP answer from callee
+     calls/{callId}/candidates/{role}  — ICE candidates
+     calls/{callId}/meta        — call metadata (who, type, status)
+   
+   Flow:
+     Teacher initiates → writes offer to Firebase
+     Student polls Firebase → sees incoming call
+     Student accepts → writes answer
+     Both exchange ICE candidates via Firebase
+     WebRTC connects directly P2P
+══════════════════════════════════════════════════════════════ */
+
+// ── State ──
+var _callState = 'idle'; // idle | ringing | calling | connected
+var _callId = null;
+var _callRole = null;    // 'caller' | 'callee'
+var _callType = 'voice'; // 'voice' | 'video'
+var _callPeer = null;    // name of the other person
+var _callCode = null;    // class code
+var _pc = null;          // RTCPeerConnection
+var _localStream = null;
+var _callTimerInterval = null;
+var _callSeconds = 0;
+var _callPollInterval = null;
+var _mutedAudio = false;
+var _mutedVideo = false;
+
+// STUN servers for NAT traversal (Google's free servers)
+var ICE_SERVERS = {
+  iceServers: [
+    {urls: 'stun:stun.l.google.com:19302'},
+    {urls: 'stun:stun1.l.google.com:19302'},
+    {urls: 'stun:stun2.l.google.com:19302'}
+  ]
+};
+
+// ── Firebase signaling helpers ──
+function _callPath(id){ return 'calls/' + id; }
+
+function _callWrite(id, data){
+  return _fbUpdate(_callPath(id), data);
+}
+
+function _callGet(id, cb){
+  _fbGet(_callPath(id), cb);
+}
+
+function _callListen(id, cb){
+  _fbListen(_callPath(id), cb, 1500); // poll every 1.5s for snappy signaling
+}
+
+function _callUnlisten(id){
+  _fbUnlisten(_callPath(id));
+}
+
+function _callCleanup(id){
+  // Delete call document from Firebase
+  fetch(_FB_URL + '/calls/' + (id||'') + '.json', {method:'DELETE'}).catch(function(){});
+}
+
+// ── Push ICE candidate to Firebase ──
+function _pushIceCandidate(id, role, candidate){
+  return _fbPush('calls/' + id + '/candidates/' + role, {
+    sdpMid: candidate.sdpMid,
+    sdpMLineIndex: candidate.sdpMLineIndex,
+    candidate: candidate.candidate
+  });
+}
+
+// ── Generate a random call ID ──
+function _genCallId(){
+  return 'call-' + Math.random().toString(36).substr(2,8);
+}
+
+// ── Format timer ──
+function _fmtTime(s){
+  var m = Math.floor(s/60);
+  return (m<10?'0':'')+m+':'+(s%60<10?'0':'')+(s%60);
+}
+
+// ══════════════════════════════
+// SHOW OVERLAY UI
+// ══════════════════════════════
+
+function callShowOverlay(){
+  var el = document.getElementById('call-overlay');
+  if(el) el.classList.remove('hidden');
+}
+
+function callHideOverlay(){
+  var el = document.getElementById('call-overlay');
+  if(el) el.classList.add('hidden');
+}
+
+function callShowRinging(title, subtitle, buttons){
+  callShowOverlay();
+  document.getElementById('call-state-ringing').style.display = '';
+  document.getElementById('call-state-active').style.display = 'none';
+  document.getElementById('call-title').textContent = title;
+  document.getElementById('call-subtitle').textContent = subtitle;
+  document.getElementById('call-action-btns').innerHTML = buttons;
+}
+
+function callShowActive(peerName, isVideo){
+  document.getElementById('call-state-ringing').style.display = 'none';
+  document.getElementById('call-state-active').style.display = '';
+  document.getElementById('call-active-name').textContent = peerName;
+  document.getElementById('call-videos').style.display = isVideo ? 'grid' : 'none';
+  document.getElementById('call-voice-avatar').style.display = isVideo ? 'none' : '';
+  document.getElementById('btn-cam').style.display = isVideo ? 'inline-flex' : 'none';
+  document.getElementById('remote-label').textContent = peerName;
+  // Start timer
+  _callSeconds = 0;
+  if(_callTimerInterval) clearInterval(_callTimerInterval);
+  _callTimerInterval = setInterval(function(){
+    _callSeconds++;
+    var el = document.getElementById('call-timer');
+    if(el) el.textContent = _fmtTime(_callSeconds);
+  }, 1000);
+}
+
+// ══════════════════════════════
+// INITIATE CALL (Teacher → Student, or Student → Teacher)
+// ══════════════════════════════
+
+async function callStart(targetName, classCode, type){
+  if(!currentUser){ showToast('Please sign in first'); return; }
+  if(_callState !== 'idle'){ showToast('Already in a call'); return; }
+  if(!classCode){ showToast('No class code — cannot start call'); return; }
+
+  _callType = type || 'voice';
+  _callPeer = targetName;
+  _callCode = classCode;
+  _callRole = 'caller';
+  _callId = _genCallId();
+  _callState = 'calling';
+
+  // Show outgoing UI
+  callShowRinging(
+    (_callType==='video' ? '📹 Video Calling…' : '📞 Voice Calling…'),
+    targetName,
+    '<button class="call-btn end" onclick="callEnd()" title="Cancel">📵</button>'
+  );
+  document.getElementById('call-status-text').textContent = 'Calling ' + targetName + '…';
+  document.getElementById('call-avatar-emoji').textContent = _callType==='video' ? '📹' : '📞';
+
+  try {
+    // Get local media
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: _callType === 'video'
+    });
+
+    if(_callType === 'video'){
+      var lv = document.getElementById('local-video');
+      if(lv){ lv.srcObject = _localStream; }
+    }
+
+    // Create RTCPeerConnection
+    _pc = new RTCPeerConnection(ICE_SERVERS);
+    _localStream.getTracks().forEach(function(track){
+      _pc.addTrack(track, _localStream);
+    });
+
+    // Handle remote stream
+    _pc.ontrack = function(event){
+      var rv = document.getElementById('remote-video');
+      if(rv && event.streams[0]){ rv.srcObject = event.streams[0]; }
+      // Also route to audio element for voice calls
+      if(_callType === 'voice'){
+        var audio = document.getElementById('remote-audio');
+        if(!audio){
+          audio = document.createElement('audio');
+          audio.id = 'remote-audio';
+          audio.autoplay = true;
+          document.body.appendChild(audio);
+        }
+        audio.srcObject = event.streams[0];
+      }
+    };
+
+    // ICE candidates → push to Firebase
+    _pc.onicecandidate = function(event){
+      if(event.candidate && _callId){
+        _pushIceCandidate(_callId, 'caller', event.candidate);
+      }
+    };
+
+    _pc.onconnectionstatechange = function(){
+      var s = _pc.connectionState;
+      var el = document.getElementById('call-active-status');
+      if(el) el.textContent = s === 'connected' ? 'Call in progress' : s;
+      if(s === 'disconnected' || s === 'failed' || s === 'closed'){
+        callEnd();
+      }
+    };
+
+    // Create offer
+    var offer = await _pc.createOffer();
+    await _pc.setLocalDescription(offer);
+
+    // Write to Firebase
+    await _callWrite(_callId, {
+      meta: {
+        callId: _callId,
+        from: currentUser.name,
+        fromRole: currentUser.role,
+        to: targetName,
+        type: _callType,
+        classCode: classCode,
+        status: 'ringing',
+        started: new Date().toISOString()
+      },
+      offer: {
+        type: offer.type,
+        sdp: offer.sdp
+      }
+    });
+
+    // Also notify via class messages
+    _fbPush('classes/'+classCode+'/messages', {
+      from: currentUser.name,
+      role: currentUser.role,
+      to: targetName,
+      msg: (_callType==='video'?'📹':'📞') + ' ' + currentUser.name + ' is calling you — open your Dashboard to answer!',
+      callId: _callId,
+      callType: _callType,
+      date: new Date().toISOString().slice(0,10),
+      time: new Date().toLocaleTimeString(),
+      read: false,
+      isCall: true
+    });
+
+    // Poll for answer
+    _callPollInterval = setInterval(function(){ _callerPollForAnswer(); }, 2000);
+
+  } catch(err) {
+    console.error('Call error:', err);
+    callEnd();
+    if(err.name === 'NotAllowedError'){
+      showToast('❌ Microphone/camera permission denied. Please allow access.');
+    } else {
+      showToast('❌ Could not start call: ' + err.message);
+    }
+  }
+}
+
+// Caller polls Firebase for answer
+function _callerPollForAnswer(){
+  if(!_callId || _callState !== 'calling') return;
+  _callGet(_callId, async function(data){
+    if(!data) return;
+    // Check if declined
+    if(data.meta && data.meta.status === 'declined'){
+      clearInterval(_callPollInterval);
+      showToast('📵 Call declined');
+      callCleanupConnection();
+      return;
+    }
+    // Process answer SDP
+    if(data.answer && _pc && _pc.signalingState !== 'stable'){
+      clearInterval(_callPollInterval);
+      try {
+        await _pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        // Apply any queued ICE candidates from callee
+        if(data.candidates && data.candidates.callee){
+          Object.values(data.candidates.callee).forEach(async function(c){
+            try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+          });
+        }
+        _callState = 'connected';
+        callShowActive(_callPeer, _callType==='video');
+        document.getElementById('call-status-text').textContent = 'Connected';
+        // Keep polling for more ICE candidates
+        _callPollInterval = setInterval(function(){ _pollRemoteIce('callee'); }, 3000);
+      } catch(e){
+        console.error('setRemoteDescription error:', e);
+      }
+    }
+  });
+}
+
+// ══════════════════════════════
+// INCOMING CALL (Callee side)
+// ══════════════════════════════
+
+// Poll for incoming calls addressed to current user
+var _incomingPollInterval = null;
+var _lastCheckedCallId = null;
+
+function startIncomingCallPoller(){
+  if(_incomingPollInterval) return; // already running
+  _incomingPollInterval = setInterval(function(){
+    if(!currentUser || _callState !== 'idle') return;
+    if(!myClassCode && !(currentUser.role==='teacher')) return;
+    // For teachers, check all their class codes
+    var codesToCheck = [];
+    if(currentUser.role === 'teacher'){
+      teacherGroups.forEach(function(g){ if(g.code) codesToCheck.push(g.code); });
+    } else if(myClassCode){
+      codesToCheck.push(myClassCode);
+    }
+    // Check Firebase for any call targeting this user
+    codesToCheck.forEach(function(code){
+      _fbGet('calls', function(allCalls){
+        if(!allCalls) return;
+        Object.keys(allCalls).forEach(function(cid){
+          if(cid === _lastCheckedCallId) return;
+          var call = allCalls[cid];
+          if(!call || !call.meta) return;
+          var meta = call.meta;
+          // Is this call for me?
+          if(meta.to === currentUser.name && meta.status === 'ringing' && meta.classCode === code){
+            _lastCheckedCallId = cid;
+            _showIncomingCall(cid, meta, call.offer);
+          }
+        });
+      });
+    });
+  }, 3000);
+}
+
+function stopIncomingCallPoller(){
+  if(_incomingPollInterval){ clearInterval(_incomingPollInterval); _incomingPollInterval = null; }
+}
+
+function _showIncomingCall(callId, meta, offer){
+  if(_callState !== 'idle') return;
+  _callState = 'ringing';
+  _callId = callId;
+  _callRole = 'callee';
+  _callType = meta.type || 'voice';
+  _callPeer = meta.from;
+  _callCode = meta.classCode;
+  _pendingOffer = offer;
+
+  var typeLabel = _callType === 'video' ? '📹 Video Call' : '📞 Voice Call';
+  callShowRinging(
+    typeLabel + ' from ' + meta.from,
+    meta.fromRole === 'teacher' ? '🏫 Your Teacher' : '👤 Classmate',
+    '<button class="call-btn accept" onclick="callAccept()" title="Accept">📞</button>' +
+    '<button class="call-btn decline" onclick="callDecline()" title="Decline">📵</button>'
+  );
+  document.getElementById('call-avatar-emoji').textContent = _callType==='video' ? '📹' : '📞';
+  // Play ring tone (simple beep via Web Audio API)
+  _callRing();
+}
+
+var _pendingOffer = null;
+var _ringOscInterval = null;
+
+function _callRing(){
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 440;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(); osc.stop(ctx.currentTime + 0.8);
+    // Repeat
+    _ringOscInterval = setInterval(function(){
+      if(_callState !== 'ringing'){ clearInterval(_ringOscInterval); return; }
+      try{
+        var c2 = new (window.AudioContext || window.webkitAudioContext)();
+        var o2 = c2.createOscillator();
+        var g2 = c2.createGain();
+        o2.connect(g2); g2.connect(c2.destination);
+        o2.frequency.value = 480;
+        g2.gain.setValueAtTime(0.25, c2.currentTime);
+        g2.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.6);
+        o2.start(); o2.stop(c2.currentTime + 0.6);
+      }catch(e){}
+    }, 1500);
+  } catch(e){}
+}
+
+// ══════════════════════════════
+// ACCEPT CALL
+// ══════════════════════════════
+
+async function callAccept(){
+  if(_callState !== 'ringing' || !_pendingOffer) return;
+  clearInterval(_ringOscInterval);
+  document.getElementById('call-status-text').textContent = 'Connecting…';
+  document.getElementById('call-action-btns').innerHTML = '';
+
+  try {
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: _callType === 'video'
+    });
+
+    if(_callType === 'video'){
+      var lv = document.getElementById('local-video');
+      if(lv){ lv.srcObject = _localStream; }
+    }
+
+    _pc = new RTCPeerConnection(ICE_SERVERS);
+    _localStream.getTracks().forEach(function(track){
+      _pc.addTrack(track, _localStream);
+    });
+
+    _pc.ontrack = function(event){
+      var rv = document.getElementById('remote-video');
+      if(rv && event.streams[0]) rv.srcObject = event.streams[0];
+      if(_callType === 'voice'){
+        var audio = document.getElementById('remote-audio');
+        if(!audio){
+          audio = document.createElement('audio');
+          audio.id = 'remote-audio';
+          audio.autoplay = true;
+          document.body.appendChild(audio);
+        }
+        audio.srcObject = event.streams[0];
+      }
+    };
+
+    _pc.onicecandidate = function(event){
+      if(event.candidate && _callId){
+        _pushIceCandidate(_callId, 'callee', event.candidate);
+      }
+    };
+
+    _pc.onconnectionstatechange = function(){
+      var s = _pc.connectionState;
+      var el = document.getElementById('call-active-status');
+      if(el) el.textContent = s === 'connected' ? 'Call in progress' : s;
+      if(s === 'disconnected' || s === 'failed' || s === 'closed') callEnd();
+    };
+
+    await _pc.setRemoteDescription(new RTCSessionDescription(_pendingOffer));
+
+    // Apply caller's ICE candidates if any arrived already
+    _callGet(_callId, async function(data){
+      if(data && data.candidates && data.candidates.caller){
+        Object.values(data.candidates.caller).forEach(async function(c){
+          try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+        });
+      }
+    });
+
+    var answer = await _pc.createAnswer();
+    await _pc.setLocalDescription(answer);
+
+    // Write answer + status to Firebase
+    await _callWrite(_callId, {
+      answer: { type: answer.type, sdp: answer.sdp },
+      'meta/status': 'connected'
+    });
+
+    _callState = 'connected';
+    callShowActive(_callPeer, _callType==='video');
+
+    // Keep polling for more ICE candidates from caller
+    _callPollInterval = setInterval(function(){ _pollRemoteIce('caller'); }, 3000);
+
+  } catch(err) {
+    console.error('Accept call error:', err);
+    callDecline();
+    showToast('❌ Could not connect: ' + (err.name==='NotAllowedError'?'Microphone permission denied':err.message));
+  }
+}
+
+// Poll and apply remote ICE candidates
+var _appliedIceCandidates = {};
+function _pollRemoteIce(remoteRole){
+  if(!_callId || !_pc) return;
+  _callGet(_callId, function(data){
+    if(!data || !data.candidates || !data.candidates[remoteRole]) return;
+    Object.keys(data.candidates[remoteRole]).forEach(function(k){
+      if(_appliedIceCandidates[k]) return;
+      _appliedIceCandidates[k] = true;
+      var c = data.candidates[remoteRole][k];
+      try{ _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+    });
+  });
+}
+
+// ══════════════════════════════
+// DECLINE CALL
+// ══════════════════════════════
+
+function callDecline(){
+  clearInterval(_ringOscInterval);
+  if(_callId){
+    _callWrite(_callId, {'meta/status': 'declined'});
+    setTimeout(function(){ _callCleanup(_callId); }, 2000);
+  }
+  callCleanupConnection();
+}
+
+// ══════════════════════════════
+// END CALL
+// ══════════════════════════════
+
+function callEnd(){
+  clearInterval(_ringOscInterval);
+  if(_callId){
+    _callWrite(_callId, {'meta/status': 'ended'});
+    setTimeout(function(){ _callCleanup(_callId); }, 2000);
+  }
+  callCleanupConnection();
+  showToast('📵 Call ended · ' + _fmtTime(_callSeconds));
+}
+
+function callCleanupConnection(){
+  if(_callTimerInterval) clearInterval(_callTimerInterval);
+  if(_callPollInterval) clearInterval(_callPollInterval);
+  if(_pc){ try{ _pc.close(); }catch(e){} _pc = null; }
+  if(_localStream){ _localStream.getTracks().forEach(function(t){ t.stop(); }); _localStream = null; }
+  var ra = document.getElementById('remote-audio');
+  if(ra){ ra.srcObject = null; ra.remove(); }
+  var rv = document.getElementById('remote-video');
+  if(rv) rv.srcObject = null;
+  var lv = document.getElementById('local-video');
+  if(lv) lv.srcObject = null;
+  _callState = 'idle';
+  _callId = null; _callRole = null; _callPeer = null; _callCode = null;
+  _pendingOffer = null; _callSeconds = 0;
+  _appliedIceCandidates = {};
+  callHideOverlay();
+}
+
+// ══════════════════════════════
+// MUTE / CAMERA TOGGLE
+// ══════════════════════════════
+
+function callToggleMute(){
+  _mutedAudio = !_mutedAudio;
+  if(_localStream){
+    _localStream.getAudioTracks().forEach(function(t){ t.enabled = !_mutedAudio; });
+  }
+  var btn = document.getElementById('btn-mute');
+  if(btn){
+    btn.textContent = _mutedAudio ? '🔇' : '🎤';
+    btn.classList.toggle('active', _mutedAudio);
+  }
+  showToast(_mutedAudio ? '🔇 Muted' : '🎤 Unmuted');
+}
+
+function callToggleCam(){
+  _mutedVideo = !_mutedVideo;
+  if(_localStream){
+    _localStream.getVideoTracks().forEach(function(t){ t.enabled = !_mutedVideo; });
+  }
+  var btn = document.getElementById('btn-cam');
+  if(btn){
+    btn.textContent = _mutedVideo ? '🚫' : '📷';
+    btn.classList.toggle('active', _mutedVideo);
+  }
+}
+
+// ══════════════════════════════
+// START POLLING ON INIT
+// ══════════════════════════════
+
+// Start incoming call poller once user is logged in and dashboard loads
+var _callPollerStarted = false;
+function maybeStartCallPoller(){
+  if(_callPollerStarted) return;
+  if(!currentUser) return;
+  _callPollerStarted = true;
+  startIncomingCallPoller();
+}
+
+// Hook into renderDashboard to start poller
+var _origRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
+if(_origRenderDashboard){
+  window.renderDashboard = function(){
+    maybeStartCallPoller();
+    return _origRenderDashboard.apply(this, arguments);
+  };
+}
+
+// Also start on updateNavAuth (called after login)
+var _origUpdateNavAuth = typeof updateNavAuth === 'function' ? updateNavAuth : null;
+if(_origUpdateNavAuth){
+  window.updateNavAuth = function(){
+    _origUpdateNavAuth.apply(this, arguments);
+    setTimeout(maybeStartCallPoller, 500);
+  };
+}
+
+</script>
 
 </body>
 </html>
