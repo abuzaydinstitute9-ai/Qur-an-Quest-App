@@ -814,27 +814,30 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 // No external scripts needed — works on GitHub Pages, offline-first friendly
 
 var _FB_URL = 'https://qur-an-quest-app-default-rtdb.firebaseio.com';
-var _FB_AUTH = '';  // set after anonymous Firebase Auth sign-in
+var _FB_AUTH = '';  // Firebase ID token (set after anonymous sign-in)
+var _FB_API_KEY = '';  // Firebase Web API key (optional, enables secure auth)
 var _FB_PROJECT_ID = 'qur-an-quest-app';
 
-// ── Firebase Anonymous Auth ──
-// Signs in anonymously via Firebase REST Auth API so that database rules
-// can verify "auth != null" without requiring user accounts in Firebase.
-// This keeps our existing localStorage auth system intact.
-(function _fbAnonAuth(){
-  var ANON_KEY = 'qq_fb_anon_token';
-  var ANON_EXP  = 'qq_fb_anon_exp';
-  function _isTokenFresh(){
-    try{
-      var exp = parseInt(localStorage.getItem(ANON_EXP)||'0',10);
-      return exp > Date.now() + 60000; // 1 min buffer
-    }catch(e){ return false; }
+// ── Firebase Auth Engine ──
+// Loads API key from localStorage if saved, then does anonymous sign-in.
+// Without an API key, _FB_AUTH stays empty and open rules are used.
+(function _fbAuthInit(){
+  var KEY_STORE = 'qq_fb_apikey';
+  var TOK_STORE = 'qq_fb_token';
+  var EXP_STORE = 'qq_fb_tokexp';
+
+  // Load saved API key
+  try { _FB_API_KEY = localStorage.getItem(KEY_STORE) || ''; } catch(e){}
+
+  function _tokenFresh(){
+    try { var exp=parseInt(localStorage.getItem(EXP_STORE)||'0',10); return exp > Date.now()+60000; } catch(e){ return false; }
   }
   function _loadToken(){
-    try{ var t=localStorage.getItem(ANON_KEY); if(t){ _FB_AUTH=t; } }catch(e){}
+    try { var t=localStorage.getItem(TOK_STORE); if(t) _FB_AUTH=t; } catch(e){}
   }
   function _signInAnon(){
-    fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAnon_placeholder',{
+    if(!_FB_API_KEY) return; // No key — rely on open DB rules
+    fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+_FB_API_KEY,{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({returnSecureToken:true})
     })
@@ -842,19 +845,30 @@ var _FB_PROJECT_ID = 'qur-an-quest-app';
     .then(function(d){
       if(d.idToken){
         _FB_AUTH = d.idToken;
-        var exp = Date.now() + (parseInt(d.expiresIn||'3600',10)*1000);
-        try{ localStorage.setItem(ANON_KEY,d.idToken); localStorage.setItem(ANON_EXP,String(exp)); }catch(e){}
+        var exp = Date.now()+(parseInt(d.expiresIn||'3600',10)*1000);
+        try{ localStorage.setItem(TOK_STORE,d.idToken); localStorage.setItem(EXP_STORE,String(exp)); }catch(e){}
       }
     })
-    .catch(function(){
-      // Auth API unreachable — app still works, rules just need open read temporarily
-    });
+    .catch(function(){});
   }
+
+  // Expose so setup guide can save a new key
+  window._fbSaveApiKey = function(key){
+    key = (key||'').trim();
+    if(!key) return;
+    _FB_API_KEY = key;
+    try{ localStorage.setItem(KEY_STORE, key); }catch(e){}
+    // Clear old token so we re-auth with new key
+    try{ localStorage.removeItem(TOK_STORE); localStorage.removeItem(EXP_STORE); }catch(e){}
+    _FB_AUTH = '';
+    _signInAnon();
+  };
+
   _loadToken();
-  if(!_isTokenFresh()) _signInAnon();
-  // Refresh token every 55 minutes
+  if(!_tokenFresh()) _signInAnon();
   setInterval(function(){ _signInAnon(); }, 55*60*1000);
 })();
+
 var _fbListeners = {}; // polled listeners
 
 function _fbPath(path){
@@ -940,97 +954,84 @@ function _fbShowSetupGuide(){
   div.id='fb-setup-guide';
   div.style.cssText='position:fixed;inset:0;z-index:199999;background:rgba(0,0,0,.92);display:flex;'+
     'align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);';
-  var rulesJson='{'+
-  '\n  "rules": {'+
-  '\n    "classes": {'+
-  '\n      "$classCode": {'+
-  '\n        ".read": "auth != null",'+
-  '\n        ".write": "auth != null",'+
-  '\n        "messages": {'+
-  '\n          "$msgId": {'+
-  '\n            ".write": "auth != null"'+
-  '\n          }'+
-  '\n        },'+
-  '\n        "assignments": {'+
-  '\n          "$assignId": {'+
-  '\n            "submissions": {'+
-  '\n              "$uid": { ".write": "auth != null" }'+
-  '\n            }'+
-  '\n          }'+
-  '\n        }'+
-  '\n      }'+
-  '\n    },'+
-  '\n    "calls": {'+
-  '\n      "$callId": {'+
-  '\n        ".read": "auth != null",'+
-  '\n        ".write": "auth != null"'+
-  '\n      }'+
-  '\n    },'+
-  '\n    "screenshare": {'+
-  '\n      "$ssId": {'+
-  '\n        ".read": "auth != null",'+
-  '\n        ".write": "auth != null"'+
-  '\n      }'+
-  '\n    },'+
-  '\n    "presence": {'+
-  '\n      "$uid": {'+
-  '\n        ".read": "auth != null",'+
-  '\n        ".write": "auth != null"'+
-  '\n      }'+
-  '\n    }'+
-  '\n  }'+
-  '\n}';
   var inner=document.createElement('div');
   inner.style.cssText='background:#0f140f;border:1px solid rgba(243,156,18,.4);border-radius:20px;padding:28px;'+
-    'max-width:600px;width:100%;max-height:90vh;overflow-y:auto;font-family:Lato,sans-serif;';
+    'max-width:620px;width:100%;max-height:92vh;overflow-y:auto;font-family:Lato,sans-serif;';
+
+  var rulesA=JSON.stringify({"rules":{".read":true,".write":true}},null,2);
+  var rulesB=JSON.stringify({"rules":{".read":"auth != null",".write":"auth != null"}},null,2);
+
   inner.innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'+
-    '<h2 style="font-family:Cinzel,serif;color:#f39c12;font-size:18px;">🔧 Firebase Setup Required</h2>'+
-    '<button id="fb-sg-close" style="background:none;border:none;color:#94a894;font-size:22px;cursor:pointer;">✕</button></div>'+
-    '<p style="color:#94a894;font-size:13px;margin-bottom:18px;line-height:1.7;">'+
-    'Your Firebase Realtime Database is blocking connections. Follow these steps to fix it:</p>'+
-    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;margin-bottom:14px;">'+
-    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 1 — Open Firebase Console</p>'+
-    '<p style="color:#94a894;font-size:12px;line-height:1.7;">Go to: <a href="https://console.firebase.google.com" target="_blank" style="color:#74b9ff;">console.firebase.google.com</a><br>'+
-    '→ Select project: <strong style="color:#f0f0f0;">qur-an-quest-app</strong><br>'+
-    '→ Click <strong style="color:#f0f0f0;">Realtime Database</strong> in the left sidebar<br>'+
-    '→ Click the <strong style="color:#f0f0f0;">Rules</strong> tab</p></div>'+
-    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;margin-bottom:14px;">'+
-    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 2 — Replace the rules with this:</p>'+
-    '<pre id="fb-rules-pre" style="background:#060a06;border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:14px;'+
-    'color:#2ecc71;font-size:12px;overflow-x:auto;line-height:1.6;white-space:pre;"></pre>'+
-    '<p style="color:#94a894;font-size:11px;margin-top:8px;">These rules require Firebase Authentication (anonymous sign-in is handled automatically by the app).</p></div>'+
-    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;margin-bottom:14px;">'+
-    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 3 — If DB does not exist yet:</p>'+
-    '<p style="color:#94a894;font-size:12px;line-height:1.7;">'+
-    '→ In Firebase Console → Realtime Database → <strong style="color:#f0f0f0;">Create Database</strong><br>'+
-    '→ Choose region: <strong style="color:#f0f0f0;">United States (us-central1)</strong><br>'+
-    '→ Start in <strong style="color:#f0f0f0;">Test Mode</strong> (allows read/write)<br>'+
-    '→ DB URL must be: <strong style="color:#74b9ff;">https://qur-an-quest-app-default-rtdb.firebaseio.com</strong></p></div>'+
-    '<div style="background:rgba(26,122,60,.1);border:1px solid rgba(46,204,113,.3);border-radius:12px;padding:14px;margin-bottom:18px;">'+
-    '<p style="color:#2ecc71;font-weight:700;font-size:12px;margin-bottom:4px;">✅ While Firebase is offline, the app uses local storage + cross-tab sync</p>'+
-    '<p style="color:#94a894;font-size:12px;line-height:1.6;">Calls and messages work between tabs on the same device. Once Firebase is fixed, data syncs normally.</p></div>'+
-    '<div style="display:flex;gap:10px;">'+
-    '<button id="fb-diag-btn" style="flex:1;background:rgba(52,152,219,.2);border:1px solid rgba(52,152,219,.4);'+
-    'color:#74b9ff;border-radius:10px;padding:10px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">'+
-    '🔍 Test Connection</button>'+
-    '<button id="fb-sg-close2" style="flex:1;background:rgba(26,122,60,.2);border:1px solid rgba(26,122,60,.4);'+
-    'color:#2ecc71;border-radius:10px;padding:10px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">'+
-    '✓ Got it, close</button></div>'+
-    '<div id="fb-diag-status" style="margin-top:10px;font-size:12px;font-family:Lato,sans-serif;"></div>';
+    '<h2 style="font-family:Cinzel,serif;color:#f39c12;font-size:18px;">🔧 Firebase Setup</h2>'+
+    '<button id="fb-sg-close" style="background:none;border:none;color:#94a894;font-size:24px;cursor:pointer;line-height:1;">✕</button></div>'+
+
+    '<div style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.35);border-radius:12px;padding:14px;margin-bottom:18px;">'+
+    '<p style="color:#e74c3c;font-weight:700;font-size:13px;margin-bottom:6px;">❌ Why am I seeing this?</p>'+
+    '<p style="color:#94a894;font-size:12px;line-height:1.7;">Firebase is returning <strong style="color:#f0f0f0;">403 Access Denied</strong>. '+
+    'This means your database rules are blocking the app. The most common cause is forgetting to click <strong style="color:#f39c12;">Publish</strong> after saving the rules.</p></div>'+
+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
+    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 1 — Go to Firebase Console</p>'+
+    '<p style="color:#94a894;font-size:12px;line-height:1.8;">'+
+    '→ <a href="https://console.firebase.google.com/project/qur-an-quest-app/database/qur-an-quest-app-default-rtdb/rules" target="_blank" style="color:#74b9ff;font-weight:700;">Click here to open your Database Rules directly ↗</a><br>'+
+    '→ Or: Firebase Console → <strong style="color:#f0f0f0;">qur-an-quest-app</strong> → Realtime Database → <strong style="color:#f0f0f0;">Rules</strong> tab</p></div>'+
+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
+    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 2 — Paste these rules</p>'+
+    '<pre id="fb-rules-pre" style="background:#060a06;border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:12px;color:#2ecc71;font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;"></pre>'+
+    '</div>'+
+
+    '<div style="background:rgba(243,156,18,.15);border:2px solid rgba(243,156,18,.6);border-radius:12px;padding:16px;margin-bottom:12px;">'+
+    '<p style="color:#f39c12;font-weight:900;font-size:14px;margin-bottom:6px;">⚠️ Step 3 — Click PUBLISH (critical!)</p>'+
+    '<p style="color:#f0f0f0;font-size:12px;line-height:1.7;">After pasting the rules, you <strong>must</strong> click the orange <strong>"Publish"</strong> button at the top right of the Rules editor. Without this step the rules do NOT take effect.</p></div>'+
+
+    '<div style="background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
+    '<p style="color:#74b9ff;font-weight:700;font-size:13px;margin-bottom:8px;">Optional: Enter Firebase Web API Key (enables secure auth)</p>'+
+    '<p style="color:#94a894;font-size:11px;margin-bottom:10px;line-height:1.6;">Found in Firebase Console → Project Settings (gear icon) → General → Web API Key. This allows secure rules like <code style="color:#2ecc71;">auth != null</code>.</p>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<input id="fb-apikey-input" type="text" placeholder="AIzaSy..." style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f0f0f0;border-radius:8px;padding:9px 12px;font-size:12px;font-family:monospace;outline:none;">'+
+    '<button id="fb-apikey-save" style="background:rgba(52,152,219,.25);border:1px solid rgba(52,152,219,.5);color:#74b9ff;border-radius:8px;padding:9px 16px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:12px;white-space:nowrap;">Save Key</button>'+
+    '</div></div>'+
+
+    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+    '<button id="fb-diag-btn" style="flex:1;background:rgba(52,152,219,.2);border:1px solid rgba(52,152,219,.4);color:#74b9ff;border-radius:10px;padding:11px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">🔍 Test Connection</button>'+
+    '<button id="fb-sg-close2" style="flex:1;background:rgba(26,122,60,.2);border:1px solid rgba(26,122,60,.4);color:#2ecc71;border-radius:10px;padding:11px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">✓ Done</button>'+
+    '</div>'+
+    '<div id="fb-diag-status" style="font-size:12px;font-family:Lato,sans-serif;min-height:16px;"></div>';
+
   div.appendChild(inner);
   document.body.appendChild(div);
-  /* Set rules text safely via textContent */
+
+  // Set rules text safely
   var pre=document.getElementById('fb-rules-pre');
-  if(pre) pre.textContent=rulesJson;
-  /* Wire buttons */
-  var closeBtn=document.getElementById('fb-sg-close');
-  if(closeBtn) closeBtn.onclick=function(){div.style.display='none';};
-  var closeBtn2=document.getElementById('fb-sg-close2');
-  if(closeBtn2) closeBtn2.onclick=function(){div.style.display='none';};
-  var diagBtn=document.getElementById('fb-diag-btn');
-  if(diagBtn) diagBtn.onclick=function(){_fbDiagnose();};
+  if(pre) pre.textContent=rulesA;
+
+  // Wire close buttons
+  document.getElementById('fb-sg-close').onclick=function(){div.style.display='none';};
+  document.getElementById('fb-sg-close2').onclick=function(){div.style.display='none';};
+
+  // Wire API key save
+  document.getElementById('fb-apikey-save').onclick=function(){
+    var val=document.getElementById('fb-apikey-input').value;
+    if(val&&val.length>10){
+      if(typeof _fbSaveApiKey==='function') _fbSaveApiKey(val);
+      var ds=document.getElementById('fb-diag-status');
+      if(ds){ds.style.color='#2ecc71';ds.textContent='✅ API key saved. Testing connection...';}
+      setTimeout(function(){ _fbDiagnose(); },800);
+    }
+  };
+
+  // Wire test button
+  document.getElementById('fb-diag-btn').onclick=function(){ _fbDiagnose(); };
+
+  // Pre-fill API key if already saved
+  try{
+    var saved=localStorage.getItem('qq_fb_apikey');
+    if(saved){ var inp=document.getElementById('fb-apikey-input'); if(inp) inp.value=saved; }
+  }catch(e){}
 }
+
 
 // Diagnose Firebase connection
 window._fbDiagnose=function(){
