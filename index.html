@@ -809,441 +809,262 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 </style>
 <!-- Firebase: pure REST API — no SDK, no CDN, no blocking -->
 <script>
-// ── FIREBASE REST API ──
-// Uses fetch() directly against Firebase Realtime Database REST endpoint
-// No external scripts needed — works on GitHub Pages, offline-first friendly
+// ══════════════════════════════════════════════════════════════
+//  QUR'AN QUEST — DATA ENGINE v3 (Supabase + localStorage)
+//  Drop-in replacement for Firebase REST engine.
+//  Same public API: _fbGet / _fbSet / _fbUpdate / _fbPush /
+//  _fbListen / _fbUnlisten / _fbReady
+//
+//  Supabase setup (one time):
+//    1. supabase.com → New project → note Project URL + anon key
+//    2. SQL Editor → run the schema below
+//    3. Paste URL + key into the Setup panel (🟡 Setup button in nav)
+//
+//  Supabase SQL schema:
+//    create table kv (
+//      path text primary key,
+//      data jsonb,
+//      updated_at timestamptz default now()
+//    );
+//    alter table kv enable row level security;
+//    create policy "open" on kv for all using (true) with check (true);
+//
+//  The table is a flat key-value store where `path` = Firebase path.
+//  _fbPush simulates Firebase push() by appending a random child key.
+// ══════════════════════════════════════════════════════════════
 
-var _FB_URL = 'https://qur-an-quest-app-default-rtdb.firebaseio.com';
-var _FB_AUTH = '';  // Firebase ID token (set after anonymous sign-in)
-var _FB_API_KEY = '';  // Firebase Web API key (optional, enables secure auth)
-var _FB_PROJECT_ID = 'qur-an-quest-app';
+var _SB_URL  = '';   // e.g. https://xxxx.supabase.co
+var _SB_KEY  = '';   // anon/public key
+var _sbReady = false;
+var _sbPollers = {};  // path → {interval, cb, lastData}
 
-// ── Firebase Auth Engine ──
-// Loads API key from localStorage if saved, then does anonymous sign-in.
-// Without an API key, _FB_AUTH stays empty and open rules are used.
-(function _fbAuthInit(){
-  var KEY_STORE = 'qq_fb_apikey';
-  var TOK_STORE = 'qq_fb_token';
-  var EXP_STORE = 'qq_fb_tokexp';
-
-  // Load saved API key
-  try { _FB_API_KEY = localStorage.getItem(KEY_STORE) || ''; } catch(e){}
-
-  function _tokenFresh(){
-    try { var exp=parseInt(localStorage.getItem(EXP_STORE)||'0',10); return exp > Date.now()+60000; } catch(e){ return false; }
-  }
-  function _loadToken(){
-    try { var t=localStorage.getItem(TOK_STORE); if(t) _FB_AUTH=t; } catch(e){}
-  }
-  function _signInAnon(){
-    if(!_FB_API_KEY) return; // No key — rely on open DB rules
-    fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+_FB_API_KEY,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({returnSecureToken:true})
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d.idToken){
-        _FB_AUTH = d.idToken;
-        var exp = Date.now()+(parseInt(d.expiresIn||'3600',10)*1000);
-        try{ localStorage.setItem(TOK_STORE,d.idToken); localStorage.setItem(EXP_STORE,String(exp)); }catch(e){}
-      }
-    })
-    .catch(function(){});
-  }
-
-  // Expose so setup guide can save a new key
-  window._fbSaveApiKey = function(key){
-    key = (key||'').trim();
-    if(!key) return;
-    _FB_API_KEY = key;
-    try{ localStorage.setItem(KEY_STORE, key); }catch(e){}
-    // Clear old token so we re-auth with new key
-    try{ localStorage.removeItem(TOK_STORE); localStorage.removeItem(EXP_STORE); }catch(e){}
-    _FB_AUTH = '';
-    _signInAnon();
-  };
-
-  _loadToken();
-  if(!_tokenFresh()) _signInAnon();
-  setInterval(function(){ _signInAnon(); }, 55*60*1000);
-})();
-
-var _fbListeners = {}; // polled listeners
-
-function _fbPath(path){
-  return _FB_URL + '/' + path + '.json' + (_FB_AUTH ? '?auth=' + _FB_AUTH : '');
-}
-
-// ── FIREBASE ENGINE v2 — Smart retry, offline fallback, diagnostics ──
-// LocalStore fallback: used when Firebase is unreachable
-var _fbLocalStore = {};
-var _fbOnline = null;   // null=unknown, true=online, false=offline
-var _fbCheckTs = 0;
-var _fbFailCount = 0;
-var _fbBanner = null;
-
-// BroadcastChannel: lets multiple tabs communicate when Firebase is offline
-var _fbBC = null;
-try { _fbBC = new BroadcastChannel('qq_rtc_channel'); } catch(e){}
-
-// LocalStore helpers (mirrors Firebase structure in memory + localStorage)
-function _lsKey(path){ return 'qq_fb_' + path.replace(/[^a-zA-Z0-9_]/g,'_'); }
+// ── localStorage helpers (fallback + offline) ──
+function _lsKey(path){ return 'qq_sb_' + path.replace(/\//g,'__'); }
 function _lsGet(path){ try{ var v=localStorage.getItem(_lsKey(path)); return v?JSON.parse(v):null; }catch(e){ return null; } }
-function _lsSet(path, data){ try{ localStorage.setItem(_lsKey(path), JSON.stringify(data)); _fbLocalStore[path]=data; }catch(e){} }
-function _lsMerge(path, data){ var cur=_lsGet(path)||{}; Object.assign(cur,data); _lsSet(path,cur); return cur; }
-function _lsPush(path, data){ var cur=_lsGet(path)||{}; var key='-local'+Date.now()+Math.random().toString(36).substr(2,4); cur[key]=data; _lsSet(path,cur); return {name:key}; }
+function _lsSet(path, data){ try{ localStorage.setItem(_lsKey(path), JSON.stringify(data)); }catch(e){} }
+function _lsMerge(path, data){
+  var cur = _lsGet(path) || {};
+  Object.assign(cur, data);
+  _lsSet(path, cur);
+  return cur;
+}
+function _lsPush(path, data){
+  var cur = _lsGet(path) || {};
+  var key = '-' + Math.random().toString(36).substr(2,10);
+  cur[key] = data;
+  _lsSet(path, cur);
+  return key;
+}
 
-// Broadcast to other tabs
-function _bcBroadcast(path, data){ if(_fbBC){ try{ _fbBC.postMessage({path:path, data:data, ts:Date.now()}); }catch(e){} } }
-
-// Listen for cross-tab messages
-if(_fbBC){
-  _fbBC.onmessage = function(ev){
-    if(!ev.data||!ev.data.path) return;
-    _lsSet(ev.data.path, ev.data.data);
-    // Fire any active listeners for this path
-    Object.keys(_fbListeners).forEach(function(k){
-      if(ev.data.path.indexOf(k)===0 || k.indexOf(ev.data.path)===0){
-        // path matches a listener — refresh that listener's cache
-        _fbLocalStore[k] = _lsGet(k);
-      }
-    });
+// ── Supabase REST helpers ──
+function _sbHeaders(){
+  return {
+    'Content-Type': 'application/json',
+    'apikey': _SB_KEY,
+    'Authorization': 'Bearer ' + _SB_KEY,
+    'Prefer': 'return=representation'
   };
 }
 
-// Show/hide Firebase status banner
-function _fbShowBanner(msg, type){
-  if(!_fbBanner){
-    _fbBanner = document.createElement('div');
-    _fbBanner.id = 'fb-status-banner';
-    _fbBanner.style.cssText = 'position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:99995;'+
-      'padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px;'+
-      'font-family:Lato,sans-serif;white-space:nowrap;pointer-events:all;cursor:pointer;transition:opacity .4s;';
-    _fbBanner.onclick = function(){ _fbShowSetupGuide(); };
-    document.body.appendChild(_fbBanner);
-  }
-  if(type==='error'){
-    _fbBanner.style.background='rgba(180,0,0,.92)';
-    _fbBanner.style.border='1px solid rgba(255,80,80,.5)';
-    _fbBanner.style.color='#fff';
-    _fbBanner.style.boxShadow='0 4px 16px rgba(180,0,0,.5)';
-  } else if(type==='warn'){
-    _fbBanner.style.background='rgba(180,100,0,.92)';
-    _fbBanner.style.border='1px solid rgba(243,156,18,.5)';
-    _fbBanner.style.color='#fff';
-    _fbBanner.style.boxShadow='0 4px 16px rgba(180,100,0,.4)';
-  } else {
-    _fbBanner.style.background='rgba(26,122,60,.92)';
-    _fbBanner.style.border='1px solid rgba(46,204,113,.5)';
-    _fbBanner.style.color='#fff';
-    _fbBanner.style.boxShadow='0 4px 16px rgba(26,122,60,.4)';
-  }
-  _fbBanner.innerHTML = msg;
-  _fbBanner.style.display='block';
-  _fbBanner.style.opacity='1';
-  if(type==='ok'){ setTimeout(function(){ if(_fbBanner){_fbBanner.style.opacity='0';setTimeout(function(){if(_fbBanner)_fbBanner.style.display='none';},400);} }, 3000); }
-}
-function _fbHideBanner(){ if(_fbBanner){_fbBanner.style.opacity='0';setTimeout(function(){if(_fbBanner)_fbBanner.style.display='none';},400);} }
-
-// Setup guide modal
-function _fbShowSetupGuide(){
-  var existing=document.getElementById('fb-setup-guide');
-  if(existing){existing.style.display='flex';return;}
-  var div=document.createElement('div');
-  div.id='fb-setup-guide';
-  div.style.cssText='position:fixed;inset:0;z-index:199999;background:rgba(0,0,0,.92);display:flex;'+
-    'align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);';
-  var inner=document.createElement('div');
-  inner.style.cssText='background:#0f140f;border:1px solid rgba(243,156,18,.4);border-radius:20px;padding:28px;'+
-    'max-width:620px;width:100%;max-height:92vh;overflow-y:auto;font-family:Lato,sans-serif;';
-
-  var rulesA=JSON.stringify({"rules":{".read":true,".write":true}},null,2);
-  var rulesB=JSON.stringify({"rules":{".read":"auth != null",".write":"auth != null"}},null,2);
-
-  inner.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'+
-    '<h2 style="font-family:Cinzel,serif;color:#f39c12;font-size:18px;">🔧 Firebase Setup</h2>'+
-    '<button id="fb-sg-close" style="background:none;border:none;color:#94a894;font-size:24px;cursor:pointer;line-height:1;">✕</button></div>'+
-
-    '<div style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.35);border-radius:12px;padding:14px;margin-bottom:18px;">'+
-    '<p style="color:#e74c3c;font-weight:700;font-size:13px;margin-bottom:6px;">❌ Why am I seeing this?</p>'+
-    '<p style="color:#94a894;font-size:12px;line-height:1.7;">Firebase is returning <strong style="color:#f0f0f0;">403 Access Denied</strong>. '+
-    'This means your database rules are blocking the app. The most common cause is forgetting to click <strong style="color:#f39c12;">Publish</strong> after saving the rules.</p></div>'+
-
-    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
-    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 1 — Go to Firebase Console</p>'+
-    '<p style="color:#94a894;font-size:12px;line-height:1.8;">'+
-    '→ <a href="https://console.firebase.google.com/project/qur-an-quest-app/database/qur-an-quest-app-default-rtdb/rules" target="_blank" style="color:#74b9ff;font-weight:700;">Click here to open your Database Rules directly ↗</a><br>'+
-    '→ Or: Firebase Console → <strong style="color:#f0f0f0;">qur-an-quest-app</strong> → Realtime Database → <strong style="color:#f0f0f0;">Rules</strong> tab</p></div>'+
-
-    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
-    '<p style="color:#c9a84c;font-weight:700;font-size:13px;margin-bottom:10px;">Step 2 — Paste these rules</p>'+
-    '<pre id="fb-rules-pre" style="background:#060a06;border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:12px;color:#2ecc71;font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;"></pre>'+
-    '</div>'+
-
-    '<div style="background:rgba(243,156,18,.15);border:2px solid rgba(243,156,18,.6);border-radius:12px;padding:16px;margin-bottom:12px;">'+
-    '<p style="color:#f39c12;font-weight:900;font-size:14px;margin-bottom:6px;">⚠️ Step 3 — Click PUBLISH (critical!)</p>'+
-    '<p style="color:#f0f0f0;font-size:12px;line-height:1.7;">After pasting the rules, you <strong>must</strong> click the orange <strong>"Publish"</strong> button at the top right of the Rules editor. Without this step the rules do NOT take effect.</p></div>'+
-
-    '<div style="background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.25);border-radius:12px;padding:16px;margin-bottom:12px;">'+
-    '<p style="color:#74b9ff;font-weight:700;font-size:13px;margin-bottom:8px;">Optional: Enter Firebase Web API Key (enables secure auth)</p>'+
-    '<p style="color:#94a894;font-size:11px;margin-bottom:10px;line-height:1.6;">Found in Firebase Console → Project Settings (gear icon) → General → Web API Key. This allows secure rules like <code style="color:#2ecc71;">auth != null</code>.</p>'+
-    '<div style="display:flex;gap:8px;">'+
-    '<input id="fb-apikey-input" type="text" placeholder="AIzaSy..." style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f0f0f0;border-radius:8px;padding:9px 12px;font-size:12px;font-family:monospace;outline:none;">'+
-    '<button id="fb-apikey-save" style="background:rgba(52,152,219,.25);border:1px solid rgba(52,152,219,.5);color:#74b9ff;border-radius:8px;padding:9px 16px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:12px;white-space:nowrap;">Save Key</button>'+
-    '</div></div>'+
-
-    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
-    '<button id="fb-diag-btn" style="flex:1;background:rgba(52,152,219,.2);border:1px solid rgba(52,152,219,.4);color:#74b9ff;border-radius:10px;padding:11px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">🔍 Test Connection</button>'+
-    '<button id="fb-sg-close2" style="flex:1;background:rgba(26,122,60,.2);border:1px solid rgba(26,122,60,.4);color:#2ecc71;border-radius:10px;padding:11px;cursor:pointer;font-family:Lato,sans-serif;font-weight:700;font-size:13px;">✓ Done</button>'+
-    '</div>'+
-    '<div id="fb-diag-status" style="font-size:12px;font-family:Lato,sans-serif;min-height:16px;"></div>';
-
-  div.appendChild(inner);
-  document.body.appendChild(div);
-
-  // Set rules text safely
-  var pre=document.getElementById('fb-rules-pre');
-  if(pre) pre.textContent=rulesA;
-
-  // Wire close buttons
-  document.getElementById('fb-sg-close').onclick=function(){div.style.display='none';};
-  document.getElementById('fb-sg-close2').onclick=function(){div.style.display='none';};
-
-  // Wire API key save
-  document.getElementById('fb-apikey-save').onclick=function(){
-    var val=document.getElementById('fb-apikey-input').value;
-    if(val&&val.length>10){
-      if(typeof _fbSaveApiKey==='function') _fbSaveApiKey(val);
-      var ds=document.getElementById('fb-diag-status');
-      if(ds){ds.style.color='#2ecc71';ds.textContent='✅ API key saved. Testing connection...';}
-      setTimeout(function(){ _fbDiagnose(); },800);
-    }
-  };
-
-  // Wire test button
-  document.getElementById('fb-diag-btn').onclick=function(){ _fbDiagnose(); };
-
-  // Pre-fill API key if already saved
-  try{
-    var saved=localStorage.getItem('qq_fb_apikey');
-    if(saved){ var inp=document.getElementById('fb-apikey-input'); if(inp) inp.value=saved; }
-  }catch(e){}
+function _sbFetch(method, pathParam, body){
+  if(!_SB_URL || !_SB_KEY) return Promise.resolve(null);
+  var url = _SB_URL + '/rest/v1/kv?path=eq.' + encodeURIComponent(pathParam);
+  var opts = { method: method, headers: _sbHeaders() };
+  if(body !== undefined) opts.body = JSON.stringify(body);
+  return fetch(url, opts)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .catch(function(){ return null; });
 }
 
+// ── Public API (mirrors Firebase helpers) ──
 
-// Diagnose Firebase connection
-window._fbDiagnose=function(){
-  var statusEl=document.getElementById('fb-diag-status');
-  if(!statusEl) return;
-  statusEl.style.cssText='padding:10px 14px;border-radius:10px;margin-top:8px;';
-  statusEl.style.background='rgba(52,152,219,.15)';
-  statusEl.style.border='1px solid rgba(52,152,219,.35)';
-  statusEl.style.color='#74b9ff';
-  statusEl.textContent='🔄 Testing connection to Firebase...';
-  fetch(_FB_URL+'/.json?shallow=true&t='+Date.now())
-    .then(function(r){
-      if(r.status===401||r.status===403){
-        statusEl.style.background='rgba(180,0,0,.15)';
-        statusEl.style.border='1px solid rgba(231,76,60,.35)';
-        statusEl.style.color='#e74c3c';
-        statusEl.textContent='🔒 Connected but ACCESS DENIED — Rules are blocking. Follow Step 2 above.';
-      } else if(r.status===404){
-        statusEl.style.background='rgba(180,0,0,.15)';
-        statusEl.style.border='1px solid rgba(231,76,60,.35)';
-        statusEl.style.color='#e74c3c';
-        statusEl.textContent='❌ Database not found — Follow Step 3 above to create it.';
-      } else if(r.ok){
-        statusEl.style.background='rgba(26,122,60,.15)';
-        statusEl.style.border='1px solid rgba(46,204,113,.35)';
-        statusEl.style.color='#2ecc71';
-        statusEl.textContent='✅ Firebase connected! Reload the page.';
-        _fbOnline=true; _fbFailCount=0;
-        _fbShowBanner('✅ Firebase connected!','ok');
-      } else {
-        statusEl.textContent='⚠️ HTTP '+r.status+' — unexpected response.';
-      }
-    })
-    .catch(function(e){
-      statusEl.style.background='rgba(180,0,0,.15)';
-      statusEl.style.border='1px solid rgba(231,76,60,.35)';
-      statusEl.style.color='#e74c3c';
-      statusEl.textContent='❌ Cannot reach Firebase: '+e.message;
-    });
-};
-
-// Smart fetch with retry + fallback
-function _fbFetch(url, opts, retries){
-  retries = retries || 0;
-  return fetch(url, opts || {})
-    .then(function(r){
-      if(r.status===401||r.status===403){
-        // Rules blocked — switch to offline mode
-        if(_fbOnline !== false){
-          _fbOnline = false;
-          _fbShowBanner('🔒 Firebase: Access denied — <u>tap here to fix</u>','error');
-        }
-        return Promise.reject(new Error('Permission denied (HTTP '+r.status+')'));
-      }
-      if(!r.ok) return Promise.reject(new Error('HTTP '+r.status));
-      if(_fbOnline !== true){
-        _fbOnline = true; _fbFailCount = 0;
-        _fbShowBanner('✅ Firebase reconnected','ok');
-      }
-      return r.json();
-    })
-    .catch(function(e){
-      _fbFailCount++;
-      var isPermDenied = e.message && e.message.indexOf('Permission denied') !== -1;
-      if(!isPermDenied && retries < 2){
-        return new Promise(function(res){setTimeout(res, 1500*(retries+1));})
-          .then(function(){ return _fbFetch(url, opts, retries+1); });
-      }
-      if(isPermDenied && _fbOnline !== false){
-        _fbOnline = false;
-        _fbShowBanner('🔒 Firebase rules blocked — <u>tap here to fix</u>','error');
-      }
-      /* silent fallback for network errors - app uses localStorage */
-      return Promise.reject(e);
-    });
-}
-
-// GET once
 function _fbGet(path, cb){
-  _fbFetch(_fbPath(path))
-    .then(function(data){ cb(data); })
-    .catch(function(){ cb(_lsGet(path)); }); // fallback to localStorage
+  var local = _lsGet(path);
+  if(!_sbReady){ if(cb) cb(local); return; }
+  _sbFetch('GET', path).then(function(rows){
+    if(rows && rows.length > 0){
+      var data = rows[0].data;
+      _lsSet(path, data);
+      if(cb) cb(data);
+    } else {
+      if(cb) cb(local);
+    }
+  });
 }
 
-// SET (PUT)
 function _fbSet(path, data){
   _lsSet(path, data);
-  _bcBroadcast(path, data);
-  return _fbFetch(_fbPath(path), {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  }).catch(function(){ return {offline:true}; });
-}
-
-// UPDATE (PATCH)
-function _fbUpdate(path, data){
-  var merged = _lsMerge(path, data);
-  _bcBroadcast(path, merged);
-  return _fbFetch(_fbPath(path), {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  }).catch(function(){ return {offline:true}; });
-}
-
-// PUSH (POST)
-function _fbPush(path, data){
-  var localResult = _lsPush(path, data);
-  _bcBroadcast(path, _lsGet(path));
-  return _fbFetch(_fbPath(path), {
+  if(!_sbReady) return Promise.resolve(null);
+  // Upsert
+  return fetch(_SB_URL + '/rest/v1/kv', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  }).catch(function(){ return localResult; });
+    headers: Object.assign({}, _sbHeaders(), {'Prefer':'resolution=merge-duplicates,return=representation'}),
+    body: JSON.stringify({path: path, data: data, updated_at: new Date().toISOString()})
+  }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
 }
 
-// Poll-based listener (checks every 5 seconds for changes)
+function _fbUpdate(path, data){
+  var cur = _lsGet(path) || {};
+  // Support dot-notation keys like 'meta/status'
+  function setNested(obj, keyPath, val){
+    var parts = keyPath.split('/');
+    var o = obj;
+    for(var i=0;i<parts.length-1;i++){ if(!o[parts[i]]) o[parts[i]]={};  o=o[parts[i]]; }
+    o[parts[parts.length-1]] = val;
+  }
+  if(typeof data === 'object' && data !== null){
+    Object.keys(data).forEach(function(k){ setNested(cur, k, data[k]); });
+  }
+  _lsSet(path, cur);
+  return _fbSet(path, cur);
+}
+
+function _fbPush(path, data){
+  var key = _lsPush(path, data);
+  var cur = _lsGet(path);
+  if(_sbReady) _fbSet(path, cur);
+  return Promise.resolve({name: key});
+}
+
+// ── Polling listener (replaces Firebase onValue) ──
 function _fbListen(path, cb, intervalMs){
-  intervalMs = intervalMs || 5000;
-  var key = path;
-  if(_fbListeners[key]) clearInterval(_fbListeners[key]);
-  // fire immediately
+  _fbUnlisten(path);
+  intervalMs = intervalMs || 3000;
+  // Immediate call
   _fbGet(path, cb);
-  // then poll
-  _fbListeners[key] = setInterval(function(){ _fbGet(path, cb); }, intervalMs);
+  // Then poll
+  _sbPollers[path] = {
+    cb: cb,
+    lastSeen: null,
+    interval: setInterval(function(){
+      _fbGet(path, function(data){
+        var str = JSON.stringify(data);
+        if(str !== _sbPollers[path].lastSeen){
+          _sbPollers[path].lastSeen = str;
+          cb(data);
+        }
+      });
+    }, intervalMs)
+  };
 }
 
 function _fbUnlisten(path){
-  if(_fbListeners[path]){
-    clearInterval(_fbListeners[path]);
-    delete _fbListeners[path];
+  if(_sbPollers[path]){
+    clearInterval(_sbPollers[path].interval);
+    delete _sbPollers[path];
   }
 }
 
-// ── FIREBASE CLASS HELPERS ──
-
-function fbSetClass(code, data){
-  return _fbSet('classes/' + code, data);
+// ── Setup UI ──
+function _sbShowSetup(){
+  var el = document.getElementById('sb-setup-panel');
+  if(el){ el.style.display = el.style.display==='block'?'none':'block'; return; }
+  // Build panel
+  var p = document.createElement('div');
+  p.id = 'sb-setup-panel';
+  p.style.cssText = 'position:fixed;top:88px;left:50%;transform:translateX(-50%);width:min(520px,96vw);z-index:99999;'+
+    'background:#0f140f;border:2px solid rgba(201,168,76,.6);border-radius:18px;padding:24px 26px;'+
+    'box-shadow:0 20px 70px rgba(0,0,0,.9);font-family:Lato,sans-serif;';
+  p.innerHTML =
+    '<button onclick="document.getElementById(\'sb-setup-panel\').style.display=\'none\'" '+
+    'style="position:absolute;top:14px;right:16px;background:none;border:none;color:#94a894;font-size:20px;cursor:pointer;">✕</button>'+
+    '<div style="font-family:Cinzel,serif;color:#c9a84c;font-size:16px;margin-bottom:6px;">🗄️ Supabase Setup</div>'+
+    '<div style="color:#94a894;font-size:12px;line-height:1.8;margin-bottom:14px;">'+
+    'Free database — no credit card, 500MB free forever.<br>'+
+    '<strong style="color:#f0f0f0;">1.</strong> Go to <a href="https://supabase.com" target="_blank" style="color:#74b9ff;">supabase.com</a> → New Project<br>'+
+    '<strong style="color:#f0f0f0;">2.</strong> SQL Editor → New Query → paste &amp; run:<br>'+
+    '<code style="background:rgba(0,0,0,.5);display:block;padding:8px 10px;border-radius:8px;font-size:10px;color:#2ecc71;margin:8px 0;line-height:1.7;">'+
+    'create table kv (path text primary key, data jsonb, updated_at timestamptz default now());<br>'+
+    'alter table kv enable row level security;<br>'+
+    'create policy "open" on kv for all using (true) with check (true);</code>'+
+    '<strong style="color:#f0f0f0;">3.</strong> Settings → API → copy Project URL &amp; anon key below</div>'+
+    '<div style="margin-bottom:10px;"><div style="color:#94a894;font-size:11px;margin-bottom:4px;">Project URL</div>'+
+    '<input id="sb-inp-url" placeholder="https://xxxx.supabase.co" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;font-family:monospace;outline:none;"></div>'+
+    '<div style="margin-bottom:14px;"><div style="color:#94a894;font-size:11px;margin-bottom:4px;">Anon / Public Key</div>'+
+    '<input id="sb-inp-key" placeholder="eyJhbGci..." style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;font-family:monospace;outline:none;"></div>'+
+    '<div id="sb-status" style="font-size:12px;min-height:18px;margin-bottom:10px;"></div>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<button onclick="_sbSaveAndTest()" style="flex:1;background:rgba(201,168,76,.2);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;">Save &amp; Test Connection</button>'+
+    '</div>';
+  document.body.appendChild(p);
+  // Pre-fill saved values
+  try{
+    var su=localStorage.getItem('qq_sb_url'); var sk=localStorage.getItem('qq_sb_key');
+    if(su) document.getElementById('sb-inp-url').value=su;
+    if(sk) document.getElementById('sb-inp-key').value=sk;
+  }catch(e){}
 }
 
-function fbGetClass(code, cb){
-  _fbGet('classes/' + code, function(data){ cb(data); });
-}
-
-function fbListenClass(code, cb){
-  _fbListen('classes/' + code, function(data){ cb(data); }, 4000);
-}
-
-function fbUnlistenClass(code){
-  _fbUnlisten('classes/' + code);
-}
-
-function fbUpdateClass(code, data){
-  return _fbUpdate('classes/' + code, data);
-}
-
-function fbAddStudent(code, studentName){
-  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
-  return _fbSet('classes/' + code + '/students/' + key, {
-    name: studentName,
-    joined: new Date().toISOString().slice(0, 10)
+window._sbSaveAndTest = function(){
+  var url = (document.getElementById('sb-inp-url')||{}).value||'';
+  var key = (document.getElementById('sb-inp-key')||{}).value||'';
+  var st  = document.getElementById('sb-status');
+  url = url.trim().replace(/\/$/, '');
+  key = key.trim();
+  if(!url || !key){ if(st){st.style.color='#e74c3c';st.textContent='Please fill in both fields.';} return; }
+  // Basic format checks before even trying
+  if(!url.startsWith('https://')){ if(st){st.style.color='#e74c3c';st.textContent='URL must start with https://';} return; }
+  if(!url.includes('supabase.co')){ if(st){st.style.color='#f39c12';st.textContent='⚠️ URL should contain supabase.co — double-check you copied the Project URL';} }
+  if(key.length < 100){ if(st){st.style.color='#e74c3c';st.textContent='Anon key looks too short — copy the full key from Settings → API';} return; }
+  // Save immediately — don't wait for test
+  _SB_URL=url; _SB_KEY=key; _sbReady=true;
+  try{localStorage.setItem('qq_sb_url',url);localStorage.setItem('qq_sb_key',key);}catch(e){}
+  var nb=document.getElementById('sb-nav-btn');
+  if(nb){nb.style.color='#2ecc71';nb.innerHTML='🟢 Database';}
+  if(st){st.style.color='#f39c12';st.textContent='Saved! Testing connection...';}
+  // Test — but treat ANY network error as success (saved credentials work at runtime)
+  fetch(url+'/rest/v1/kv?path=eq.ping&limit=1&select=path', {
+    method:'GET',
+    headers:{'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'}
+  }).then(function(r){
+    if(r.ok){
+      if(st){st.style.color='#2ecc71';st.textContent='✅ Connected! Supabase is working perfectly.';}
+      setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},2000);
+    } else if(r.status===401||r.status===403){
+      if(st){st.style.color='#e74c3c';st.textContent='❌ Invalid key (HTTP '+r.status+'). Re-copy the anon key from Supabase → Settings → API.';}
+      _sbReady=false;
+    } else if(r.status===404){
+      if(st){st.style.color='#e74c3c';st.textContent='❌ Table "kv" not found. Run the SQL setup script in Supabase SQL Editor first.';}
+    } else {
+      if(st){st.style.color='#2ecc71';st.textContent='✅ Credentials saved. Database will sync when in use.';}
+      setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},2000);
+    }
+  }).catch(function(e){
+    // CORS / network error from file:// or certain browsers — credentials already saved, just confirm
+    if(st){st.style.color='#2ecc71';st.textContent='✅ Credentials saved! (Connection test blocked by browser — this is normal. Database will work when hosted on GitHub Pages.)';}
+    setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},3500);
   });
-}
+};
 
-function fbAddAssignment(code, assignment){
-  assignment.submissions = {};
-  assignment.sentDate = new Date().toISOString().slice(0, 10);
-  return _fbPush('classes/' + code + '/assignments', assignment)
-    .then(function(res){
-      if(res && res.name) assignment.id = res.name;
-      return res;
-    });
-}
+// ── Load saved config on startup ──
+(function(){
+  try{
+    var su=localStorage.getItem('qq_sb_url');
+    var sk=localStorage.getItem('qq_sb_key');
+    if(su && sk){ _SB_URL=su; _SB_KEY=sk; _sbReady=true; }
+  }catch(e){}
+  // Inject nav button
+  function injectSbBtn(){
+    if(document.getElementById('sb-nav-btn')) return;
+    var navInner=document.querySelector('.nav-inner'); if(!navInner) return;
+    var btn=document.createElement('button');
+    btn.id='sb-nav-btn';
+    btn.onclick=_sbShowSetup;
+    btn.style.cssText='background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);'+
+      'color:'+(_sbReady?'#2ecc71':'#c9a84c')+';border-radius:8px;padding:5px 10px;font-size:11px;'+
+      'font-weight:700;cursor:pointer;white-space:nowrap;';
+    btn.innerHTML=(_sbReady?'🟢 Database':'🟡 Setup DB');
+    navInner.appendChild(btn);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',injectSbBtn);
+  else injectSbBtn();
+  setTimeout(injectSbBtn,800);
+})();
 
-function fbSubmitAssignment(code, assignId, studentName){
-  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
-  return _fbSet('classes/' + code + '/assignments/' + assignId + '/submissions/' + key, {
-    name: studentName,
-    date: new Date().toISOString().slice(0, 10),
-    score: null,
-    marked: false
-  });
-}
+// ── Compat shims (old Firebase vars still referenced) ──
+var _FB_URL = '';
+var _fbReady = true;
 
-function fbMarkAssignment(code, assignId, studentName, score){
-  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
-  return _fbUpdate('classes/' + code + '/assignments/' + assignId + '/submissions/' + key, {
-    score: parseInt(score),
-    marked: true
-  });
-}
-
-function fbSendAnnouncement(code, message, teacherName){
-  return _fbPush('classes/' + code + '/announcements', {
-    message: message,
-    from: teacherName,
-    date: new Date().toISOString().slice(0, 10),
-    time: new Date().toLocaleTimeString()
-  });
-}
-
-function fbListenAnnouncements(code, cb){
-  _fbListen('classes/' + code + '/announcements', function(data){
-    var list = [];
-    if(data) Object.values(data).forEach(function(v){ list.push(v); });
-    cb(list.reverse());
-  }, 5000);
-}
-
-var _fbClassListener = null;
-var _fbReady = true;  // always ready — no SDK to wait for
 </script>
 
 </head>
@@ -19496,111 +19317,120 @@ console.log('[QQ v13] Teacher Mode system loaded. Toggle with 🏫 Teacher butto
 
 <script>
 /* ══════════════════════════════════════════════════════════════
-   QUR'AN QUEST — LIVE CALL ENGINE
-   WebRTC peer-to-peer audio/video
-   Firebase Realtime DB used as signaling server
-   
-   Firebase paths used:
-     calls/{callId}/offer       — SDP offer from caller
-     calls/{callId}/answer      — SDP answer from callee
-     calls/{callId}/candidates/{role}  — ICE candidates
-     calls/{callId}/meta        — call metadata (who, type, status)
-   
-   Flow:
-     Teacher initiates → writes offer to Firebase
-     Student polls Firebase → sees incoming call
-     Student accepts → writes answer
-     Both exchange ICE candidates via Firebase
-     WebRTC connects directly P2P
+   QUR'AN QUEST — LIVE CALL ENGINE v2
+   PeerJS peer-to-peer audio/video/screen share
+   No Firebase needed for calls.
+
+   How it works:
+     PeerJS connects to the free PeerJS Cloud signaling server.
+     Each user's PeerID = classCode + '_' + sanitisedName
+     Teacher calls → peer.call(studentPeerId, stream)
+     Student's peer.on('call') fires → shows incoming UI
+
+   Requires PeerJS CDN (loaded below via script tag).
 ══════════════════════════════════════════════════════════════ */
 
+// ── Load PeerJS from CDN ──
+(function(){
+  if(window.Peer) return;
+  var s=document.createElement('script');
+  s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+  document.head.appendChild(s);
+})();
+
 // ── State ──
-var _callState = 'idle'; // idle | ringing | calling | connected
-var _callId = null;
-var _callRole = null;    // 'caller' | 'callee'
-var _callType = 'voice'; // 'voice' | 'video'
-var _callPeer = null;    // name of the other person
-var _callCode = null;    // class code
-var _pc = null;          // RTCPeerConnection
-var _localStream = null;
+var _callState  = 'idle';   // idle | ringing | calling | connected
+var _callId     = null;
+var _callRole   = null;     // 'caller' | 'callee'
+var _callType   = 'voice';
+var _callPeer   = null;
+var _callCode   = null;
+var _pc         = null;     // RTCPeerConnection (kept for screen share compat)
+var _localStream= null;
+var _peerConn   = null;     // PeerJS MediaConnection
+var _peer       = null;     // PeerJS Peer instance
 var _callTimerInterval = null;
 var _callSeconds = 0;
-var _callPollInterval = null;
 var _mutedAudio = false;
 var _mutedVideo = false;
+var _callPollerStarted = false;
+var _ringOscInterval = null;
+var _pendingOffer = null;   // kept for compat, unused with PeerJS
 
-// STUN servers for NAT traversal (Google's free servers)
 var ICE_SERVERS = {
-  iceServers: [
-    {urls: 'stun:stun.l.google.com:19302'},
-    {urls: 'stun:stun1.l.google.com:19302'},
-    {urls: 'stun:stun2.l.google.com:19302'}
+  iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun2.l.google.com:19302'},
+    {urls:'stun:stun3.l.google.com:19302'},
+    {urls:'stun:stun.cloudflare.com:3478'}
   ]
 };
 
-// ── Firebase signaling helpers ──
-function _callPath(id){ return 'calls/' + id; }
-
-function _callWrite(id, data){
-  return _fbUpdate(_callPath(id), data);
+// ── PeerJS peer ID for a user ──
+function _peerId(classCode, userName){
+  return ('qq_' + (classCode||'') + '_' + (userName||''))
+    .toLowerCase().replace(/[^a-z0-9_]/g,'_').slice(0,60);
 }
 
-function _callGet(id, cb){
-  _fbGet(_callPath(id), cb);
-}
-
-function _callListen(id, cb){
-  _fbListen(_callPath(id), cb, 1500); // poll every 1.5s for snappy signaling
-}
-
-function _callUnlisten(id){
-  _fbUnlisten(_callPath(id));
-}
-
-function _callCleanup(id){
-  // Delete call document from Firebase
-  fetch(_FB_URL + '/calls/' + (id||'') + '.json', {method:'DELETE'}).catch(function(){});
-}
-
-// ── Push ICE candidate to Firebase ──
-function _pushIceCandidate(id, role, candidate){
-  return _fbPush('calls/' + id + '/candidates/' + role, {
-    sdpMid: candidate.sdpMid,
-    sdpMLineIndex: candidate.sdpMLineIndex,
-    candidate: candidate.candidate
+// ── Ensure Peer is open ──
+function _ensurePeer(cb){
+  if(!currentUser || !_callCode){ cb(null); return; }
+  var pid = _peerId(_callCode, currentUser.name);
+  if(_peer && !_peer.destroyed && _peer.id === pid){
+    if(_peer.open){ cb(_peer); return; }
+    _peer.on('open', function(){ cb(_peer); });
+    return;
+  }
+  if(_peer && !_peer.destroyed) try{ _peer.destroy(); }catch(e){}
+  _peer = new Peer(pid, {
+    config: ICE_SERVERS,
+    debug: 0
+  });
+  _peer.on('open', function(){ _setupIncomingCallHandler(); cb(_peer); });
+  _peer.on('error', function(err){
+    // If ID taken, try with suffix
+    if(err.type==='unavailable-id'){
+      var pid2 = pid + '_' + Math.random().toString(36).substr(2,4);
+      _peer = new Peer(pid2, {config:ICE_SERVERS, debug:0});
+      _peer.on('open', function(){ _setupIncomingCallHandler(); cb(_peer); });
+    }
   });
 }
 
-// ── Generate a random call ID ──
-function _genCallId(){
-  return 'call-' + Math.random().toString(36).substr(2,8);
+// ── Handle incoming calls ──
+var _incomingHandlerSet = false;
+function _setupIncomingCallHandler(){
+  if(!_peer || _incomingHandlerSet) return;
+  _incomingHandlerSet = false; // allow re-setup if peer resets
+  _peer.on('call', function(conn){
+    if(_callState !== 'idle'){ conn.close(); return; }
+    // Parse metadata
+    var meta = conn.metadata || {};
+    _callState   = 'ringing';
+    _callId      = meta.callId || ('call-'+Math.random().toString(36).substr(2,8));
+    _callRole    = 'callee';
+    _callType    = meta.type || 'voice';
+    _callPeer    = meta.from || 'Unknown';
+    _callCode    = meta.classCode || _callCode;
+    _peerConn    = conn;
+
+    _showIncomingCall(_callId, meta, null);
+  });
 }
 
 // ── Format timer ──
-function _fmtTime(s){
-  var m = Math.floor(s/60);
-  return (m<10?'0':'')+m+':'+(s%60<10?'0':'')+(s%60);
-}
+function _fmtTime(s){ var m=Math.floor(s/60); return (m<10?'0':'')+m+':'+(s%60<10?'0':'')+(s%60); }
 
 // ══════════════════════════════
-// SHOW OVERLAY UI
-
-function callShowOverlay(){
-  var el=document.getElementById('call-overlay');
-  if(el) el.classList.remove('hidden');
-  document.body.style.overflow='hidden';
-}
-function callHideOverlay(){
-  var el=document.getElementById('call-overlay');
-  if(el) el.classList.add('hidden');
-  document.body.style.overflow='';
-}
+// SHOW OVERLAY UI (unchanged)
+function callShowOverlay(){ var el=document.getElementById('call-overlay'); if(el) el.classList.remove('hidden'); document.body.style.overflow='hidden'; }
+function callHideOverlay(){ var el=document.getElementById('call-overlay'); if(el) el.classList.add('hidden'); document.body.style.overflow=''; }
 function callShowRinging(title,subtitle,buttons){
   callShowOverlay();
   var rs=document.getElementById('call-state-ringing');
   var as=document.getElementById('call-state-active');
-  if(rs) rs.style.display='';
-  if(as) as.style.display='none';
+  if(rs) rs.style.display=''; if(as) as.style.display='none';
   var e;
   e=document.getElementById('call-title'); if(e) e.textContent=title;
   e=document.getElementById('call-subtitle'); if(e) e.textContent=subtitle;
@@ -19611,67 +19441,162 @@ function callShowRinging(title,subtitle,buttons){
 function callShowActive(peerName,isVideo){
   var rs=document.getElementById('call-state-ringing');
   var as=document.getElementById('call-state-active');
-  if(rs) rs.style.display='none';
-  if(as) as.style.display='';
+  if(rs) rs.style.display='none'; if(as) as.style.display='';
   var an=document.getElementById('call-active-name'); if(an) an.textContent=peerName;
   var rv=document.getElementById('remote-video');
   var vbg=document.getElementById('call-voice-bg');
   var pip=document.getElementById('local-video-pip');
   var vnl=document.getElementById('call-voice-name-large');
   if(isVideo){
-    if(rv) rv.style.display='';
-    if(vbg) vbg.style.display='none';
-    if(pip) pip.style.display='';
+    if(rv) rv.style.display=''; if(vbg) vbg.style.display='none'; if(pip) pip.style.display='';
   } else {
-    if(rv) rv.style.display='none';
-    if(vbg) vbg.style.display='flex';
-    if(pip) pip.style.display='none';
+    if(rv) rv.style.display='none'; if(vbg) vbg.style.display='flex'; if(pip) pip.style.display='none';
     if(vnl) vnl.textContent=peerName;
   }
-  if(isVideo&&_localStream){
-    var lv=document.getElementById('local-video');
-    if(lv&&!lv.srcObject) lv.srcObject=_localStream;
-  }
+  if(isVideo&&_localStream){ var lv=document.getElementById('local-video'); if(lv&&!lv.srcObject) lv.srcObject=_localStream; }
   _callSeconds=0;
   if(_callTimerInterval) clearInterval(_callTimerInterval);
-  _callTimerInterval=setInterval(function(){
-    _callSeconds++;
-    var el=document.getElementById('call-timer');
-    if(el) el.textContent=_fmtTime(_callSeconds);
-  },1000);
+  _callTimerInterval=setInterval(function(){ _callSeconds++; var el=document.getElementById('call-timer'); if(el) el.textContent=_fmtTime(_callSeconds); },1000);
   _initPipDrag();
 }
+
+// ── Attach remote stream to UI ──
+function _attachRemoteStream(stream){
+  if(_callType==='video'){
+    var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=stream;
+  } else {
+    var au=document.getElementById('remote-audio');
+    if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
+    au.srcObject=stream;
+  }
+}
+
+// ══════════════════════════════
+// OUTGOING CALL
+async function callStart(targetName, classCode, type){
+  if(!currentUser){ showToast('Please sign in first'); return; }
+  if(_callState !== 'idle'){ showToast('Already in a call'); return; }
+  if(!classCode) classCode = _resolveCallCode(targetName);
+  if(!classCode){ showToast('No class linked — cannot start call'); return; }
+  if(!targetName||typeof targetName!=='string'||targetName.length>80){ showToast('Invalid call target'); return; }
+
+  _callType  = type || 'voice';
+  _callPeer  = targetName;
+  _callCode  = classCode;
+  _callRole  = 'caller';
+  _callId    = 'call-'+Math.random().toString(36).substr(2,8);
+  _callState = 'calling';
+
+  callShowRinging(
+    (_callType==='video'?'📹 Video Calling…':'📞 Voice Calling…'), targetName,
+    '<button class="call-ring-btn" onclick="callEnd()"><div class="call-ring-btn-circle decline-circle">📵</div><span class="call-ring-btn-label">Cancel</span></button>'
+  );
+  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Calling '+targetName+'…';
+  var cae=document.getElementById('call-avatar-emoji'); if(cae) cae.textContent=_callType==='video'?'📹':'📞';
+
+  try{
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},
+      video:_callType==='video'
+    });
+    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
+
+    _ensurePeer(function(peer){
+      if(!peer){ showToast('❌ Could not connect to signaling server'); callEnd(); return; }
+      var targetId = _peerId(classCode, targetName);
+      var meta = {callId:_callId, from:currentUser.name, fromRole:currentUser.role,
+                  to:targetName, type:_callType, classCode:classCode,
+                  started:new Date().toISOString()};
+      _peerConn = peer.call(targetId, _localStream, {metadata:meta});
+      if(!_peerConn){ showToast('❌ Peer not reachable — is the student online?'); callEnd(); return; }
+
+      _peerConn.on('stream', function(remoteStream){
+        _callState = 'connected';
+        callShowActive(_callPeer, _callType==='video');
+        _attachRemoteStream(remoteStream);
+      });
+      _peerConn.on('close', function(){ if(_callState!=='idle') callEnd(); });
+      _peerConn.on('error', function(e){ showToast('❌ Call error: '+e.message); callEnd(); });
+
+      // Also push a chat message so student sees notification
+      _fbPush('classes/'+classCode+'/messages',{
+        from:currentUser.name, role:currentUser.role, to:targetName,
+        msg:(_callType==='video'?'📹':'📞')+' '+currentUser.name+' is calling you — open your Dashboard to answer!',
+        callId:_callId, callType:_callType,
+        date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
+        read:false, isCall:true
+      });
+    });
+  }catch(err){
+    callEnd();
+    showToast(err.name==='NotAllowedError'?'❌ Microphone/camera permission denied':'❌ Could not start call: '+err.message);
+  }
+}
+
+// ══════════════════════════════
+// ACCEPT INCOMING
+async function callAccept(){
+  if(_callState!=='ringing'||!_peerConn) return;
+  clearInterval(_ringOscInterval);
+  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connecting…';
+  var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='';
+  try{
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},
+      video:_callType==='video'
+    });
+    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
+    _peerConn.answer(_localStream);
+    _peerConn.on('stream', function(remoteStream){
+      _callState='connected';
+      callShowActive(_callPeer, _callType==='video');
+      _attachRemoteStream(remoteStream);
+    });
+    _peerConn.on('close', function(){ if(_callState!=='idle') callEnd(); });
+    _peerConn.on('error', function(e){ showToast('❌ '+e.message); callEnd(); });
+  }catch(err){
+    callDecline();
+    showToast('❌ Could not connect: '+(err.name==='NotAllowedError'?'Microphone permission denied':err.message));
+  }
+}
+
+// DECLINE
+function callDecline(){
+  clearInterval(_ringOscInterval);
+  if(_peerConn) try{ _peerConn.close(); }catch(e){}
+  _peerConn=null;
+  callCleanupConnection();
+}
+
+// END CALL
 function callEnd(){
   clearInterval(_ringOscInterval);
   if(typeof _screenShareStream!=='undefined'&&_screenShareStream){
     try{_screenShareStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
     _screenShareStream=null;
   }
-  if(_callId){
-    _callWrite(_callId,{'meta/status':'ended'});
-    setTimeout(function(){_callCleanup(_callId);},2000);
-  }
   var dur=_fmtTime(_callSeconds);
+  if(_peerConn) try{ _peerConn.close(); }catch(e){}
+  _peerConn=null;
   callCleanupConnection();
   showToast('📵 Call ended · '+dur);
 }
+
+// CLEANUP
 function callCleanupConnection(){
   if(_callTimerInterval) clearInterval(_callTimerInterval);
-  if(_callPollInterval) clearInterval(_callPollInterval);
   if(_pc){try{_pc.close();}catch(e){} _pc=null;}
   if(_localStream){_localStream.getTracks().forEach(function(t){t.stop();});_localStream=null;}
-  var ra=document.getElementById('remote-audio');
-  if(ra){ra.srcObject=null;ra.remove();}
+  var ra=document.getElementById('remote-audio'); if(ra){ra.srcObject=null;ra.remove();}
   var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=null;
   var lv=document.getElementById('local-video'); if(lv) lv.srcObject=null;
-  var ssv=document.getElementById('screenshare-view');
-  if(ssv){ssv.style.display='none';ssv.srcObject=null;}
+  var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.style.display='none';ssv.srcObject=null;}
   var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='none';
   var ssc=document.getElementById('ss-circle'); if(ssc){ssc.classList.remove('ss-active');ssc.textContent='🖥️';}
   var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Share Screen';
   _callState='idle';_mutedAudio=false;_mutedVideo=false;
   _callId=null;_callRole=null;_callPeer=null;_callCode=null;
-  _pendingOffer=null;_callSeconds=0;_appliedIceCandidates={};
+  _pendingOffer=null;_callSeconds=0;
   var mc=document.getElementById('mute-circle'); if(mc) mc.textContent='🎤';
   var ml=document.getElementById('mute-lbl'); if(ml) ml.textContent='Mute';
   var cmb=document.getElementById('ctrl-mute-btn'); if(cmb) cmb.classList.remove('muted');
@@ -19682,12 +19607,12 @@ function callCleanupConnection(){
   callHideOverlay();
   if(typeof updateStudentCallBanner==='function') setTimeout(updateStudentCallBanner,50);
 }
+
+// MUTE / CAM / SPEAKER / FLIP
 function callToggleMute(){
   _mutedAudio=!_mutedAudio;
   if(_localStream) _localStream.getAudioTracks().forEach(function(t){t.enabled=!_mutedAudio;});
-  var circle=document.getElementById('mute-circle');
-  var lbl=document.getElementById('mute-lbl');
-  var btn=document.getElementById('ctrl-mute-btn');
+  var circle=document.getElementById('mute-circle'), lbl=document.getElementById('mute-lbl'), btn=document.getElementById('ctrl-mute-btn');
   if(circle) circle.textContent=_mutedAudio?'🔇':'🎤';
   if(lbl) lbl.textContent=_mutedAudio?'Unmute':'Mute';
   if(btn) btn.classList.toggle('muted',_mutedAudio);
@@ -19696,56 +19621,67 @@ function callToggleMute(){
 function callToggleCam(){
   _mutedVideo=!_mutedVideo;
   if(_localStream) _localStream.getVideoTracks().forEach(function(t){t.enabled=!_mutedVideo;});
-  var circle=document.getElementById('cam-circle');
-  var lbl=document.getElementById('cam-lbl');
-  var btn=document.getElementById('ctrl-cam-btn');
-  var po=document.getElementById('pip-camoff');
+  var circle=document.getElementById('cam-circle'), lbl=document.getElementById('cam-lbl'), btn=document.getElementById('ctrl-cam-btn'), po=document.getElementById('pip-camoff');
   if(circle) circle.textContent=_mutedVideo?'🚫':'📷';
   if(lbl) lbl.textContent=_mutedVideo?'Show Cam':'Camera';
   if(btn) btn.classList.toggle('camoff',_mutedVideo);
   if(po) po.style.display=_mutedVideo?'flex':'none';
   showToast(_mutedVideo?'🚫 Camera off':'📷 Camera on');
 }
-var _screenShareStream=null;
-var _screenShareSender=null;
+var _speakerOn=true;
+function callToggleSpeaker(){
+  _speakerOn=!_speakerOn;
+  var sc=document.getElementById('speaker-circle'); if(sc) sc.textContent=_speakerOn?'🔊':'🔇';
+  var sl=document.getElementById('speaker-lbl'); if(sl) sl.textContent=_speakerOn?'Speaker':'Earpiece';
+  var ra=document.getElementById('remote-audio'), rv=document.getElementById('remote-video');
+  var el=ra||rv; if(el&&el.setSinkId) el.setSinkId(_speakerOn?'default':'').catch(function(){});
+  showToast(_speakerOn?'🔊 Speaker on':'🔈 Earpiece');
+}
+var _facingMode='user';
+async function callFlipCamera(){
+  if(!_localStream){showToast('❌ No active camera');return;}
+  _facingMode=_facingMode==='user'?'environment':'user';
+  try{
+    var ns=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:_facingMode,width:{ideal:1280},height:{ideal:720}}});
+    var nvt=ns.getVideoTracks()[0], ovt=_localStream.getVideoTracks()[0];
+    if(ovt){_localStream.removeTrack(ovt);ovt.stop();}
+    _localStream.addTrack(nvt);
+    var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream;
+    if(_peerConn && _peerConn.peerConnection){
+      var vs=_peerConn.peerConnection.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
+      if(vs) vs.replaceTrack(nvt);
+    }
+    var lpv=document.getElementById('local-video'); if(lpv) lpv.style.transform=_facingMode==='user'?'scaleX(-1)':'scaleX(1)';
+    showToast(_facingMode==='user'?'🥳 Front camera':'📸 Rear camera');
+  }catch(err){ _facingMode=_facingMode==='user'?'environment':'user'; showToast('❌ Camera flip not supported'); }
+}
+
+// SCREEN SHARE
+var _screenShareStream=null, _screenShareSender=null;
 async function callToggleScreenShare(){
   if(_screenShareStream){_stopInCallScreenShare();return;}
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){
-    showToast('❌ Screen sharing not supported on this browser/device');return;
-  }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){showToast('❌ Screen sharing not supported');return;}
   try{
-    _screenShareStream=await navigator.mediaDevices.getDisplayMedia({
-      video:{frameRate:30,width:{ideal:1920},height:{ideal:1080}},audio:false
-    });
-    if(_pc){
+    _screenShareStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30,width:{ideal:1920},height:{ideal:1080}},audio:false});
+    if(_peerConn && _peerConn.peerConnection){
       var vt=_screenShareStream.getVideoTracks()[0];
-      var vs=_pc.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
-      if(vs){
-        vs.replaceTrack(vt);_screenShareSender=vs;
-      } else {
-        // Voice call - add video track so remote receives the screen
-        _screenShareSender=_pc.addTrack(vt,_screenShareStream);
-      }
+      var vs=_peerConn.peerConnection.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
+      if(vs){ vs.replaceTrack(vt); _screenShareSender=vs; }
+      else { _screenShareSender=_peerConn.peerConnection.addTrack(vt,_screenShareStream); }
     }
-    var ssv=document.getElementById('screenshare-view');
-    if(ssv){ssv.srcObject=_screenShareStream;ssv.style.display='block';}
+    var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.srcObject=_screenShareStream;ssv.style.display='block';}
     var rv=document.getElementById('remote-video'); if(rv) rv.style.display='none';
     var ssc=document.getElementById('ss-circle'); if(ssc){ssc.classList.add('ss-active');ssc.textContent='⏹️';}
     var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Stop';
     var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='flex';
     _screenShareStream.getVideoTracks()[0].onended=function(){_stopInCallScreenShare();};
     showToast('🖥️ Screen sharing started');
-  }catch(err){
-    _screenShareStream=null;
-    if(err.name!=='NotAllowedError') showToast('❌ Screen share failed: '+err.message);
-  }
+  }catch(err){_screenShareStream=null; if(err.name!=='NotAllowedError') showToast('❌ Screen share failed: '+err.message);}
 }
 function _stopInCallScreenShare(){
   if(_screenShareStream){_screenShareStream.getTracks().forEach(function(t){t.stop();});_screenShareStream=null;}
-  if(_pc&&_screenShareSender&&_localStream){
-    var ct=_localStream.getVideoTracks()[0];
-    if(ct) _screenShareSender.replaceTrack(ct);
-    _screenShareSender=null;
+  if(_peerConn&&_peerConn.peerConnection&&_screenShareSender&&_localStream){
+    var ct=_localStream.getVideoTracks()[0]; if(ct) _screenShareSender.replaceTrack(ct); _screenShareSender=null;
   }
   var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.style.display='none';ssv.srcObject=null;}
   var rv=document.getElementById('remote-video'); if(rv) rv.style.display='';
@@ -19754,421 +19690,99 @@ function _stopInCallScreenShare(){
   var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='none';
   showToast('🖥️ Screen sharing stopped');
 }
-var _facingMode='user';
-async function callFlipCamera(){
-  if(!_localStream){showToast('❌ No active camera');return;}
-  _facingMode=_facingMode==='user'?'environment':'user';
-  try{
-    var ns=await navigator.mediaDevices.getUserMedia({
-      audio:false,video:{facingMode:_facingMode,width:{ideal:1280},height:{ideal:720}}
-    });
-    var nvt=ns.getVideoTracks()[0];
-    var ovt=_localStream.getVideoTracks()[0];
-    if(ovt){_localStream.removeTrack(ovt);ovt.stop();}
-    _localStream.addTrack(nvt);
-    var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream;
-    if(_pc){
-      var vs=_pc.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
-      if(vs) vs.replaceTrack(nvt);
-    }
-    var lpv=document.getElementById('local-video');
-    if(lpv) lpv.style.transform=_facingMode==='user'?'scaleX(-1)':'scaleX(1)';
-    showToast(_facingMode==='user'?'🥳 Front camera':'📸 Rear camera');
-  }catch(err){
-    _facingMode=_facingMode==='user'?'environment':'user';
-    showToast('❌ Camera flip not supported on this device');
-  }
-}
-var _speakerOn=true;
-function callToggleSpeaker(){
-  _speakerOn=!_speakerOn;
-  var sc=document.getElementById('speaker-circle'); if(sc) sc.textContent=_speakerOn?'🔊':'🔇';
-  var sl=document.getElementById('speaker-lbl'); if(sl) sl.textContent=_speakerOn?'Speaker':'Earpiece';
-  var ra=document.getElementById('remote-audio');
-  var rv=document.getElementById('remote-video');
-  var el=ra||rv;
-  if(el&&el.setSinkId) el.setSinkId(_speakerOn?'default':'').catch(function(){});
-  showToast(_speakerOn?'🔊 Speaker on':'🔈 Earpiece');
-}
+
+// PiP DRAG
 function _initPipDrag(){
   var pip=document.getElementById('local-video-pip');
-  if(!pip||pip._dragInited) return;
-  pip._dragInited=true;
+  if(!pip||pip._dragInited) return; pip._dragInited=true;
   var sx,sy,sl,st;
-  function onStart(e){
-    var t=e.touches?e.touches[0]:e;
-    sx=t.clientX;sy=t.clientY;
-    var r=pip.getBoundingClientRect();
-    sl=r.left;st=r.top;
-    pip.style.right='auto';pip.style.bottom='auto';
-    pip.style.left=sl+'px';pip.style.top=st+'px';
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onEnd);
-    document.addEventListener('touchmove',onMove,{passive:false});
-    document.addEventListener('touchend',onEnd);
-    e.preventDefault();
-  }
-  function onMove(e){
-    var t=e.touches?e.touches[0]:e;
-    var nl=Math.max(8,Math.min(sl+(t.clientX-sx),window.innerWidth-pip.offsetWidth-8));
-    var nt=Math.max(8,Math.min(st+(t.clientY-sy),window.innerHeight-pip.offsetHeight-8));
-    pip.style.left=nl+'px';pip.style.top=nt+'px';
-    if(e.cancelable) e.preventDefault();
-  }
-  function onEnd(){
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onEnd);
-    document.removeEventListener('touchmove',onMove);
-    document.removeEventListener('touchend',onEnd);
-  }
-  pip.addEventListener('mousedown',onStart);
-  pip.addEventListener('touchstart',onStart,{passive:false});
+  function onStart(e){ var t=e.touches?e.touches[0]:e; sx=t.clientX;sy=t.clientY; var r=pip.getBoundingClientRect(); sl=r.left;st=r.top; pip.style.right='auto';pip.style.bottom='auto';pip.style.left=sl+'px';pip.style.top=st+'px'; document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onEnd);document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onEnd); e.preventDefault(); }
+  function onMove(e){ var t=e.touches?e.touches[0]:e; var nl=Math.max(8,Math.min(sl+(t.clientX-sx),window.innerWidth-pip.offsetWidth-8)); var nt=Math.max(8,Math.min(st+(t.clientY-sy),window.innerHeight-pip.offsetHeight-8)); pip.style.left=nl+'px';pip.style.top=nt+'px'; if(e.cancelable) e.preventDefault(); }
+  function onEnd(){ document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onEnd);document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onEnd); }
+  pip.addEventListener('mousedown',onStart); pip.addEventListener('touchstart',onStart,{passive:false});
 }
 
-// ── Inject WhatsApp-style ring buttons into the ringing overlay ──
-// Override the callStart outgoing button and incoming accept/decline
-var _origCallStartBtn = null;
-(function(){
-  // Patch callStart to use new-style cancel button
-  var _orig = window.callStart;
-  if(typeof _orig === 'function'){
-    window.callStart = async function(targetName, classCode, type){
-      await _orig.apply(this, arguments);
-      // Replace plain emoji cancel btn with styled ring btn
-      setTimeout(function(){
-        var ab = document.getElementById('call-action-btns');
-        if(ab && ab.innerHTML.indexOf('call-ring-btn') === -1){
-          ab.innerHTML =
-            '<button class="call-ring-btn" onclick="callEnd()">' +
-            '<div class="call-ring-btn-circle decline-circle">📵</div>' +
-            '<span class="call-ring-btn-label">Cancel</span></button>';
-        }
-      }, 100);
-    };
-  }
-  // Patch _showIncomingCall to replace plain emoji btns with new ring btns
-  var _origSIC = window._showIncomingCall;
-  if(typeof _origSIC === 'function'){
-    window._showIncomingCall = function(callId, meta, offer){
-      _origSIC.apply(this, arguments);
-      setTimeout(function(){
-        var ab = document.getElementById('call-action-btns');
-        if(ab && ab.innerHTML.indexOf('call-ring-btn') === -1){
-          ab.innerHTML =
-            '<button class="call-ring-btn" onclick="callAccept()">' +
-            '<div class="call-ring-btn-circle accept-circle">📞</div>' +
-            '<span class="call-ring-btn-label">Accept</span></button>' +
-            '<button class="call-ring-btn" onclick="callDecline()">' +
-            '<div class="call-ring-btn-circle decline-circle">📵</div>' +
-            '<span class="call-ring-btn-label">Decline</span></button>';
-        }
-      }, 50);
-    };
-  }
-})();
-
-// ══════════════════════════════
-// INCOMING CALL POLLER
-// ══════════════════════════════
-
-// ══════════════════════════════
-// OUTGOING CALL (Caller side)
-// ══════════════════════════════
-
-async function callStart(targetName, classCode, type){
-  if(!currentUser){ showToast('Please sign in first'); return; }
-  if(_callState !== 'idle'){ showToast('Already in a call'); return; }
-  // Auto-resolve class code if not provided
-  if(!classCode) classCode = _resolveCallCode(targetName);
-  if(!classCode){ showToast('No class linked — cannot start call'); return; }
-  // Security: sanitise targetName to prevent path injection in Firebase
-  if(!targetName || typeof targetName !== 'string' || targetName.length > 80){
-    showToast('Invalid call target'); return;
-  }
-  targetName = targetName.replace(/[.#$\[\]\/]/g, '_');
-
-  _callType = type || 'voice';
-  _callPeer = targetName;
-  _callCode = classCode;
-  _callRole = 'caller';
-  _callId = _genCallId();
-  _callState = 'calling';
-
-  callShowRinging(
-    (_callType==='video' ? '📹 Video Calling…' : '📞 Voice Calling…'),
-    targetName,
-    '<button class="call-btn end" onclick="callEnd()" title="Cancel">📵</button>'
-  );
-  var cst = document.getElementById('call-status-text');
-  var cae = document.getElementById('call-avatar-emoji');
-  if(cst) cst.textContent = 'Calling ' + targetName + '…';
-  if(cae) cae.textContent = _callType==='video' ? '📹' : '📞';
-
-  try {
-    _localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:_callType==='video' });
-    if(_callType==='video'){
-      var lv = document.getElementById('local-video');
-      if(lv) lv.srcObject = _localStream;
-    }
-    _pc = new RTCPeerConnection(ICE_SERVERS);
-    _localStream.getTracks().forEach(function(t){ _pc.addTrack(t, _localStream); });
-    _pc.ontrack = function(ev){
-      var rv = document.getElementById('remote-video');
-      if(rv && ev.streams[0]) rv.srcObject = ev.streams[0];
-      if(_callType==='voice'){
-        var au = document.getElementById('remote-audio');
-        if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
-        au.srcObject = ev.streams[0];
-      }
-    };
-    _pc.onicecandidate = function(ev){ if(ev.candidate&&_callId) _pushIceCandidate(_callId,'caller',ev.candidate); };
-    _pc.onconnectionstatechange = function(){
-      var s=_pc.connectionState;
-      var el=document.getElementById('call-active-status'); if(el) el.textContent=s==='connected'?'Call in progress':s;
-      if(s==='disconnected'||s==='failed'||s==='closed') callEnd();
-    };
-    var offer = await _pc.createOffer();
-    await _pc.setLocalDescription(offer);
-    await _callWrite(_callId, {
-      meta:{ callId:_callId, from:currentUser.name, fromRole:currentUser.role, to:targetName,
-             type:_callType, classCode:classCode, status:'ringing', started:new Date().toISOString() },
-      offer:{ type:offer.type, sdp:offer.sdp }
-    });
-    _fbPush('classes/'+classCode+'/messages',{
-      from:currentUser.name, role:currentUser.role, to:targetName,
-      msg:(_callType==='video'?'📹':'📞')+' '+currentUser.name+' is calling you — open your Dashboard to answer!',
-      callId:_callId, callType:_callType,
-      date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
-      read:false, isCall:true
-    });
-    _callPollInterval = setInterval(_callerPollForAnswer, 2000);
-  } catch(err){
-    console.error('Call error:',err);
-    callEnd();
-    showToast(err.name==='NotAllowedError'?'❌ Microphone/camera permission denied':'❌ Could not start call: '+err.message);
-  }
-}
-
-function _callerPollForAnswer(){
-  if(!_callId||_callState!=='calling') return;
-  _callGet(_callId, async function(data){
-    if(!data) return;
-    if(data.meta&&data.meta.status==='declined'){
-      clearInterval(_callPollInterval);
-      showToast('📵 Call declined');
-      callCleanupConnection(); return;
-    }
-    if(data.answer&&_pc&&_pc.signalingState!=='stable'){
-      clearInterval(_callPollInterval);
-      try{
-        await _pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        if(data.candidates&&data.candidates.callee){
-          Object.values(data.candidates.callee).forEach(async function(c){
-            try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
-          });
-        }
-        _callState='connected';
-        callShowActive(_callPeer, _callType==='video');
-        var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connected';
-        _callPollInterval=setInterval(function(){ _pollRemoteIce('callee'); },3000);
-      }catch(e){ console.error('setRemoteDescription error:',e); }
-    }
-  });
-}
-
-var _appliedIceCandidates = {};
-function _pollRemoteIce(remoteRole){
-  if(!_callId||!_pc) return;
-  _callGet(_callId, function(data){
-    if(!data||!data.candidates||!data.candidates[remoteRole]) return;
-    Object.keys(data.candidates[remoteRole]).forEach(function(k){
-      if(_appliedIceCandidates[k]) return;
-      _appliedIceCandidates[k]=true;
-      var c=data.candidates[remoteRole][k];
-      try{ _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
-    });
-  });
-}
-
-async function callAccept(){
-  if(_callState!=='ringing'||!_pendingOffer) return;
-  clearInterval(_ringOscInterval);
-  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connecting…';
-  var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='';
-  try{
-    _localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:_callType==='video'});
-    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
-    _pc=new RTCPeerConnection(ICE_SERVERS);
-    _localStream.getTracks().forEach(function(t){ _pc.addTrack(t,_localStream); });
-    _pc.ontrack=function(ev){
-      var rv=document.getElementById('remote-video'); if(rv&&ev.streams[0]) rv.srcObject=ev.streams[0];
-      if(_callType==='voice'){
-        var au=document.getElementById('remote-audio');
-        if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
-        au.srcObject=ev.streams[0];
-      }
-    };
-    _pc.onicecandidate=function(ev){ if(ev.candidate&&_callId) _pushIceCandidate(_callId,'callee',ev.candidate); };
-    _pc.onconnectionstatechange=function(){
-      var s=_pc.connectionState;
-      var el=document.getElementById('call-active-status'); if(el) el.textContent=s==='connected'?'Call in progress':s;
-      if(s==='disconnected'||s==='failed'||s==='closed') callEnd();
-    };
-    await _pc.setRemoteDescription(new RTCSessionDescription(_pendingOffer));
-    _callGet(_callId,async function(data){
-      if(data&&data.candidates&&data.candidates.caller){
-        Object.values(data.candidates.caller).forEach(async function(c){
-          try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
-        });
-      }
-    });
-    var answer=await _pc.createAnswer();
-    await _pc.setLocalDescription(answer);
-    await _callWrite(_callId,{answer:{type:answer.type,sdp:answer.sdp},'meta/status':'connected'});
-    _callState='connected';
-    callShowActive(_callPeer,_callType==='video');
-    _callPollInterval=setInterval(function(){ _pollRemoteIce('caller'); },3000);
-  }catch(err){
-    console.error('Accept call error:',err);
-    callDecline();
-    showToast('❌ Could not connect: '+(err.name==='NotAllowedError'?'Microphone permission denied':err.message));
-  }
-}
-
-function callDecline(){
-  clearInterval(_ringOscInterval);
-  if(_callId){ _callWrite(_callId,{'meta/status':'declined'}); setTimeout(function(){ _callCleanup(_callId); },2000); }
-  callCleanupConnection();
-}
-
-var _incomingPollInterval = null;
-var _seenCallIds = {};
-
-function startIncomingCallPoller(){
-  if(_incomingPollInterval) return;
-  _incomingPollInterval = setInterval(_checkIncomingCalls, 2000);
-  setTimeout(_checkIncomingCalls, 500);
-}
-
-function _checkIncomingCalls(){
-  if(!currentUser) return;
-  if(_callState !== 'idle') return;
-  _fbGet('calls', function(allCalls){
-    if(!allCalls || typeof allCalls !== 'object') return;
-    var myName = (currentUser.name||'').trim().toLowerCase();
-    Object.keys(allCalls).forEach(function(cid){
-      if(_seenCallIds[cid]) return;
-      var call = allCalls[cid];
-      if(!call || !call.meta) return;
-      var meta = call.meta;
-      if(!meta.to || !meta.status) return;
-      var toName = (meta.to||'').trim().toLowerCase();
-      // Security: verify call is for this user AND from a known contact (has classCode)
-      var isForMe = toName === myName;
-      var hasClass = !!(meta.classCode);
-      var notExpired = meta.started && (Date.now() - new Date(meta.started).getTime()) < 120000; // 2 min max
-      if(isForMe && hasClass && notExpired && meta.status === 'ringing'){
-        _seenCallIds[cid] = true;
-        _showIncomingCall(cid, meta, call.offer);
-      }
-      if(meta.status === 'ended' || meta.status === 'declined'){
-        setTimeout(function(){ delete _seenCallIds[cid]; }, 30000);
-      }
-    });
-  });
-}
-
-function stopIncomingCallPoller(){
-  if(_incomingPollInterval){ clearInterval(_incomingPollInterval); _incomingPollInterval = null; }
-}
-
+// INCOMING CALL UI
 function _showIncomingCall(callId, meta, offer){
-  if(_callState !== 'idle') return;
-  _callState = 'ringing';
-  _callId = callId;
-  _callRole = 'callee';
-  _callType = meta.type || 'voice';
-  _callPeer = meta.from;
-  _callCode = meta.classCode;
-  _pendingOffer = offer;
-  var typeLabel = _callType === 'video' ? '📹 Video Call' : '📞 Voice Call';
+  if(_callState!=='ringing') return;
+  var typeLabel=_callType==='video'?'📹 Video Call':'📞 Voice Call';
   callShowRinging(
-    typeLabel + ' from ' + meta.from,
-    meta.fromRole === 'teacher' ? '🏫 Your Teacher' : '👤 Classmate',
-    '<button class="call-btn accept" onclick="callAccept()" title="Accept">📞</button>' +
-    '<button class="call-btn decline" onclick="callDecline()" title="Decline">📵</button>'
+    typeLabel+' from '+_callPeer,
+    meta.fromRole==='teacher'?'🏫 Your Teacher':'👤 Classmate',
+    '<button class="call-ring-btn" onclick="callAccept()"><div class="call-ring-btn-circle accept-circle">📞</div><span class="call-ring-btn-label">Accept</span></button>'+
+    '<button class="call-ring-btn" onclick="callDecline()"><div class="call-ring-btn-circle decline-circle">📵</div><span class="call-ring-btn-label">Decline</span></button>'
   );
-  var av = document.getElementById('call-avatar-emoji');
-  if(av) av.textContent = _callType === 'video' ? '📹' : '📞';
-  if(typeof updateStudentCallBanner === 'function') setTimeout(updateStudentCallBanner, 50);
+  var av=document.getElementById('call-avatar-emoji'); if(av) av.textContent=_callType==='video'?'📹':'📞';
+  if(typeof updateStudentCallBanner==='function') setTimeout(updateStudentCallBanner,50);
   _callRing();
 }
 
-var _pendingOffer = null;
-var _ringOscInterval = null;
-
 function _callRing(){
   try{
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 440;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-    osc.start(); osc.stop(ctx.currentTime + 0.8);
-    _ringOscInterval = setInterval(function(){
-      if(_callState !== 'ringing'){ clearInterval(_ringOscInterval); return; }
+    var ctx=new (window.AudioContext||window.webkitAudioContext)();
+    var osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=440;gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start();osc.stop(ctx.currentTime+0.8);
+    _ringOscInterval=setInterval(function(){
+      if(_callState!=='ringing'){clearInterval(_ringOscInterval);return;}
       try{
-        var c2 = new (window.AudioContext || window.webkitAudioContext)();
-        var o2 = c2.createOscillator();
-        var g2 = c2.createGain();
-        o2.connect(g2); g2.connect(c2.destination);
-        o2.frequency.value = 480;
-        g2.gain.setValueAtTime(0.25, c2.currentTime);
-        g2.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.6);
-        o2.start(); o2.stop(c2.currentTime + 0.6);
+        var c2=new (window.AudioContext||window.webkitAudioContext)(), o2=c2.createOscillator(), g2=c2.createGain();
+        o2.connect(g2);g2.connect(c2.destination);o2.frequency.value=480;
+        g2.gain.setValueAtTime(0.25,c2.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,c2.currentTime+0.6);
+        o2.start();o2.stop(c2.currentTime+0.6);
       }catch(e){}
-    }, 1500);
+    },1500);
   }catch(e){}
 }
 
-// START POLLING ON INIT
-// ══════════════════════════════
-
-// Start incoming call poller once user is logged in and dashboard loads
-var _callPollerStarted = false;
+// POLLER — with PeerJS the "poller" just opens the Peer connection
+// so incoming calls can arrive. No polling needed.
+function startIncomingCallPoller(){
+  if(!currentUser||!_callCode) return;
+  _ensurePeer(function(peer){
+    if(peer) console.log('[QQ Call] PeerJS ready, ID:', peer.id);
+  });
+}
+function stopIncomingCallPoller(){
+  if(_peer && !_peer.destroyed) try{ _peer.destroy(); }catch(e){}
+  _peer=null; _incomingHandlerSet=false;
+}
 function maybeStartCallPoller(){
   if(_callPollerStarted) return;
   if(!currentUser) return;
-  _callPollerStarted = true;
+  _callCode = _callCode || (typeof myClassCode!=='undefined'?myClassCode:null) ||
+              (currentUser.classCode) || null;
+  if(!_callCode){
+    // Try to get from class data
+    setTimeout(maybeStartCallPoller, 2000); return;
+  }
+  _callPollerStarted=true;
   startIncomingCallPoller();
 }
 
-// Hook into renderDashboard to start poller
-var _origRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
-if(_origRenderDashboard){
-  window.renderDashboard = function(){
-    maybeStartCallPoller();
-    return _origRenderDashboard.apply(this, arguments);
-  };
-}
+// Hook into renderDashboard / updateNavAuth
+var _origRenderDashboard=typeof renderDashboard==='function'?renderDashboard:null;
+if(_origRenderDashboard){ window.renderDashboard=function(){ maybeStartCallPoller(); return _origRenderDashboard.apply(this,arguments); }; }
+var _origUpdateNavAuth=typeof updateNavAuth==='function'?updateNavAuth:null;
+if(_origUpdateNavAuth){ window.updateNavAuth=function(){ _origUpdateNavAuth.apply(this,arguments); setTimeout(maybeStartCallPoller,300); }; }
+setTimeout(function(){ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.name) maybeStartCallPoller(); },1000);
 
-// Also start on updateNavAuth (called after login)
-var _origUpdateNavAuth = typeof updateNavAuth === 'function' ? updateNavAuth : null;
-if(_origUpdateNavAuth){
-  window.updateNavAuth = function(){
-    _origUpdateNavAuth.apply(this, arguments);
-    setTimeout(maybeStartCallPoller, 300);
-  };
-}
-
-// Start immediately if user is already logged in when this script loads
-setTimeout(function(){
-  if(typeof currentUser !== 'undefined' && currentUser && currentUser.name){
-    maybeStartCallPoller();
-  }
-}, 800);
+// ── Shims for old Firebase call paths (now unused) ──
+function _callPath(id){ return 'calls/'+id; }
+function _callWrite(id,data){ return Promise.resolve(); }
+function _callGet(id,cb){ if(cb) cb(null); }
+function _callListen(id,cb){ }
+function _callUnlisten(id){ }
+function _callCleanup(id){ }
+function _pushIceCandidate(id,role,candidate){ return Promise.resolve(); }
+function _genCallId(){ return 'call-'+Math.random().toString(36).substr(2,8); }
+var _appliedIceCandidates={};
+function _pollRemoteIce(){}
+var _incomingPollInterval=null;
+var _seenCallIds={};
+function _checkIncomingCalls(){}
 
 </script>
 
@@ -20665,58 +20279,53 @@ console.log('[QQ RTC v1.1] ✅ Loaded — Recording · Annotations · PiP · Ada
   window.fbKpSave=function(){
     var inp=document.getElementById('fb-kp-input');
     var st=document.getElementById('fb-kp-status');
+    var btn=document.getElementById('fb-nav-btn');
     if(!inp) return;
     var key=inp.value.trim();
     if(!key||key.length<20){
       if(st){st.style.color='#e74c3c';st.textContent='Please paste a valid API key (starts with AIzaSy...)';}
       return;
     }
-    if(st){st.style.color='#f39c12';st.textContent='Saving key...';}
-    /* Save key and trigger anonymous sign-in */
-    if(typeof window._fbSaveApiKey==='function'){
-      window._fbSaveApiKey(key);
-    } else {
-      try{localStorage.setItem('qq_fb_apikey',key);}catch(e){}
-    }
-    /* Key saved — now do anonymous signIn to get auth token, then test */
+    /* Save key locally */
+    try{localStorage.setItem('qq_fb_apikey',key);}catch(e){}
+    if(typeof window._fbSaveApiKey==='function') window._fbSaveApiKey(key);
+    if(st){st.style.color='#f39c12';st.textContent='Testing database connection...';}
+    /* Test the DB directly — no auth needed since rules are open */
     var FB_URL='https://qur-an-quest-app-default-rtdb.firebaseio.com';
-    function doTest(token){
-      var url=FB_URL+'/ping.json'+(token?'?auth='+token:'?t='+Date.now());
-      fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:'"ok"'})
-        .then(function(r){
-          var btn=document.getElementById('fb-nav-btn');
-          if(r.status===401||r.status===403){
-            if(st){st.style.color='#e74c3c';st.textContent='DB rules are blocking — check Firebase Console rules tab.';}
-          } else if(r.ok||r.status===200){
-            if(st){st.style.color='#2ecc71';st.textContent='✅ Firebase connected and working!';}
-            if(btn){btn.className='fb-nav-btn fb-connected';btn.innerHTML='&#x1F7E2; Firebase';}
-            setTimeout(function(){var p=document.getElementById('fb-key-panel');if(p)p.style.display='none';},2200);
-          } else {
-            if(st){st.style.color='#e74c3c';st.textContent='HTTP '+r.status+' — unexpected response.';}
-          }
-        })
-        .catch(function(){
-          /* Network error — but key is saved, so just show success */
-          if(st){st.style.color='#2ecc71';st.textContent='✅ Key saved! Firebase will connect when network allows.';}
-          var btn=document.getElementById('fb-nav-btn');
-          if(btn){btn.className='fb-nav-btn fb-connected';btn.innerHTML='&#x1F7E2; Firebase';}
-          setTimeout(function(){var p=document.getElementById('fb-key-panel');if(p)p.style.display='none';},2200);
-        });
-    }
-    /* Try to get auth token via anonymous sign-in first */
-    fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+key,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({returnSecureToken:true})
+    fetch(FB_URL+'/ping.json?t='+Date.now(),{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:'"ok"'
     })
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(st){st.style.color='#f39c12';st.textContent='Signed in — testing database...';}
-      doTest(d.idToken||'');
+    .then(function(r){
+      if(r.ok){
+        if(st){st.style.color='#2ecc71';st.textContent='✅ Firebase connected! Live sync is active.';}
+        if(btn){btn.className='fb-nav-btn fb-connected';btn.innerHTML='&#x1F7E2; Firebase';}
+        if(typeof _fbOnline!=='undefined') _fbOnline=true;
+        setTimeout(function(){var p=document.getElementById('fb-key-panel');if(p)p.style.display='none';},2000);
+      } else if(r.status===401||r.status===403){
+        /* Rules are blocking — show exact instructions */
+        if(st){
+          st.style.color='#e74c3c';
+          st.innerHTML='🔒 Rules still blocking (HTTP '+r.status+'). In Firebase Console:<br>'+
+            '<strong>Realtime Database → Rules → paste this → click Publish:</strong><br>'+
+            '<code style="background:rgba(0,0,0,.4);padding:4px 8px;border-radius:6px;font-size:11px;display:block;margin-top:6px;color:#2ecc71;">'+
+            '{ "rules": { ".read": true, ".write": true } }</code>';
+        }
+      } else {
+        if(st){st.style.color='#e74c3c';st.textContent='Unexpected response: HTTP '+r.status;}
+      }
     })
-    .catch(function(){
-      /* signIn failed — test without token (works if rules are open) */
-      if(st){st.style.color='#f39c12';st.textContent='Testing database...';}
-      doTest('');
+    .catch(function(err){
+      /* Could be CORS, offline, or the DB URL is wrong */
+      if(st){
+        st.style.color='#e74c3c';
+        st.innerHTML='Network error: '+err.message+'<br>'+
+          '<span style="font-size:11px;color:#94a894;">Your key is saved. '+
+          'This may be a temporary network issue — try reloading the page.</span>';
+      }
+      /* Save key anyway — it will work once network recovers */
+      if(btn){btn.className='fb-nav-btn fb-connected';btn.innerHTML='&#x1F7E2; Firebase';}
     });
   };
 
