@@ -980,8 +980,8 @@ var _fbReady = true;  // always ready — no SDK to wait for
       <button class="btn btn-o btn-sm nav-reciter-btn" onclick="openReciterModal()" title="Choose Reciter" style="display:flex;align-items:center;gap:5px;padding:5px 11px;">🎙 <span class="nav-reciter-label" style="font-size:10px;letter-spacing:.5px;">Reciter</span></button>
       <!-- Auth -->
       <div class="nav-auth" id="nav-auth">
-        <button class="btn btn-o btn-sm" onclick="openAuth('login')">Sign In</button>
-        <button class="btn btn-gold btn-sm nav-register-btn" onclick="openAuth('register','student')">✨ Free Account</button>
+        <button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-weight:700;">🔑 Login</button>
+        <button class="btn btn-gold btn-sm nav-register-btn" onclick="openAuth('register','student')">✨ Create Account</button>
       </div>
       <button id="tm-toggle-nav" class="tm-toggle-btn" onclick="if(typeof tmToggle==='function')tmToggle();else{document.addEventListener('DOMContentLoaded',function(){tmToggle();});}" title="Teacher Mode">🏫 Teacher</button>
       <!-- Hamburger (mobile only) -->
@@ -1440,6 +1440,7 @@ function showPage(page){
     journey:renderJourneyPage, achievements:renderAchievementsPage,
     listenrepeat:renderListenRepeatPage, recitepractice:renderRecitePracticePage};
   if(renders[page]) renders[page]();
+  if(page==='home' && typeof renderHomePortalCTA==='function') setTimeout(renderHomePortalCTA,60);
 }
 function toggleMobileMenu(){
   $('mobile-menu').classList.toggle('open');
@@ -2273,6 +2274,7 @@ function onAuthSuccess(isLogin){
 }
 
 function updateNavAuth(){
+  setTimeout(function(){ if(typeof renderHomePortalCTA==='function') renderHomePortalCTA(); },100);
   if(currentUser){
     const isStu = currentUser.role==='student';
     const badge = `<span style="font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:10px;background:${isStu?'rgba(46,204,113,.2)':'rgba(201,168,76,.2)'};color:${isStu?'var(--emb)':'var(--goldl)'};">${isStu?'STUDENT':'TEACHER'}</span>`;
@@ -2330,9 +2332,10 @@ function renderHome(){
         <button onclick="showPage('beginner')" style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(46,204,113,.18),rgba(46,204,113,.09));border:1px solid rgba(46,204,113,.45);color:var(--emb);padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.4px;">🌱 Beginners / Kids</button>
         <button onclick="showPage('recitepractice')" style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(26,188,156,.18),rgba(26,188,156,.09));border:1px solid rgba(26,188,156,.45);color:#1abc9c;padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.4px;">🎙 Recite &amp; Compare</button>
       </div>
-      <!-- Row 3: standalone Create Free Account CTA -->
-      <div style="display:flex;justify-content:center;margin-bottom:28px;">
-        <button class="btn btn-gold" onclick="openAuth('register','student')" id="hero-cta-btn" style="padding:13px 36px;font-size:14px;border-radius:30px;letter-spacing:1px;box-shadow:0 4px 24px rgba(201,168,76,.35);">✨ Create Free Account</button>
+      <!-- Row 3: Portal CTA — renderHomePortalCTA() fills this after render -->
+      <div id="home-portal-cta" style="display:flex;justify-content:center;gap:12px;margin-bottom:28px;flex-wrap:wrap;">
+        <button class="btn btn-g" onclick="openAuth('login')" style="padding:13px 28px;font-size:15px;font-weight:700;">🔑 Login</button>
+        <button class="btn btn-gold" onclick="openAuth('register','student')" id="hero-cta-btn" style="padding:13px 36px;font-size:15px;font-weight:700;letter-spacing:.5px;">✨ Create Free Account</button>
       </div>
       <!-- Row 4: Ko-fi — separated as a support/sadaqah appeal -->
       <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:20px;display:flex;flex-direction:column;align-items:center;gap:8px;">
@@ -5351,9 +5354,21 @@ function _startClassListener(code){
   if(_fbClassListener) fbUnlistenClass(_fbClassListener);
   _fbClassListener = code;
   fbListenClass(code, function(cls){
+    var prev = JSON.stringify(_liveClassData);
     _liveClassData = cls;
-    // Refresh dashboard if student is viewing assignments
-    if(typeof renderDashboard === 'function') renderDashboard();
+    var changed = JSON.stringify(cls) !== prev;
+    if(!changed) return; // nothing changed, skip re-render
+    // Check for screen share notifications
+    if(cls && cls.messages && typeof checkForScreenShareNotice==='function') checkForScreenShareNotice(cls.messages);
+    // Don't re-render if user is actively typing in any input/textarea
+    var focused = document.activeElement;
+    if(focused && (focused.tagName==='TEXTAREA' || focused.tagName==='INPUT')){
+      return; // keyboard is open — skip to avoid dismissing it
+    }
+    var activePage = document.querySelector('[id^="page-"]:not(.hidden)');
+    if(activePage && activePage.id==='page-dashboard' && typeof renderDashboard==='function'){
+      renderDashboard();
+    }
   });
 }
 
@@ -6232,6 +6247,24 @@ function renderStudentClassTab(){
   },0)/markedAssigns.length) : null;
 
   return `
+    <!-- Incoming call banner - shows when teacher is calling -->
+    ${(typeof _callState!=='undefined' && _callState==='ringing')?`
+    <div style="background:linear-gradient(135deg,rgba(39,174,96,.2),rgba(46,204,113,.1));border:2px solid rgba(46,204,113,.6);border-radius:14px;padding:18px 20px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:14px;animation:callPulse 1.2s ease-in-out infinite;" onclick="callShowOverlay()">
+      <div style="font-size:36px;animation:callPulse 0.8s ease-in-out infinite;">${typeof _callType!=='undefined'&&_callType==='video'?'📹':'📞'}</div>
+      <div style="flex:1;">
+        <div style="color:#2ecc71;font-size:15px;font-weight:700;margin-bottom:3px;">📲 Incoming Call!</div>
+        <div style="color:var(--white);font-size:13px;">${typeof _callPeer!=='undefined'&&_callPeer?_callPeer:'Your teacher'} is calling you</div>
+        <div style="color:var(--greyd);font-size:11px;margin-top:2px;">Tap anywhere here to answer</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="call-btn accept" onclick="event.stopPropagation();callAccept()" title="Accept" style="width:52px;height:52px;font-size:22px;">📞</button>
+        <button class="call-btn decline" onclick="event.stopPropagation();callDecline()" title="Decline" style="width:52px;height:52px;font-size:22px;">📵</button>
+      </div>
+    </div>`:''}
+    <!-- Screen share join banner -->
+    <div id="ss-join-banner"></div>
+    <!-- Incoming call banner -->
+    <div id="call-incoming-banner"></div>
     <!-- New reply banner -->
     ${teacherReplies.length>0?`
     <div style="background:rgba(26,122,60,.1);border:1px solid rgba(46,204,113,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
@@ -6406,6 +6439,7 @@ function renderTeacherDashboard(){
   if(teacherSubTab==='reminders') return renderTeacherReminders();
   if(teacherSubTab==='messages') return renderTeacherMessages();
   if(teacherSubTab==='call') return renderTeacherCallTab();
+  if(teacherSubTab==='modules') return renderTeacherModulesTab();
   return renderTeacherOverview();
 }
 
@@ -6415,6 +6449,7 @@ function renderTeacherNavTabs(){
     ['overview','📊 Overview'],['groups','👥 Groups'],['assignments','📋 Assignments'],
     ['messages', unread>0?`💬 Messages <span style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:2px;">${unread}</span>`:'💬 Messages'],
     ['call','📞 Live Call'],
+    ['modules','📚 Course Modules'],
     ['reminders','⏰ Reminders']
   ];
   return `<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">${tabs.map(([id,lb])=>`<button class="tab ${teacherSubTab===id?'on':''}" onclick="teacherSubTab='${id}';renderDashboard()">${lb}</button>`).join('')}</div>`;
@@ -7185,6 +7220,335 @@ function renderStudentCallTab(){
       </div>
     </div>
     `}`;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// renderHomePortalCTA — fills #home-portal-cta div
+// Called by showPage('home'), updateNavAuth, qqmRenderHome
+// ══════════════════════════════════════════════════════════════
+function renderHomePortalCTA(){
+  var el = document.getElementById('home-portal-cta');
+  if(!el) return;
+  if(typeof currentUser !== 'undefined' && currentUser && currentUser.name){
+    var isT = currentUser.role === 'teacher';
+    el.style.cssText = 'display:flex;justify-content:center;gap:12px;margin-bottom:28px;';
+    el.innerHTML =
+      '<div style="background:linear-gradient(135deg,rgba(26,122,60,.22),rgba(201,168,76,.12));'
+      +'border:1px solid rgba(46,204,113,.45);border-radius:18px;padding:18px 28px;'
+      +'display:inline-flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;">'
+        +'<div style="text-align:left;">'
+          +'<div style="color:#2ecc71;font-size:13px;font-weight:700;letter-spacing:.5px;">'
+            +'Welcome back, '+currentUser.name.split(' ')[0]+'! \u262d</div>'
+          +'<div style="color:rgba(255,255,255,.55);font-size:11px;margin-top:3px;">'
+            +(isT?'\uD83C\uDFEB Teacher Account':'\uD83C\uDF93 Student Account')+'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">'
+          +'<button class="btn btn-g" onclick="showPage(\'dashboard\')" style="font-weight:700;padding:11px 24px;">'
+            +(isT?'\uD83C\uDFEB My Teacher Portal':'\uD83D\uDCCA My Dashboard')+'</button>'
+          +(isT
+            ?'<button class="btn btn-o btn-sm" onclick="showPage(\'dashboard\');setTimeout(function(){dashTab=\'teacher\';renderDashboard();},120)">\uD83D\uDCCB My Classes</button>'
+            :'<button class="btn btn-o btn-sm" onclick="showPage(\'dashboard\');setTimeout(function(){_sstab=\'class\';renderDashboard();},120)">\uD83D\uDCDA My Class</button>'
+          )
+        +'</div>'
+      +'</div>';
+  } else {
+    el.style.cssText = 'display:flex;justify-content:center;gap:12px;margin-bottom:28px;flex-wrap:wrap;';
+    el.innerHTML =
+      '<button class="btn btn-g" onclick="openAuth(\'login\')" style="padding:13px 28px;font-size:15px;font-weight:700;">\uD83D\uDD11 Login</button>'
+      +'<button class="btn btn-gold" onclick="openAuth(\'register\',\'student\')" id="hero-cta-btn" style="padding:13px 36px;font-size:15px;font-weight:700;letter-spacing:.5px;">\u2728 Create Free Account</button>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// renderTeacherModulesTab — all course modules accessible to teacher
+// ══════════════════════════════════════════════════════════════
+function renderTeacherModulesTab(){
+  var mods = [
+    {i:'📿',n:'Hifdh Practice',d:'Memorise Juz Amma surah by surah with audio and progress tracking',p:'hifdh',c:'#27ae60'},
+    {i:'🎵',n:'Tajweed Rules',d:'All 10 tajweed rules with examples, quizzes and pronunciation guides',p:'tajweed',c:'#8e44ad'},
+    {i:'🎮',n:'Games & Quizzes',d:'Six game modes: Quiz, Ayah Completion, Word Match, Order, Tajweed & Hifdh',p:'games',c:'#2980b9'},
+    {i:'⚡',n:'Daily Ayah Challenge',d:'Study a new ayah each day with translation, meaning and comprehension quiz',p:'daily',c:'#f39c12'},
+    {i:'🌱',n:'Beginner / Kids',d:'Arabic alphabet, letter recognition, pronunciation and basic words for new learners',p:'beginner',c:'#16a085'},
+    {i:'🎧',n:'Listen & Repeat',d:'Listen to a reciter then record and compare your own recitation',p:'listenrepeat',c:'#2980b9'},
+    {i:'🎙',n:'Recite & Compare',d:'Record your recitation and get a visual waveform comparison with a reciter',p:'recitepractice',c:'#8e44ad'},
+    {i:'🗺',n:'Learning Journey',d:'Five-level Quran mastery path — track milestones and earn badges',p:'journey',c:'#c9a84c'},
+    {i:'🏆',n:'Achievements',d:'View all earned badges and see what students can unlock next',p:'achievements',c:'#e67e22'},
+    {i:'🌍',n:'Leaderboard',d:'See how your class ranks globally among Quran Quest learners',p:'leaderboard',c:'#e74c3c'},
+  ];
+
+  var ssSection = '';
+  if(typeof _ssActive !== 'undefined' && _ssActive){
+    ssSection = '<div style="background:linear-gradient(135deg,rgba(52,152,219,.2),rgba(41,128,185,.1));border:2px solid rgba(52,152,219,.5);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +'<div style="font-size:24px;">🖥</div>'
+      +'<div style="flex:1;"><div style="color:#3498db;font-size:13px;font-weight:700;">Screen Sharing Active</div>'
+      +'<div style="color:var(--greyd);font-size:11px;margin-top:2px;">Students in your class can see your screen live</div></div>'
+      +'<button class="btn btn-r btn-sm" onclick="stopScreenShare()">⏹ Stop Sharing</button>'
+      +'</div>';
+  } else {
+    ssSection = '<div style="background:rgba(52,152,219,.06);border:1px solid rgba(52,152,219,.25);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +'<span style="font-size:22px;">🖥</span>'
+      +'<div style="flex:1;min-width:180px;"><div style="color:var(--white);font-size:13px;font-weight:600;">Share Your Screen with Students</div>'
+      +'<div style="color:var(--greyd);font-size:11px;margin-top:2px;">Students will see a live view of whatever you navigate to</div></div>'
+      +'<button class="call-start-btn video-call" onclick="startScreenShare()" style="padding:9px 18px;white-space:nowrap;">🖥 Start Screen Share</button>'
+      +'</div>';
+  }
+
+  var modCards = mods.map(function(m){
+    return '<div class="card" style="padding:0;overflow:hidden;cursor:pointer;border-top:3px solid '+m.c+';" onclick="showPage(\''+m.p+'\')">'
+      +'<div style="padding:18px;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      +'<div style="width:40px;height:40px;border-radius:9px;background:'+m.c+'22;border:1px solid '+m.c+'44;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+m.i+'</div>'
+      +'<div style="flex:1;color:var(--white);font-size:13px;font-weight:700;">'+m.n+'</div>'
+      +'<span style="color:'+m.c+';font-size:18px;">›</span>'
+      +'</div>'
+      +'<p style="color:var(--greyd);font-size:11px;line-height:1.6;margin:0 0 10px;">'+m.d+'</p>'
+      +'<button class="btn btn-sm" onclick="event.stopPropagation();showPage(\''+m.p+'\')" style="background:'+m.c+'22;border:1px solid '+m.c+'44;color:var(--white);font-size:11px;">Open →</button>'
+      +'</div></div>';
+  }).join('');
+
+  var tips = [
+    ['📿','Hifdh Lesson','Open Hifdh, play an ayah audio, then mute and ask students to recite it back. Mark submissions from Assignments.'],
+    ['🎮','Live Quiz','Run Games mode as a class challenge — read each question aloud and race to the answer together.'],
+    ['🎵','Tajweed Drill','Explain a tajweed rule from the Tajweed page, then switch to Listen & Repeat for instant audio practice.'],
+    ['🖥','Screen Share Tip','Tap Start Screen Share first, then navigate to any module — students see exactly what you see in real time.'],
+  ].map(function(t){
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.02);border-radius:8px;">'
+      +'<span style="font-size:18px;flex-shrink:0;">'+t[0]+'</span>'
+      +'<div><div style="color:var(--white);font-size:12px;font-weight:600;margin-bottom:3px;">'+t[1]+'</div>'
+      +'<div style="color:var(--greyd);font-size:11px;line-height:1.5;">'+t[2]+'</div></div></div>';
+  }).join('');
+
+  return renderTeacherNavTabs()
+    +'<div style="margin-bottom:18px;">'
+      +'<h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:4px;">📚 All Course Modules</h3>'
+      +'<p style="color:var(--greyd);font-size:12px;">Navigate to any section to teach or demonstrate. Use Screen Share so students can follow along live.</p>'
+    +'</div>'
+    + ssSection
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:20px;">'
+      + modCards
+    +'</div>'
+    +'<div class="card" style="padding:20px;background:rgba(201,168,76,.05);border-color:rgba(201,168,76,.2);">'
+      +'<h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">💡 Teaching Tips</h4>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">'+tips+'</div>'
+    +'</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCREEN SHARE — Teacher broadcasts screen to students via WebRTC
+// Uses Firebase for signaling (same infrastructure as calls)
+// ══════════════════════════════════════════════════════════════
+var _ssActive = false;
+var _ssStream = null;
+var _ssPeers = {};
+var _ssCallId = null;
+var _ssPollInterval = null;
+var _ssSeenAnswers = {};
+
+async function startScreenShare(){
+  if(!currentUser || currentUser.role !== 'teacher'){ showToast('Only teachers can share screen'); return; }
+  if(_ssActive){ showToast('Screen share already active'); return; }
+  if(typeof navigator.mediaDevices === 'undefined' || !navigator.mediaDevices.getDisplayMedia){
+    showToast('Screen share not supported in this browser'); return;
+  }
+  try {
+    _ssStream = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:15, width:{ideal:1280} }, audio:false });
+  } catch(e){
+    showToast(e.name==='NotAllowedError' ? '❌ Permission denied for screen share' : '❌ Screen share error: '+e.message);
+    return;
+  }
+  _ssActive = true;
+  _ssCallId = 'ss-'+Math.random().toString(36).substr(2,8);
+  _ssStream.getVideoTracks()[0].onended = function(){ stopScreenShare(); };
+
+  // Notify students in all teacher classes
+  teacherGroups.filter(function(g){ return g.code; }).forEach(function(g){
+    _fbPush('classes/'+g.code+'/messages',{
+      from:currentUser.name, role:'teacher', to:'all',
+      msg:'🖥 '+currentUser.name+' started screen sharing — tap Watch Live in your Class tab!',
+      ssId:_ssCallId, isScreenShare:true,
+      date:new Date().toISOString().slice(0,10),
+      time:new Date().toLocaleTimeString(), read:false
+    });
+  });
+  _fbSet('screenshare/'+_ssCallId,{ teacher:currentUser.name, status:'active', started:new Date().toISOString() });
+  _ssPollInterval = setInterval(_ssPollJoinRequests, 3000);
+  showToast('🖥 Screen sharing active! Students have been notified.');
+  if(teacherSubTab==='modules') renderDashboard();
+}
+
+function stopScreenShare(){
+  _ssActive = false;
+  if(_ssStream){ _ssStream.getTracks().forEach(function(t){ t.stop(); }); _ssStream=null; }
+  if(_ssPollInterval){ clearInterval(_ssPollInterval); _ssPollInterval=null; }
+  Object.values(_ssPeers).forEach(function(pc){ try{ pc.close(); }catch(e){} });
+  _ssPeers={};
+  if(_ssCallId){ fetch(_FB_URL+'/screenshare/'+_ssCallId+'.json',{method:'DELETE'}).catch(function(){}); }
+  _ssCallId=null; _ssSeenAnswers={};
+  showToast('🖥 Screen share ended');
+  if(teacherSubTab==='modules') renderDashboard();
+}
+
+async function _ssPollJoinRequests(){
+  if(!_ssCallId||!_ssActive) return;
+  _fbGet('screenshare/'+_ssCallId+'/joinRequests', async function(reqs){
+    if(!reqs||typeof reqs!=='object') return;
+    for(var k in reqs){
+      if(_ssPeers[k]) continue;
+      var req=reqs[k];
+      if(req&&req.offer) await _ssHandleStudentOffer(k, req.offer);
+    }
+  });
+}
+
+async function _ssHandleStudentOffer(key, offer){
+  if(!_ssStream||!_ssActive) return;
+  try {
+    var pc = new RTCPeerConnection(ICE_SERVERS);
+    _ssPeers[key] = pc;
+    _ssStream.getTracks().forEach(function(t){ pc.addTrack(t,_ssStream); });
+    pc.onicecandidate = function(e){
+      if(e.candidate&&_ssCallId)
+        _fbPush('screenshare/'+_ssCallId+'/teacherCandidates/'+key,{sdpMid:e.candidate.sdpMid,sdpMLineIndex:e.candidate.sdpMLineIndex,candidate:e.candidate.candidate});
+    };
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    var ans = await pc.createAnswer();
+    await pc.setLocalDescription(ans);
+    _fbSet('screenshare/'+_ssCallId+'/answers/'+key,{type:ans.type,sdp:ans.sdp});
+  } catch(ex){ console.error('SS offer error:',ex); }
+}
+
+// Student side
+var _ssViewerActive = false;
+var _ssViewerPc = null;
+var _ssViewerPoll = null;
+var _ssViewerSessionId = null;
+
+function studentJoinScreenShare(ssId, teacherName){
+  if(_ssViewerActive){ showToast('Already viewing screen share'); return; }
+  _ssViewerActive = true;
+  _ssViewerSessionId = ssId;
+  _ssShowViewerOverlay(teacherName);
+
+  (async function(){
+    try {
+      _ssViewerPc = new RTCPeerConnection(ICE_SERVERS);
+      var remoteStream = new MediaStream();
+      _ssViewerPc.ontrack = function(e){
+        e.streams[0].getTracks().forEach(function(t){ remoteStream.addTrack(t); });
+        var vid = document.getElementById('ss-viewer-video');
+        if(vid){ vid.srcObject=remoteStream; }
+        var st = document.getElementById('ss-status-text');
+        if(st) st.textContent = 'Connected — watching live';
+      };
+      _ssViewerPc.onicecandidate = function(e){
+        if(e.candidate&&ssId){
+          var myKey=(currentUser.name||'student').replace(/[.#$/\[\]\s]/g,'_');
+          _fbPush('screenshare/'+ssId+'/joinRequests/'+myKey+'/studentCandidates',{sdpMid:e.candidate.sdpMid,sdpMLineIndex:e.candidate.sdpMLineIndex,candidate:e.candidate.candidate});
+        }
+      };
+      _ssViewerPc.onconnectionstatechange = function(){
+        var s=_ssViewerPc.connectionState;
+        var el=document.getElementById('ss-status-text');
+        if(el) el.textContent = s==='connected'?'Connected — watching live':s;
+        if(s==='disconnected'||s==='failed') studentStopScreenShare();
+      };
+      var offer = await _ssViewerPc.createOffer({offerToReceiveVideo:true,offerToReceiveAudio:false});
+      await _ssViewerPc.setLocalDescription(offer);
+      var myKey=(currentUser.name||'student').replace(/[.#$/\[\]\s]/g,'_');
+      _fbSet('screenshare/'+ssId+'/joinRequests/'+myKey,{offer:{type:offer.type,sdp:offer.sdp},name:currentUser.name,joined:new Date().toISOString()});
+
+      _ssViewerPoll = setInterval(async function(){
+        _fbGet('screenshare/'+ssId+'/answers/'+myKey, async function(ans){
+          if(!ans||!ans.sdp) return;
+          if(!_ssViewerPc||_ssViewerPc.signalingState==='stable') return;
+          clearInterval(_ssViewerPoll);
+          try {
+            await _ssViewerPc.setRemoteDescription(new RTCSessionDescription(ans));
+            _fbGet('screenshare/'+ssId+'/teacherCandidates/'+myKey, function(cands){
+              if(!cands) return;
+              Object.values(cands).forEach(function(cd){ try{ _ssViewerPc.addIceCandidate(new RTCIceCandidate(cd)); }catch(ex){} });
+            });
+          } catch(ex){ console.error('SS setRemoteDesc error:',ex); }
+        });
+      }, 2000);
+    } catch(err){
+      _ssViewerActive=false;
+      showToast('Could not join screen share: '+err.message);
+    }
+  })();
+}
+
+function _ssShowViewerOverlay(teacherName){
+  var old=document.getElementById('ss-viewer-overlay'); if(old) old.remove();
+  var d=document.createElement('div');
+  d.id='ss-viewer-overlay';
+  d.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9990;width:340px;background:var(--card);border:1px solid rgba(52,152,219,.4);border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.5);';
+  d.innerHTML='<div style="background:linear-gradient(135deg,rgba(41,128,185,.3),rgba(52,152,219,.15));padding:10px 14px;display:flex;align-items:center;gap:10px;">'
+    +'<span style="font-size:16px;">🖥</span>'
+    +'<div style="flex:1;"><div style="color:#3498db;font-size:12px;font-weight:700;">Screen Share</div>'
+    +'<div id="ss-status-text" style="color:var(--greyd);font-size:10px;">Connecting to '+(teacherName||'teacher')+'...</div></div>'
+    +'<button onclick="studentStopScreenShare()" style="background:rgba(231,76,60,.2);border:1px solid rgba(231,76,60,.4);color:#e74c3c;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">✕</button>'
+    +'</div>'
+    +'<div style="background:#000;position:relative;">'
+    +'<video id="ss-viewer-video" autoplay playsinline style="width:100%;max-height:200px;display:block;object-fit:contain;"></video>'
+    +'<button onclick="_ssViewerFullscreen()" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;">⛶ Fullscreen</button>'
+    +'</div>';
+  document.body.appendChild(d);
+}
+
+function _ssViewerFullscreen(){
+  var v=document.getElementById('ss-viewer-video');
+  if(!v) return;
+  (v.requestFullscreen||v.webkitRequestFullscreen||function(){}).call(v);
+}
+
+function studentStopScreenShare(){
+  _ssViewerActive=false;
+  if(_ssViewerPoll){ clearInterval(_ssViewerPoll); _ssViewerPoll=null; }
+  if(_ssViewerPc){ try{ _ssViewerPc.close(); }catch(e){} _ssViewerPc=null; }
+  var v=document.getElementById('ss-viewer-overlay'); if(v) v.remove();
+  _ssViewerSessionId=null;
+}
+
+// Check incoming class messages for screen share notifications
+function checkForScreenShareNotice(messages){
+  if(!messages||_ssViewerActive) return;
+  var notices = Object.values(messages).filter(function(m){
+    return m.isScreenShare && m.ssId && !_seenCallIds['ss-'+m.ssId];
+  });
+  if(!notices.length) return;
+  var notice = notices[notices.length-1];
+  _seenCallIds['ss-'+notice.ssId]=true;
+  // Update the SS join banner in student class tab
+  var banner = document.getElementById('ss-join-banner');
+  if(banner){
+    banner.innerHTML='<div style="background:linear-gradient(135deg,rgba(41,128,185,.18),rgba(52,152,219,.1));border:2px solid rgba(52,152,219,.5);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +'<div style="font-size:28px;">🖥</div>'
+      +'<div style="flex:1;"><div style="color:#3498db;font-size:14px;font-weight:700;">'+notice.from+' is sharing their screen!</div>'
+      +'<div style="color:var(--greyd);font-size:11px;margin-top:2px;">Follow along with the lesson live</div></div>'
+      +'<button class="call-start-btn video-call" onclick="studentJoinScreenShare(\''+notice.ssId+'\',\''+notice.from+'\')">🖥 Watch Live</button>'
+      +'</div>';
+  }
+  showToast('🖥 '+notice.from+' started screen sharing!', 5000);
+}
+
+// Update call incoming banner in student class tab when in ringing state
+function updateStudentCallBanner(){
+  var banner = document.getElementById('call-incoming-banner');
+  if(!banner) return;
+  if(typeof _callState !== 'undefined' && _callState === 'ringing'){
+    banner.innerHTML='<div style="background:linear-gradient(135deg,rgba(39,174,96,.2),rgba(46,204,113,.1));border:2px solid rgba(46,204,113,.6);border-radius:14px;padding:16px 18px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:14px;animation:callPulse 1.2s ease-in-out infinite;" onclick="callShowOverlay()">'
+      +'<div style="font-size:32px;">'+(typeof _callType!=='undefined'&&_callType==='video'?'📹':'📞')+'</div>'
+      +'<div style="flex:1;"><div style="color:#2ecc71;font-size:15px;font-weight:700;">Incoming Call!</div>'
+      +'<div style="color:var(--white);font-size:12px;margin-top:2px;">'+(typeof _callPeer!=='undefined'&&_callPeer?_callPeer:'Your teacher')+' is calling</div></div>'
+      +'<div style="display:flex;gap:8px;flex-shrink:0;">'
+      +'<button class="call-btn accept" onclick="event.stopPropagation();callAccept()" style="width:48px;height:48px;font-size:20px;">📞</button>'
+      +'<button class="call-btn decline" onclick="event.stopPropagation();callDecline()" style="width:48px;height:48px;font-size:20px;">📵</button>'
+      +'</div></div>';
+  } else {
+    banner.innerHTML='';
+  }
 }
 
 function renderTeacherMessages(){
@@ -13747,6 +14111,7 @@ function qqmPatchLeaderboard(){
 // ═══════════════════════════════════════════════════════════════════
 function qqmRenderHome(){
   renderHome(); // call original — no recursion since this is a different name
+  setTimeout(renderHomePortalCTA, 50);
   // Inject the Daily Motivation + Journey preview into home after render
   setTimeout(()=>{
     const pg = document.getElementById('page-home');
@@ -15809,7 +16174,7 @@ td{padding:8px 10px;font-size:12px;}
 /* ═══════════════════════════════════════════
    LIVE CALL SYSTEM — WebRTC + Firebase Signaling
 ═══════════════════════════════════════════ */
-#call-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);}
+#call-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(16px);pointer-events:all;}
 #call-overlay.hidden{display:none!important;}
 .call-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:520px;width:90%;text-align:center;position:relative;}
 .call-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--eml));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;border:3px solid var(--gold);}
@@ -18565,38 +18930,44 @@ function _callerPollForAnswer(){
 
 // Poll for incoming calls addressed to current user
 var _incomingPollInterval = null;
-var _lastCheckedCallId = null;
+var _seenCallIds = {};  // track all call IDs we've already processed
 
 function startIncomingCallPoller(){
   if(_incomingPollInterval) return; // already running
-  _incomingPollInterval = setInterval(function(){
-    if(!currentUser || _callState !== 'idle') return;
-    if(!myClassCode && !(currentUser.role==='teacher')) return;
-    // For teachers, check all their class codes
-    var codesToCheck = [];
-    if(currentUser.role === 'teacher'){
-      teacherGroups.forEach(function(g){ if(g.code) codesToCheck.push(g.code); });
-    } else if(myClassCode){
-      codesToCheck.push(myClassCode);
-    }
-    // Check Firebase for any call targeting this user
-    codesToCheck.forEach(function(code){
-      _fbGet('calls', function(allCalls){
-        if(!allCalls) return;
-        Object.keys(allCalls).forEach(function(cid){
-          if(cid === _lastCheckedCallId) return;
-          var call = allCalls[cid];
-          if(!call || !call.meta) return;
-          var meta = call.meta;
-          // Is this call for me?
-          if(meta.to === currentUser.name && meta.status === 'ringing' && meta.classCode === code){
-            _lastCheckedCallId = cid;
-            _showIncomingCall(cid, meta, call.offer);
-          }
-        });
-      });
+  _incomingPollInterval = setInterval(_checkIncomingCalls, 2000);
+  // Also run immediately
+  setTimeout(_checkIncomingCalls, 500);
+}
+
+function _checkIncomingCalls(){
+  if(!currentUser) return;
+  if(_callState !== 'idle') return;
+
+  _fbGet('calls', function(allCalls){
+    if(!allCalls || typeof allCalls !== 'object') return;
+    var myName = (currentUser.name||'').trim().toLowerCase();
+
+    Object.keys(allCalls).forEach(function(cid){
+      if(_seenCallIds[cid]) return; // already handled
+      var call = allCalls[cid];
+      if(!call || !call.meta) return;
+      var meta = call.meta;
+      if(!meta.to || !meta.status) return;
+
+      var toName = (meta.to||'').trim().toLowerCase();
+      var isForMe = (toName === myName);
+
+      if(isForMe && meta.status === 'ringing'){
+        _seenCallIds[cid] = true;
+        // Show the incoming call overlay
+        _showIncomingCall(cid, meta, call.offer);
+      }
+      // Clean up ended/declined calls from our seen list after 30s
+      if(meta.status === 'ended' || meta.status === 'declined'){
+        setTimeout(function(){ delete _seenCallIds[cid]; }, 30000);
+      }
     });
-  }, 3000);
+  });
 }
 
 function stopIncomingCallPoller(){
@@ -18621,7 +18992,11 @@ function _showIncomingCall(callId, meta, offer){
     '<button class="call-btn decline" onclick="callDecline()" title="Decline">📵</button>'
   );
   document.getElementById('call-avatar-emoji').textContent = _callType==='video' ? '📹' : '📞';
-  // Play ring tone (simple beep via Web Audio API)
+  
+  // Update the in-tab call banner without full re-render (avoids keyboard dismiss)
+  if(typeof updateStudentCallBanner==='function') setTimeout(updateStudentCallBanner, 50);
+  
+  // Play ring tone
   _callRing();
 }
 
@@ -18800,6 +19175,7 @@ function callCleanupConnection(){
   _pendingOffer = null; _callSeconds = 0;
   _appliedIceCandidates = {};
   callHideOverlay();
+  if(typeof updateStudentCallBanner==='function') setTimeout(updateStudentCallBanner,50);
 }
 
 // ══════════════════════════════
@@ -18858,9 +19234,16 @@ var _origUpdateNavAuth = typeof updateNavAuth === 'function' ? updateNavAuth : n
 if(_origUpdateNavAuth){
   window.updateNavAuth = function(){
     _origUpdateNavAuth.apply(this, arguments);
-    setTimeout(maybeStartCallPoller, 500);
+    setTimeout(maybeStartCallPoller, 300);
   };
 }
+
+// Start immediately if user is already logged in when this script loads
+setTimeout(function(){
+  if(typeof currentUser !== 'undefined' && currentUser && currentUser.name){
+    maybeStartCallPoller();
+  }
+}, 800);
 
 </script>
 
