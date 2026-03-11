@@ -961,15 +961,16 @@ var _fbReady = true;  // always ready — no SDK to wait for
 </button>
 
 <!-- ═══ ONLINE PRESENCE TOAST ═══ -->
-<div id="presence-toast" style="display:none;position:fixed;top:60px;right:12px;z-index:550;background:rgba(10,20,10,.95);border:1px solid rgba(46,204,113,.4);border-radius:12px;padding:10px 14px;min-width:220px;max-width:300px;backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(0,0,0,.5);font-size:12px;">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <span id="presence-icon" style="font-size:16px;">🟢</span>
-    <div>
-      <div id="presence-title" style="color:var(--white);font-weight:700;font-size:12px;"></div>
+<div id="presence-toast" style="display:none;position:fixed;top:60px;right:12px;z-index:550;background:rgba(10,20,10,.97);border:1px solid rgba(46,204,113,.4);border-radius:14px;padding:12px 14px;min-width:230px;max-width:310px;backdrop-filter:blur(20px);box-shadow:0 6px 28px rgba(0,0,0,.6);font-size:12px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="presence-icon" style="font-size:18px;flex-shrink:0;">🟢</span>
+    <div style="flex:1;min-width:0;">
+      <div id="presence-title" style="color:var(--white);font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
       <div id="presence-sub" style="color:var(--grey);font-size:11px;margin-top:1px;"></div>
     </div>
-    <button onclick="document.getElementById('presence-toast').style.display='none'" style="background:none;border:none;color:var(--greyd);cursor:pointer;margin-left:auto;font-size:14px;padding:0;">✕</button>
+    <button onclick="document.getElementById('presence-toast').style.display='none'" style="background:none;border:none;color:var(--greyd);cursor:pointer;flex-shrink:0;font-size:14px;padding:0;">✕</button>
   </div>
+  <div id="presence-action" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
 </div>
 
 <!-- ═══ RECITER MODAL ═══ -->
@@ -2405,6 +2406,57 @@ function logoutUser(){
   showToast('You have been signed out.');
 }
 
+// Edit Name
+function openEditName(){
+  var modal = document.getElementById('edit-name-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'edit-name-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.onclick = function(e){ if(e.target===modal) closeEditName(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div style="background:#1a1f1a;border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:360px;">'
+    + '<h3 style="margin:0 0 6px;color:var(--white);font-size:16px;">Edit Your Name</h3>'
+    + '<p style="color:var(--greyd);font-size:12px;margin:0 0 18px;">Updates your display name across the app.</p>'
+    + '<input id="edit-name-input" type="text" value="' + (currentUser ? currentUser.name.replace(/"/g,'&quot;') : '') + '" maxlength="40"'
+    + ' style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--white);font-size:15px;font-family:Lato,sans-serif;outline:none;margin-bottom:16px;"'
+    + ' oninput="this.style.borderColor=this.value.trim().length>=2?\'var(--em)\':\'var(--border)\'"'
+    + ' onkeydown="if(event.key===\'Enter\') saveEditName()">'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button onclick="saveEditName()" class="btn btn-g" style="flex:1;">Save</button>'
+    + '<button onclick="closeEditName()" class="btn" style="flex:1;background:rgba(255,255,255,.07);color:var(--greyd);">Cancel</button>'
+    + '</div></div>';
+  modal.style.display = 'flex';
+  setTimeout(function(){
+    var inp = document.getElementById('edit-name-input');
+    if(inp){ inp.focus(); inp.select(); }
+  }, 80);
+}
+function closeEditName(){
+  var modal = document.getElementById('edit-name-modal');
+  if(modal) modal.style.display = 'none';
+}
+function saveEditName(){
+  var inp = document.getElementById('edit-name-input');
+  if(!inp) return;
+  var newName = inp.value.trim();
+  if(newName.length < 2){ showToast('Name must be at least 2 characters'); inp.focus(); return; }
+  if(!currentUser){ closeEditName(); return; }
+  currentUser.name = newName;
+  saveSession(currentUser);
+  var db = getAuthDB();
+  var key = currentUser.phone || currentUser.email || '';
+  if(db[key]){ db[key].name = newName; saveAuthDB(db); }
+  _presenceGoOnline();
+  updateNavAuth();
+  if(typeof renderDashboard === 'function') renderDashboard();
+  closeEditName();
+  showToast('Name updated!');
+}
+
+
+
 // ==========================================================
 // ---- ONLINE PRESENCE SYSTEM ----
 // ==========================================================
@@ -2472,9 +2524,27 @@ function _showPresenceToast(name, role, isOnline){
   if(!toast) return;
   icon.textContent = isOnline ? (role==='teacher'?'🏫':'🎓') : '⚫';
   title.textContent = name + (isOnline?' is now online':' went offline');
-  sub.textContent = role==='teacher'?'Your teacher is available':'Student joined the app';
+  sub.textContent = role==='teacher'?'Your teacher is available':'Student is online';
+  var actionEl = document.getElementById('presence-action');
+  if(actionEl){
+    if(isOnline){
+      var safeName = name.replace(/'/g,"\\'");
+      actionEl.innerHTML =
+        '<button onclick="_presenceCallFromToast(\''+ safeName +'\',\'voice\')" style="background:rgba(46,204,113,.2);border:1px solid rgba(46,204,113,.4);color:#2ecc71;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;margin-right:6px;">📞 Call</button>'+
+        '<button onclick="_presenceCallFromToast(\''+ safeName +'\',\'video\')" style="background:rgba(41,128,185,.2);border:1px solid rgba(41,128,185,.4);color:#5dade2;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;">📹 Video</button>';
+    } else {
+      actionEl.innerHTML = '';
+    }
+  }
   toast.style.display = 'flex';
-  setTimeout(function(){ toast.style.display='none'; }, 7000);
+  if(toast._hideTimeout) clearTimeout(toast._hideTimeout);
+  toast._hideTimeout = setTimeout(function(){ toast.style.display='none'; }, 8000);
+}
+
+function _presenceCallFromToast(name, type){
+  var toast = document.getElementById('presence-toast');
+  if(toast) toast.style.display='none';
+  callDirect(name, type);
 }
 
 function _renderOnlineIndicators(presenceData, now){
@@ -2493,6 +2563,9 @@ function _renderOnlineIndicators(presenceData, now){
   // Update teacher overview online count widget if it exists
   var countEl = document.getElementById('online-count');
   if(countEl) countEl.textContent = onlineCount;
+  // Update call tab online counter if visible
+  var callTabCount = document.getElementById('call-tab-online-count');
+  if(callTabCount) callTabCount.textContent = onlineCount;
 }
 
 // Hook into onAuthSuccess to go online
@@ -5808,7 +5881,7 @@ function renderDashboard(){
   html('page-dashboard',`
     <div style="margin-bottom:20px;">
       <button onclick="navBack()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:10px;padding:0;">← Back</button>
-      <h2 class="dp" style="color:var(--white);font-size:clamp(16px,4vw,26px);letter-spacing:2px;">${pageTitle}${isViewingStudent?'':roleBadge}</h2>
+      <h2 class="dp" style="color:var(--white);font-size:clamp(16px,4vw,26px);letter-spacing:2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">${pageTitle}${isViewingStudent?'':roleBadge}<button onclick="openEditName()" title="Edit name" style="background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--greyd);flex-shrink:0;">&#9998; Edit Name</button></h2>
       ${!isViewingStudent?`<p style="color:var(--greyd);font-size:12px;margin-top:4px;">Streak: <span style="color:#e67e22;font-weight:700;">${getStreak()} 🔥</span> · Points: <span style="color:var(--gold);font-weight:700;">${(sessionPoints+4250).toLocaleString()} ⭐</span></p>`:''}
     </div>
     ${!isViewingStudent&&tabs.length>1?`<div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;">
@@ -7359,91 +7432,147 @@ function saveTeacherReminders(){
   showToast('✅ Reminders saved!');
 }
 
-// ── Teacher Messages ──
+// ── Resolve class code for a contact by name (teacher uses groups, student uses myClassCode) ──
+function _resolveCallCode(targetName){
+  if(currentUser && currentUser.role === 'teacher'){
+    var grp = teacherGroups.find(function(g){ return g.students && g.students.includes(targetName) && g.code; });
+    return grp ? grp.code : (teacherGroups.find(function(g){return g.code;})||{}).code || null;
+  }
+  return myClassCode || null;
+}
+
+// ── Direct call by name — no code required ──
+function callDirect(targetName, type){
+  var code = _resolveCallCode(targetName);
+  if(!code){ showToast('⚠️ No class linked to '+targetName); return; }
+  callStart(targetName, code, type||'voice');
+}
+
+// ── Get live presence snapshot (returns object keyed by sanitised name) ──
+function _getPresenceSnapshot(cb){
+  _fbGet('presence', function(data){ cb(data||{}); });
+}
+
+// ── Render teacher call tab: live presence contact list ──
 function renderTeacherCallTab(){
   maybeStartCallPoller();
-  var allStudents = [...new Set(teacherGroups.flatMap(function(g){return g.students;}))];
-  var classCodes = teacherGroups.filter(function(g){return g.code;});
+  var allStudents = Array.from(new Set(teacherGroups.flatMap(function(g){return g.students||[];})));
+  var now = Date.now();
+
+  // Build presence map from known online cache
+  function _isOnline(name){
+    return !!_presenceKnownOnline[name];
+  }
+
+  var online  = allStudents.filter(_isOnline);
+  var offline = allStudents.filter(function(s){ return !_isOnline(s); });
+  var sorted  = online.concat(offline);
+
+  function _contactRow(s, isOnline){
+    var grp  = teacherGroups.find(function(g){ return g.students && g.students.includes(s) && g.code; });
+    var code = grp ? grp.code : null;
+    var initials = s.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    var avatarBg = isOnline
+      ? 'linear-gradient(135deg,#1a7a3c,#27ae60)'
+      : 'linear-gradient(135deg,#2a3a2a,#3a4a3a)';
+    var statusDot = isOnline
+      ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2ecc71;box-shadow:0 0 8px #2ecc71;flex-shrink:0;" title="Online now"></span>'
+      : '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3a4a3a;flex-shrink:0;" title="Offline"></span>';
+    var statusLabel = isOnline
+      ? '<span style="color:#2ecc71;font-size:10px;font-weight:600;">● Online</span>'
+      : '<span style="color:var(--greyd);font-size:10px;">○ Offline</span>';
+    return `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);" data-presence-row="${s}">
+      <div style="position:relative;flex-shrink:0;">
+        <div style="width:44px;height:44px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;border:2px solid ${isOnline?'rgba(46,204,113,.5)':'transparent'};">${initials}</div>
+        <div style="position:absolute;bottom:1px;right:1px;">${statusDot}</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s}</div>
+        <div style="margin-top:2px;">${statusLabel}${code?'<span style="color:var(--greyd);font-size:10px;"> · '+code+'</span>':''}</div>
+      </div>
+      <div style="display:flex;gap:7px;flex-shrink:0;">
+        <button onclick="callDirect('${s}','voice')" title="Voice call"
+          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;
+          background:${isOnline?'linear-gradient(135deg,#1a7a3c,#27ae60)':'rgba(255,255,255,.07)'};
+          color:${isOnline?'#fff':'var(--greyd)'};
+          box-shadow:${isOnline?'0 2px 12px rgba(46,204,113,.3)':'none'};">
+          📞 <span>${isOnline?'Call':'Voice'}</span>
+        </button>
+        <button onclick="callDirect('${s}','video')" title="Video call"
+          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;
+          background:${isOnline?'linear-gradient(135deg,#1a3d7a,#2980b9)':'rgba(255,255,255,.07)'};
+          color:${isOnline?'#fff':'var(--greyd)'};
+          box-shadow:${isOnline?'0 2px 12px rgba(41,128,185,.3)':'none'};">
+          📹 <span>Video</span>
+        </button>
+      </div>
+    </div>`;
+  }
 
   return `
     ${renderTeacherNavTabs()}
-    <div style="margin-bottom:20px;">
-      <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:4px;">📞 Live Call with Students</h3>
-      <p style="color:var(--greyd);font-size:12px;">Start a voice or video call with any student in your class. Students will see a notification and can answer from their dashboard.</p>
-    </div>
 
-    ${classCodes.length===0?`
-    <div class="card" style="padding:30px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:12px;">🔑</div>
-      <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">No Class Code Generated</h4>
-      <p style="color:var(--greyd);font-size:13px;margin-bottom:16px;">Generate a class code first so students can join and receive calls.</p>
-      <button class="btn btn-g" onclick="teacherSubTab='groups';renderDashboard()">👥 Go to Groups →</button>
-    </div>
-    `:`
-    <!-- How it works -->
-    <div class="card" style="padding:18px;margin-bottom:16px;background:rgba(26,122,60,.06);border-color:rgba(46,204,113,.2);">
-      <div style="display:flex;align-items:flex-start;gap:12px;">
-        <span style="font-size:24px;">ℹ️</span>
-        <div>
-          <div style="color:var(--emb);font-size:12px;font-weight:700;margin-bottom:6px;">How Calls Work</div>
-          <div style="color:var(--grey);font-size:12px;line-height:1.7;">
-            1. Click a call button below &nbsp;→&nbsp; allow microphone/camera when prompted<br>
-            2. Student sees an incoming call notification on their dashboard<br>
-            3. Both devices connect directly — no server in the middle<br>
-            4. Works best on the same WiFi network or with a stable internet connection
-          </div>
-        </div>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:3px;">📞 Direct Calls</h3>
+        <p style="color:var(--greyd);font-size:12px;">Call any student directly — no code needed. Green means online now.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:20px;padding:6px 14px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#2ecc71;box-shadow:0 0 6px #2ecc71;display:inline-block;"></span>
+        <span style="color:#2ecc71;font-size:12px;font-weight:600;" id="call-tab-online-count">${online.length}</span>
+        <span style="color:var(--greyd);font-size:12px;"> online</span>
       </div>
     </div>
 
-    <!-- Call students -->
-    <div class="card" style="padding:22px;margin-bottom:16px;">
-      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">📋 Call a Student</h4>
-      ${allStudents.length===0?`
-        <div style="text-align:center;padding:24px;color:var(--greyd);">
-          <div style="font-size:32px;margin-bottom:8px;">👥</div>
-          <p style="font-size:12px;">No students have joined your class yet.</p>
-        </div>
-      `:allStudents.map(function(s){
-        var grp = teacherGroups.find(function(g){return g.students.includes(s)&&g.code;});
-        var code = grp ? grp.code : null;
+    ${allStudents.length===0?`
+    <div class="card" style="padding:40px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:14px;">👥</div>
+      <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">No Students Yet</h4>
+      <p style="color:var(--greyd);font-size:13px;margin-bottom:18px;">Share your class code so students can join your class.</p>
+      <button class="btn btn-g" onclick="teacherSubTab='groups';renderDashboard()">👥 Go to Groups →</button>
+    </div>
+    `:`
+    <!-- Online now banner -->
+    ${online.length>0?`
+    <div style="background:linear-gradient(135deg,rgba(46,204,113,.12),rgba(26,122,60,.08));border:1px solid rgba(46,204,113,.25);border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:22px;">🟢</div>
+      <div>
+        <div style="color:#2ecc71;font-size:12px;font-weight:700;margin-bottom:2px;">${online.length} student${online.length!==1?'s':''} online right now</div>
+        <div style="color:var(--greyd);font-size:11px;">${online.slice(0,3).join(', ')}${online.length>3?' and '+(online.length-3)+' more':''}</div>
+      </div>
+    </div>
+    `:''}
+
+    <!-- Contact list -->
+    <div class="card" style="padding:6px 20px 4px;">
+      ${online.length>0?`<div style="color:var(--greyd);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 0 6px;">Online Now · ${online.length}</div>`:''}
+      ${online.map(function(s){ return _contactRow(s,true); }).join('')}
+      ${offline.length>0&&online.length>0?`<div style="color:var(--greyd);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:16px 0 6px;">Offline · ${offline.length}</div>`:''}
+      ${offline.map(function(s){ return _contactRow(s,false); }).join('')}
+    </div>
+
+    <!-- Group notify -->
+    ${teacherGroups.filter(function(g){return g.code&&g.students&&g.students.length>0;}).length>0?`
+    <div class="card" style="padding:18px;margin-top:14px;">
+      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">📢 Notify Whole Class</h4>
+      ${teacherGroups.filter(function(g){return g.code&&g.students&&g.students.length>0;}).map(function(g){
+        var onlineInGroup = (g.students||[]).filter(_isOnline).length;
         return `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--eml));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;">${s[0].toUpperCase()}</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border-radius:12px;margin-bottom:8px;">
           <div style="flex:1;">
-            <div style="color:var(--white);font-size:13px;font-weight:600;">${s}</div>
-            <div style="color:var(--greyd);font-size:10px;">${code?'Class: '+code:'No class linked'}</div>
+            <div style="color:var(--white);font-size:13px;font-weight:600;">${g.name}</div>
+            <div style="color:var(--greyd);font-size:11px;">${g.students.length} student${g.students.length!==1?'s':''}${onlineInGroup>0?' · <span style="color:#2ecc71;font-weight:600;">'+onlineInGroup+' online</span>':''}</div>
           </div>
-          <div style="display:flex;gap:6px;">
-            ${code?`
-            <button class="call-start-btn" onclick="callStart('${s}','${code}','voice')" title="Voice call">
-              📞 Voice
-            </button>
-            <button class="call-start-btn video-call" onclick="callStart('${s}','${code}','video')" title="Video call">
-              📹 Video
-            </button>
-            `:`<span style="color:var(--greyd);font-size:11px;">No class code</span>`}
-          </div>
+          <button onclick="sendGroupCallNotification('${g.code}','${g.name}')"
+            style="padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--greyd);font-size:12px;cursor:pointer;">
+            📢 Notify All
+          </button>
         </div>`;
       }).join('')}
     </div>
-
-    <!-- Group call / broadcast call info -->
-    <div class="card" style="padding:22px;">
-      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">📢 Class Broadcast Call</h4>
-      <p style="color:var(--greyd);font-size:12px;line-height:1.7;margin-bottom:14px;">
-        To hold a group lesson, use the voice/video call with one student at a time. For larger classes, share your screen via the video call — students can watch while you teach from the Hifdh or Tajweed module.
-      </p>
-      ${classCodes.map(function(g){return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
-        <span style="font-size:18px;">🏫</span>
-        <div style="flex:1;">
-          <div style="color:var(--white);font-size:13px;font-weight:600;">${g.name}</div>
-          <div style="color:var(--greyd);font-size:10px;">${g.students.length} student${g.students.length!==1?'s':''} · Code: <strong style="color:var(--goldl);letter-spacing:2px;">${g.code}</strong></div>
-        </div>
-        <button class="call-start-btn" onclick="sendGroupCallNotification('${g.code}','${g.name}')">📢 Notify All</button>
-      </div>`;}).join('')}
-    </div>
+    `:''}
     `}`;
 }
 
@@ -7458,66 +7587,80 @@ function sendGroupCallNotification(classCode, className){
   }).then(function(){ showToast('📢 All students in '+className+' have been notified!'); });
 }
 
+// ── Student call tab: teacher presence + direct call ──
 function renderStudentCallTab(){
   maybeStartCallPoller();
-  var hasClass = !!myClassCode;
-  var classData = _liveClassData;
+  var hasClass   = !!myClassCode;
+  var classData  = _liveClassData;
   var teacherName = classData ? classData.teacher : null;
+  var teacherOnline = teacherName ? !!_presenceKnownOnline[teacherName] : false;
 
   return `
-    <div style="margin-bottom:20px;">
-      <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:4px;">📞 Call Your Teacher</h3>
-      <p style="color:var(--greyd);font-size:12px;">Start a live voice or video session with your teacher. Your teacher can also call you directly.</p>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:3px;">📞 Call Your Teacher</h3>
+        <p style="color:var(--greyd);font-size:12px;">Call directly — no code required. Your teacher will see it instantly.</p>
+      </div>
     </div>
 
     ${!hasClass?`
-    <div class="card" style="padding:30px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+    <div class="card" style="padding:40px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:14px;">🔑</div>
       <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">Join a Class First</h4>
-      <p style="color:var(--greyd);font-size:13px;margin-bottom:16px;">You need to join a class before you can call your teacher.</p>
+      <p style="color:var(--greyd);font-size:13px;margin-bottom:18px;">You need to join a class before you can call your teacher.</p>
       <button class="btn btn-g" onclick="_sstab='class';renderDashboard()">📚 Join a Class →</button>
     </div>
     `:`
-    <!-- How it works -->
-    <div class="card" style="padding:18px;margin-bottom:16px;background:rgba(26,122,60,.06);border-color:rgba(46,204,113,.2);">
-      <div style="display:flex;align-items:flex-start;gap:12px;">
-        <span style="font-size:24px;">ℹ️</span>
-        <div>
-          <div style="color:var(--emb);font-size:12px;font-weight:700;margin-bottom:6px;">How Calls Work</div>
-          <div style="color:var(--grey);font-size:12px;line-height:1.7;">
-            • Tap a call button to request a session with your teacher<br>
-            • Your teacher will see the call on their dashboard and can answer<br>
-            • Allow microphone access when your browser asks<br>
-            • Works best with headphones to avoid echo
+    <!-- Teacher card -->
+    <div class="card" style="padding:28px;margin-bottom:16px;${teacherOnline?'border-color:rgba(46,204,113,.35);background:linear-gradient(135deg,rgba(26,122,60,.08),rgba(0,0,0,0));':''}">
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+        <!-- Avatar -->
+        <div style="position:relative;flex-shrink:0;">
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#c9a84c);display:flex;align-items:center;justify-content:center;font-size:26px;border:2px solid ${teacherOnline?'rgba(46,204,113,.6)':'var(--gold)'};">🏫</div>
+          <div style="position:absolute;bottom:2px;right:2px;width:14px;height:14px;border-radius:50%;background:${teacherOnline?'#2ecc71':'#3a4a3a'};border:2px solid #111;box-shadow:${teacherOnline?'0 0 8px #2ecc71':'none'};"></div>
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0;">
+          <div style="color:var(--white);font-size:16px;font-weight:700;">${teacherName||'Your Teacher'}</div>
+          <div style="margin-top:4px;">
+            ${teacherOnline
+              ? '<span style="color:#2ecc71;font-size:12px;font-weight:600;">● Online now — available to take your call</span>'
+              : '<span style="color:var(--greyd);font-size:12px;">○ Offline — your call will notify them</span>'}
           </div>
+          <div style="color:var(--greyd);font-size:11px;margin-top:4px;">Class: <strong style="color:var(--goldl);letter-spacing:1px;">${myClassCode}</strong></div>
         </div>
       </div>
-    </div>
 
-    <!-- Call teacher -->
-    <div class="card" style="padding:28px;text-align:center;margin-bottom:16px;">
-      <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#c9a84c);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;border:2px solid var(--gold);">🏫</div>
-      <h4 style="color:var(--white);font-size:16px;margin-bottom:4px;">${teacherName||'Your Teacher'}</h4>
-      <div style="color:var(--greyd);font-size:11px;margin-bottom:20px;">Class: <strong style="color:var(--goldl);letter-spacing:2px;">${myClassCode}</strong></div>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="call-start-btn" style="padding:12px 22px;font-size:13px;" onclick="callStart('${teacherName||'Teacher'}','${myClassCode}','voice')">
+      <!-- Call buttons -->
+      <div style="display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;">
+        <button onclick="callDirect('${teacherName||'Teacher'}','voice')"
+          style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:28px;border:none;cursor:pointer;font-size:14px;font-weight:700;
+          background:${teacherOnline?'linear-gradient(135deg,#1a7a3c,#27ae60)':'rgba(255,255,255,.08)'};
+          color:${teacherOnline?'#fff':'var(--greyd)'};
+          box-shadow:${teacherOnline?'0 4px 18px rgba(46,204,113,.35)':'none'};transition:.2s;">
           📞 Voice Call
         </button>
-        <button class="call-start-btn video-call" style="padding:12px 22px;font-size:13px;" onclick="callStart('${teacherName||'Teacher'}','${myClassCode}','video')">
+        <button onclick="callDirect('${teacherName||'Teacher'}','video')"
+          style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:28px;border:none;cursor:pointer;font-size:14px;font-weight:700;
+          background:${teacherOnline?'linear-gradient(135deg,#1a3d7a,#2980b9)':'rgba(255,255,255,.08)'};
+          color:${teacherOnline?'#fff':'var(--greyd)'};
+          box-shadow:${teacherOnline?'0 4px 18px rgba(41,128,185,.35)':'none'};transition:.2s;">
           📹 Video Call
         </button>
       </div>
+      ${!teacherOnline?`<p style="color:var(--greyd);font-size:11px;margin-top:12px;text-align:center;">Calling while offline will send a notification — they can call back when they're available.</p>`:''}
     </div>
 
     <!-- Tips -->
     <div class="card" style="padding:18px;">
-      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">💡 Tips for Your Session</h4>
+      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">💡 Session Tips</h4>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="grid2">
         ${[
-          ['🎙','Speak Clearly','Recite slowly so your teacher can correct your tajweed'],
-          ['📿','Have Your Mushaf','Keep your Qur\'an open to the surah you\'re studying'],
-          ['🔇','Find a Quiet Spot','Reduce background noise for better audio quality'],
-          ['🕐','Be On Time','Join at your scheduled lesson time']
+          ['🎙','Speak Clearly','Recite slowly for tajweed correction'],
+          ['📿','Have Your Mushaf','Keep your Qur\'an open'],
+          ['🔇','Find a Quiet Spot','Reduce background noise'],
+          ['🎧','Use Headphones','Prevents echo and feedback']
         ].map(function(t){return `
         <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.03);border-radius:8px;">
           <span style="font-size:18px;flex-shrink:0;">${t[0]}</span>
@@ -19250,7 +19393,12 @@ async function callToggleScreenShare(){
     if(_pc){
       var vt=_screenShareStream.getVideoTracks()[0];
       var vs=_pc.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
-      if(vs){vs.replaceTrack(vt);_screenShareSender=vs;}
+      if(vs){
+        vs.replaceTrack(vt);_screenShareSender=vs;
+      } else {
+        // Voice call - add video track so remote receives the screen
+        _screenShareSender=_pc.addTrack(vt,_screenShareStream);
+      }
     }
     var ssv=document.getElementById('screenshare-view');
     if(ssv){ssv.srcObject=_screenShareStream;ssv.style.display='block';}
@@ -19395,6 +19543,171 @@ var _origCallStartBtn = null;
 // ══════════════════════════════
 // INCOMING CALL POLLER
 // ══════════════════════════════
+
+// ══════════════════════════════
+// OUTGOING CALL (Caller side)
+// ══════════════════════════════
+
+async function callStart(targetName, classCode, type){
+  if(!currentUser){ showToast('Please sign in first'); return; }
+  if(_callState !== 'idle'){ showToast('Already in a call'); return; }
+  // Auto-resolve class code if not provided
+  if(!classCode) classCode = _resolveCallCode(targetName);
+  if(!classCode){ showToast('No class linked — cannot start call'); return; }
+
+  _callType = type || 'voice';
+  _callPeer = targetName;
+  _callCode = classCode;
+  _callRole = 'caller';
+  _callId = _genCallId();
+  _callState = 'calling';
+
+  callShowRinging(
+    (_callType==='video' ? '📹 Video Calling…' : '📞 Voice Calling…'),
+    targetName,
+    '<button class="call-btn end" onclick="callEnd()" title="Cancel">📵</button>'
+  );
+  var cst = document.getElementById('call-status-text');
+  var cae = document.getElementById('call-avatar-emoji');
+  if(cst) cst.textContent = 'Calling ' + targetName + '…';
+  if(cae) cae.textContent = _callType==='video' ? '📹' : '📞';
+
+  try {
+    _localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:_callType==='video' });
+    if(_callType==='video'){
+      var lv = document.getElementById('local-video');
+      if(lv) lv.srcObject = _localStream;
+    }
+    _pc = new RTCPeerConnection(ICE_SERVERS);
+    _localStream.getTracks().forEach(function(t){ _pc.addTrack(t, _localStream); });
+    _pc.ontrack = function(ev){
+      var rv = document.getElementById('remote-video');
+      if(rv && ev.streams[0]) rv.srcObject = ev.streams[0];
+      if(_callType==='voice'){
+        var au = document.getElementById('remote-audio');
+        if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
+        au.srcObject = ev.streams[0];
+      }
+    };
+    _pc.onicecandidate = function(ev){ if(ev.candidate&&_callId) _pushIceCandidate(_callId,'caller',ev.candidate); };
+    _pc.onconnectionstatechange = function(){
+      var s=_pc.connectionState;
+      var el=document.getElementById('call-active-status'); if(el) el.textContent=s==='connected'?'Call in progress':s;
+      if(s==='disconnected'||s==='failed'||s==='closed') callEnd();
+    };
+    var offer = await _pc.createOffer();
+    await _pc.setLocalDescription(offer);
+    await _callWrite(_callId, {
+      meta:{ callId:_callId, from:currentUser.name, fromRole:currentUser.role, to:targetName,
+             type:_callType, classCode:classCode, status:'ringing', started:new Date().toISOString() },
+      offer:{ type:offer.type, sdp:offer.sdp }
+    });
+    _fbPush('classes/'+classCode+'/messages',{
+      from:currentUser.name, role:currentUser.role, to:targetName,
+      msg:(_callType==='video'?'📹':'📞')+' '+currentUser.name+' is calling you — open your Dashboard to answer!',
+      callId:_callId, callType:_callType,
+      date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
+      read:false, isCall:true
+    });
+    _callPollInterval = setInterval(_callerPollForAnswer, 2000);
+  } catch(err){
+    console.error('Call error:',err);
+    callEnd();
+    showToast(err.name==='NotAllowedError'?'❌ Microphone/camera permission denied':'❌ Could not start call: '+err.message);
+  }
+}
+
+function _callerPollForAnswer(){
+  if(!_callId||_callState!=='calling') return;
+  _callGet(_callId, async function(data){
+    if(!data) return;
+    if(data.meta&&data.meta.status==='declined'){
+      clearInterval(_callPollInterval);
+      showToast('📵 Call declined');
+      callCleanupConnection(); return;
+    }
+    if(data.answer&&_pc&&_pc.signalingState!=='stable'){
+      clearInterval(_callPollInterval);
+      try{
+        await _pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        if(data.candidates&&data.candidates.callee){
+          Object.values(data.candidates.callee).forEach(async function(c){
+            try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+          });
+        }
+        _callState='connected';
+        callShowActive(_callPeer, _callType==='video');
+        var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connected';
+        _callPollInterval=setInterval(function(){ _pollRemoteIce('callee'); },3000);
+      }catch(e){ console.error('setRemoteDescription error:',e); }
+    }
+  });
+}
+
+var _appliedIceCandidates = {};
+function _pollRemoteIce(remoteRole){
+  if(!_callId||!_pc) return;
+  _callGet(_callId, function(data){
+    if(!data||!data.candidates||!data.candidates[remoteRole]) return;
+    Object.keys(data.candidates[remoteRole]).forEach(function(k){
+      if(_appliedIceCandidates[k]) return;
+      _appliedIceCandidates[k]=true;
+      var c=data.candidates[remoteRole][k];
+      try{ _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+    });
+  });
+}
+
+async function callAccept(){
+  if(_callState!=='ringing'||!_pendingOffer) return;
+  clearInterval(_ringOscInterval);
+  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connecting…';
+  var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='';
+  try{
+    _localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:_callType==='video'});
+    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
+    _pc=new RTCPeerConnection(ICE_SERVERS);
+    _localStream.getTracks().forEach(function(t){ _pc.addTrack(t,_localStream); });
+    _pc.ontrack=function(ev){
+      var rv=document.getElementById('remote-video'); if(rv&&ev.streams[0]) rv.srcObject=ev.streams[0];
+      if(_callType==='voice'){
+        var au=document.getElementById('remote-audio');
+        if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
+        au.srcObject=ev.streams[0];
+      }
+    };
+    _pc.onicecandidate=function(ev){ if(ev.candidate&&_callId) _pushIceCandidate(_callId,'callee',ev.candidate); };
+    _pc.onconnectionstatechange=function(){
+      var s=_pc.connectionState;
+      var el=document.getElementById('call-active-status'); if(el) el.textContent=s==='connected'?'Call in progress':s;
+      if(s==='disconnected'||s==='failed'||s==='closed') callEnd();
+    };
+    await _pc.setRemoteDescription(new RTCSessionDescription(_pendingOffer));
+    _callGet(_callId,async function(data){
+      if(data&&data.candidates&&data.candidates.caller){
+        Object.values(data.candidates.caller).forEach(async function(c){
+          try{ await _pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
+        });
+      }
+    });
+    var answer=await _pc.createAnswer();
+    await _pc.setLocalDescription(answer);
+    await _callWrite(_callId,{answer:{type:answer.type,sdp:answer.sdp},'meta/status':'connected'});
+    _callState='connected';
+    callShowActive(_callPeer,_callType==='video');
+    _callPollInterval=setInterval(function(){ _pollRemoteIce('caller'); },3000);
+  }catch(err){
+    console.error('Accept call error:',err);
+    callDecline();
+    showToast('❌ Could not connect: '+(err.name==='NotAllowedError'?'Microphone permission denied':err.message));
+  }
+}
+
+function callDecline(){
+  clearInterval(_ringOscInterval);
+  if(_callId){ _callWrite(_callId,{'meta/status':'declined'}); setTimeout(function(){ _callCleanup(_callId); },2000); }
+  callCleanupConnection();
+}
 
 var _incomingPollInterval = null;
 var _seenCallIds = {};
