@@ -21,7 +21,7 @@ body{background:var(--bg);color:var(--white);font-family:'Lato',sans-serif;overf
 .hidden{display:none!important;}
 
 /* ── NAV — two-tier ── */
-nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.5);}
+nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.5);min-height:50px;}
 /* Tier-1: identity row (logo + auth + hamburger) */
 .nav-inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.04);}
 /* Tier-2: scrollable pill-tab row */
@@ -508,10 +508,20 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .nav-reciter-btn{display:none;}
   .nav-actions{gap:4px;}
 }
+@media(min-width:901px){
+  .nav-pill-row{display:flex!important;}
+  .hamburger{display:none!important;}
+}
+
+@media(min-width:901px){
+  .nav-pill-row{display:flex!important;}
+  .hamburger{display:none!important;}
+}
 /* Shrink identity bar slightly on small desktop */
 @media(max-width:1100px) and (min-width:901px){
   .nav-register-btn{font-size:10px;padding:5px 10px;}
   .nav-pill{font-size:10px;padding:4px 10px;}
+  .nav-pill-row{display:flex!important;}
 }
 
 
@@ -797,111 +807,150 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 }
 
 </style>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<!-- Firebase: pure REST API — no SDK, no CDN, no blocking -->
 <script>
-// ── FIREBASE INIT ──
-const firebaseConfig = {
-  apiKey: "AIzaSyD_4SWxQ9MXi7iI3tynq_iK9dQ5Z81rL5s",
-  authDomain: "qur-an-quest-app.firebaseapp.com",
-  databaseURL: "https://qur-an-quest-app-default-rtdb.firebaseio.com",
-  projectId: "qur-an-quest-app",
-  storageBucket: "qur-an-quest-app.firebasestorage.app",
-  messagingSenderId: "258365684163",
-  appId: "1:258365684163:web:0e006ba5691211f21b6576"
-};
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
+// ── FIREBASE REST API ──
+// Uses fetch() directly against Firebase Realtime Database REST endpoint
+// No external scripts needed — works on GitHub Pages, offline-first friendly
+
+var _FB_URL = 'https://qur-an-quest-app-default-rtdb.firebaseio.com';
+var _FB_AUTH = '';  // open rules — no auth token needed
+var _fbListeners = {}; // polled listeners
+
+function _fbPath(path){
+  return _FB_URL + '/' + path + '.json' + (_FB_AUTH ? '?auth=' + _FB_AUTH : '');
+}
+
+// GET once
+function _fbGet(path, cb){
+  fetch(_fbPath(path))
+    .then(function(r){ return r.json(); })
+    .then(function(data){ cb(data); })
+    .catch(function(e){ console.warn('FB GET error', e); cb(null); });
+}
+
+// SET (PUT)
+function _fbSet(path, data){
+  return fetch(_fbPath(path), {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); });
+}
+
+// UPDATE (PATCH)
+function _fbUpdate(path, data){
+  return fetch(_fbPath(path), {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); });
+}
+
+// PUSH (POST)
+function _fbPush(path, data){
+  return fetch(_fbPath(path), {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); });
+}
+
+// Poll-based listener (checks every 5 seconds for changes)
+function _fbListen(path, cb, intervalMs){
+  intervalMs = intervalMs || 5000;
+  var key = path;
+  if(_fbListeners[key]) clearInterval(_fbListeners[key]);
+  // fire immediately
+  _fbGet(path, cb);
+  // then poll
+  _fbListeners[key] = setInterval(function(){ _fbGet(path, cb); }, intervalMs);
+}
+
+function _fbUnlisten(path){
+  if(_fbListeners[path]){
+    clearInterval(_fbListeners[path]);
+    delete _fbListeners[path];
+  }
+}
 
 // ── FIREBASE CLASS HELPERS ──
 
-// Write a class to Firebase
 function fbSetClass(code, data){
-  return db.ref('classes/'+code).set(data);
+  return _fbSet('classes/' + code, data);
 }
 
-// Read a class once from Firebase
 function fbGetClass(code, cb){
-  db.ref('classes/'+code).once('value', function(snap){
-    cb(snap.exists() ? snap.val() : null);
-  });
+  _fbGet('classes/' + code, function(data){ cb(data); });
 }
 
-// Listen to a class in real-time
 function fbListenClass(code, cb){
-  db.ref('classes/'+code).on('value', function(snap){
-    cb(snap.exists() ? snap.val() : null);
-  });
+  _fbListen('classes/' + code, function(data){ cb(data); }, 4000);
 }
 
-// Stop listening to a class
 function fbUnlistenClass(code){
-  db.ref('classes/'+code).off();
+  _fbUnlisten('classes/' + code);
 }
 
-// Update part of a class
 function fbUpdateClass(code, data){
-  return db.ref('classes/'+code).update(data);
+  return _fbUpdate('classes/' + code, data);
 }
 
-// Push a student into a class
 function fbAddStudent(code, studentName){
-  return db.ref('classes/'+code+'/students/'+studentName.replace(/[.#$/\[\]]/g,'_')).set({
+  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
+  return _fbSet('classes/' + code + '/students/' + key, {
     name: studentName,
-    joined: new Date().toISOString().slice(0,10)
+    joined: new Date().toISOString().slice(0, 10)
   });
 }
 
-// Push an assignment to a class
 function fbAddAssignment(code, assignment){
-  var ref = db.ref('classes/'+code+'/assignments').push();
-  assignment.id = ref.key;
   assignment.submissions = {};
-  assignment.sentDate = new Date().toISOString().slice(0,10);
-  return ref.set(assignment);
+  assignment.sentDate = new Date().toISOString().slice(0, 10);
+  return _fbPush('classes/' + code + '/assignments', assignment)
+    .then(function(res){
+      if(res && res.name) assignment.id = res.name;
+      return res;
+    });
 }
 
-// Submit an assignment (student)
 function fbSubmitAssignment(code, assignId, studentName){
-  var key = studentName.replace(/[.#$/\[\]]/g,'_');
-  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).set({
+  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
+  return _fbSet('classes/' + code + '/assignments/' + assignId + '/submissions/' + key, {
     name: studentName,
-    date: new Date().toISOString().slice(0,10),
+    date: new Date().toISOString().slice(0, 10),
     score: null,
     marked: false
   });
 }
 
-// Mark an assignment (teacher)
 function fbMarkAssignment(code, assignId, studentName, score){
-  var key = studentName.replace(/[.#$/\[\]]/g,'_');
-  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).update({
+  var key = studentName.replace(/[.#$\/\[\]\s]/g, '_');
+  return _fbUpdate('classes/' + code + '/assignments/' + assignId + '/submissions/' + key, {
     score: parseInt(score),
     marked: true
   });
 }
 
-// Send announcement
 function fbSendAnnouncement(code, message, teacherName){
-  return db.ref('classes/'+code+'/announcements').push({
+  return _fbPush('classes/' + code + '/announcements', {
     message: message,
     from: teacherName,
-    date: new Date().toISOString().slice(0,10),
+    date: new Date().toISOString().slice(0, 10),
     time: new Date().toLocaleTimeString()
   });
 }
 
-// Listen for announcements
 function fbListenAnnouncements(code, cb){
-  db.ref('classes/'+code+'/announcements').on('value', function(snap){
+  _fbListen('classes/' + code + '/announcements', function(data){
     var list = [];
-    if(snap.exists()) snap.forEach(function(c){ list.push(c.val()); });
+    if(data) Object.values(data).forEach(function(v){ list.push(v); });
     cb(list.reverse());
-  });
+  }, 5000);
 }
 
 var _fbClassListener = null;
+var _fbReady = true;  // always ready — no SDK to wait for
 </script>
 </head>
 <body>
@@ -1083,17 +1132,17 @@ var _fbClassListener = null;
 
 <!-- ═══ PAGES ═══ -->
 <div id="page-home" style="padding-top:88px;"></div>
-<div id="page-games" class="hidden" style="padding:80px 16px 60px;"></div>
-<div id="page-hifdh" class="hidden" style="padding:80px 16px 60px;max-width:1100px;margin:0 auto;"></div>
-<div id="page-tajweed" class="hidden" style="padding:80px 16px 60px;max-width:1100px;margin:0 auto;"></div>
-<div id="page-daily" class="hidden" style="padding:80px 16px 60px;max-width:760px;margin:0 auto;"></div>
-<div id="page-leaderboard" class="hidden" style="padding:80px 16px 60px;max-width:860px;margin:0 auto;"></div>
-<div id="page-dashboard" class="hidden" style="padding:80px 16px 60px;max-width:1160px;margin:0 auto;"></div>
+<div id="page-games" class="hidden" style="padding:88px 16px 60px;"></div>
+<div id="page-hifdh" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
+<div id="page-tajweed" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
+<div id="page-daily" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
+<div id="page-leaderboard" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
+<div id="page-dashboard" class="hidden" style="padding:88px 16px 60px;max-width:1160px;margin:0 auto;"></div>
 <div id="page-beginner" class="hidden" style="padding:80px 0 80px;"></div>
-<div id="page-journey"    class="hidden" style="padding:80px 16px 60px;max-width:900px;margin:0 auto;"></div>
-<div id="page-achievements" class="hidden" style="padding:80px 16px 60px;max-width:860px;margin:0 auto;"></div>
-<div id="page-listenrepeat" class="hidden" style="padding:80px 16px 60px;max-width:760px;margin:0 auto;"></div>
-<div id="page-recitepractice" class="hidden" style="padding:80px 16px 60px;max-width:760px;margin:0 auto;"></div>
+<div id="page-journey"    class="hidden" style="padding:88px 16px 60px;max-width:900px;margin:0 auto;"></div>
+<div id="page-achievements" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
+<div id="page-listenrepeat" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
+<div id="page-recitepractice" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
 
 <!-- Auth Modal -->
 <div id="auth-modal" class="overlay hidden" onclick="closeAuth(event)">
