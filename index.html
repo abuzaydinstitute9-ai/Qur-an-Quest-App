@@ -19836,5 +19836,1119 @@ setTimeout(function(){
 
 </script>
 
-</body>
+<!-- ═══════════════ RTC UPGRADE v1.0 INJECTED BELOW ═══════════════ -->
 </html>
+<!-- ═══════════════════════════════════════════════════════════════════
+     QUR'AN QUEST — REAL-TIME COMMUNICATION UPGRADE v1.0
+     Extends the existing call system WITHOUT changing any existing code.
+     Adds: Recording, Annotation Canvas, PiP, Adaptive Quality,
+           Post-class parent PDF, Recordings Library, Bandwidth Monitor
+═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── UPGRADE STYLES ── -->
+<style>
+/* ── Recording indicator ── */
+#rtc-rec-badge{
+  position:absolute;top:70px;left:16px;
+  display:none;align-items:center;gap:7px;
+  background:rgba(180,0,0,.9);color:#fff;
+  font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  padding:5px 13px;border-radius:20px;z-index:50;
+  border:1px solid rgba(255,80,80,.5);
+  box-shadow:0 2px 12px rgba(180,0,0,.5);
+}
+#rtc-rec-badge .rec-dot{
+  width:8px;height:8px;border-radius:50%;background:#ff4444;
+  animation:recBlink 1s ease-in-out infinite;
+}
+@keyframes recBlink{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+/* ── Annotation overlay canvas ── */
+#rtc-annot-canvas{
+  position:absolute;inset:0;z-index:35;
+  pointer-events:none;
+  touch-action:none;
+}
+#rtc-annot-canvas.drawing{pointer-events:all;cursor:crosshair;}
+
+/* ── Annotation toolbar ── */
+#rtc-annot-toolbar{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  z-index:40;display:none;flex-direction:column;gap:8px;
+  background:rgba(8,12,8,.92);border:1px solid rgba(201,168,76,.3);
+  border-radius:16px;padding:10px 8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  backdrop-filter:blur(16px);
+}
+#rtc-annot-toolbar.visible{display:flex;}
+.annot-btn{
+  width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);color:#fff;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .18s;position:relative;flex-shrink:0;
+}
+.annot-btn:hover{background:rgba(201,168,76,.22);border-color:rgba(201,168,76,.5);transform:scale(1.08);}
+.annot-btn.active{background:rgba(201,168,76,.3);border-color:var(--gold,#c9a84c);color:#f5d98a;}
+.annot-btn[data-tool="highlight"].active{background:rgba(255,200,0,.25);border-color:#ffc800;}
+.annot-btn[data-tool="underline"].active{background:rgba(100,200,255,.2);border-color:#64c8ff;}
+.annot-color-strip{
+  display:flex;flex-direction:column;gap:4px;padding:4px 6px;
+  background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.08);
+}
+.annot-color-dot{
+  width:18px;height:18px;border-radius:50%;cursor:pointer;
+  border:2px solid rgba(255,255,255,.2);transition:all .15s;
+}
+.annot-color-dot:hover,.annot-color-dot.active{
+  transform:scale(1.25);border-color:#fff;
+}
+
+/* ── Brush size slider ── */
+.annot-size-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;
+}
+.annot-size-wrap label{color:rgba(255,255,255,.4);font-size:9px;letter-spacing:.5px;}
+#rtc-brush-size{
+  -webkit-appearance:none;appearance:none;
+  width:6px;height:60px;
+  background:rgba(255,255,255,.12);
+  border-radius:4px;writing-mode:vertical-lr;direction:rtl;
+  outline:none;cursor:pointer;
+}
+#rtc-brush-size::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  border-radius:50%;background:#c9a84c;border:2px solid #fff;
+}
+
+/* ── Secondary controls row additions ── */
+#rtc-extra-controls{
+  display:none;align-items:center;justify-content:center;gap:20px;
+  margin-bottom:6px;
+}
+#rtc-extra-controls.visible{display:flex;}
+.rtc-extra-btn{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  background:none;border:none;cursor:pointer;
+}
+.rtc-extra-circle{
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  transition:all .18s;
+}
+.rtc-extra-circle:hover{background:rgba(255,255,255,.24);transform:scale(1.06);}
+.rtc-extra-circle.active{background:rgba(201,168,76,.25);border-color:rgba(201,168,76,.6);}
+.rtc-extra-circle.rec-active{background:rgba(180,0,0,.3);border-color:rgba(255,60,60,.7);}
+.rtc-extra-lbl{color:rgba(255,255,255,.55);font-size:10px;font-weight:600;letter-spacing:.5px;}
+
+/* ── Adaptive quality badge ── */
+#rtc-quality-badge{
+  position:absolute;bottom:155px;left:50%;transform:translateX(-50%);
+  font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  padding:3px 10px;border-radius:12px;z-index:40;
+  display:none;pointer-events:none;
+  transition:opacity .5s;
+}
+#rtc-quality-badge.q-good{background:rgba(46,204,113,.2);color:#2ecc71;border:1px solid rgba(46,204,113,.35);}
+#rtc-quality-badge.q-mid{background:rgba(243,156,18,.18);color:#f39c12;border:1px solid rgba(243,156,18,.35);}
+#rtc-quality-badge.q-poor{background:rgba(231,76,60,.18);color:#e74c3c;border:1px solid rgba(231,76,60,.35);}
+
+/* ── Post-class modal ── */
+#rtc-post-class-modal{
+  display:none;position:fixed;inset:0;z-index:199999;
+  background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(8px);
+}
+#rtc-post-class-modal.open{display:flex;}
+.rtc-pcm-inner{
+  background:#0f140f;border:1px solid rgba(201,168,76,.35);border-radius:20px;
+  padding:28px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.8);
+}
+.rtc-pcm-inner h3{font-family:'Cinzel',serif;color:#c9a84c;font-size:18px;margin-bottom:4px;}
+.rtc-pcm-inner p{color:#94a894;font-size:13px;margin-bottom:18px;}
+.rtc-lesson-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;
+  max-height:240px;overflow-y:auto;
+}
+.rtc-surah-chip{
+  padding:9px 10px;border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  color:#94a894;font-size:11px;font-weight:700;letter-spacing:.5px;
+  transition:all .18s;text-align:center;
+}
+.rtc-surah-chip:hover{background:rgba(26,122,60,.2);border-color:rgba(26,122,60,.4);color:#2ecc71;}
+.rtc-surah-chip.selected{background:rgba(26,122,60,.28);border-color:#1a7a3c;color:#2ecc71;}
+.rtc-pcm-note{
+  width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  color:#f0f0f0;border-radius:10px;padding:10px;font-size:13px;outline:none;
+  font-family:'Lato',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px;
+}
+.rtc-pcm-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* ── Recordings library ── */
+#rtc-recordings-lib{
+  display:none;position:fixed;inset:0;z-index:199998;
+  background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(8px);
+}
+#rtc-recordings-lib.open{display:flex;}
+.rtc-rl-inner{
+  background:#0f140f;border:1px solid rgba(52,152,219,.3);border-radius:20px;
+  padding:28px;max-width:660px;width:100%;max-height:88vh;overflow-y:auto;
+}
+.rtc-rl-inner h3{font-family:'Cinzel',serif;color:#74b9ff;font-size:18px;margin-bottom:4px;}
+.rtc-rl-inner>p{color:#94a894;font-size:13px;margin-bottom:20px;}
+.rtc-rec-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(52,152,219,.18);
+  border-radius:12px;padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;
+}
+.rtc-rec-card .rc-icon{font-size:28px;flex-shrink:0;}
+.rtc-rec-card .rc-info{flex:1;min-width:0;}
+.rtc-rec-card .rc-title{color:#f0f0f0;font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rtc-rec-card .rc-meta{color:#94a894;font-size:11px;}
+.rtc-rec-card .rc-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* ── PiP notice ── */
+#rtc-pip-notice{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(8,12,8,.95);border:1px solid rgba(201,168,76,.35);
+  color:#c9a84c;font-size:12px;font-weight:700;padding:10px 18px;
+  border-radius:20px;z-index:99998;display:none;
+  white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
+}
+
+/* ── Bandwidth meter bar ── */
+#rtc-bw-bar{
+  position:absolute;top:0;left:0;right:0;height:3px;z-index:60;
+  overflow:hidden;display:none;
+}
+#rtc-bw-fill{height:100%;width:100%;transition:background .5s,width .5s;border-radius:2px;}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  #rtc-annot-toolbar{left:8px;padding:7px 5px;}
+  .annot-btn{width:36px;height:36px;font-size:15px;}
+  .rtc-lesson-grid{grid-template-columns:1fr;}
+  .rtc-pcm-inner,.rtc-rl-inner{padding:18px;}
+}
+</style>
+
+<!-- ── ANNOTATION OVERLAY (injected into call-state-active via JS) ── -->
+
+<!-- ── POST CLASS MODAL ── -->
+<div id="rtc-post-class-modal">
+  <div class="rtc-pcm-inner">
+    <h3>📚 Class Summary</h3>
+    <p>Select what was covered today. This will be sent to parents automatically.</p>
+    <div class="rtc-lesson-grid" id="rtc-lesson-chips"></div>
+    <textarea class="rtc-pcm-note" id="rtc-lesson-note" rows="3" placeholder="Teacher notes for parents (optional)…"></textarea>
+    <div class="rtc-pcm-actions">
+      <button class="btn btn-gold" onclick="rtcDownloadLessonPDF()" style="flex:1;min-width:130px;">📄 Download PDF</button>
+      <button class="btn btn-g" onclick="rtcSendToParents()" style="flex:1;min-width:130px;">📨 Notify Parents</button>
+      <button class="btn btn-o" onclick="document.getElementById('rtc-post-class-modal').classList.remove('open')" style="flex:0 0 auto;">Skip</button>
+    </div>
+    <div id="rtc-pcm-status" style="margin-top:12px;font-size:12px;color:#94a894;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- ── RECORDINGS LIBRARY ── -->
+<div id="rtc-recordings-lib">
+  <div class="rtc-rl-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h3>🎬 Class Recordings</h3>
+        <p style="margin:0;">Your saved session recordings</p>
+      </div>
+      <button onclick="document.getElementById('rtc-recordings-lib').classList.remove('open')"
+        style="background:none;border:none;color:#94a894;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="rtc-rl-list">
+      <p style="text-align:center;color:#4a5e4a;padding:30px 0;">No recordings yet. Start recording during a live class.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── PiP NOTICE ── -->
+<div id="rtc-pip-notice">📹 Call continues in Picture-in-Picture</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   QUR'AN QUEST — RTC UPGRADE ENGINE
+   All code below is ADDITIVE. No existing functions are replaced.
+   Existing functions are monkey-patched via safe wrappers only.
+══════════════════════════════════════════════════════════════════════ */
+
+(function(){
+'use strict';
+
+/* ─── CONSTANTS ─────────────────────────────────── */
+var RTC_REC_KEY = 'qq_rtc_recordings_v1';
+
+/* ─── STATE ─────────────────────────────────────── */
+var _rtcRec = {
+  active: false,
+  mediaRecorder: null,
+  chunks: [],
+  startTime: null,
+  stream: null,   // composite stream
+  studentName: '',
+  type: ''        // 'audio'|'video'|'screen'
+};
+
+var _rtcAnnot = {
+  tool: 'pointer',  // pointer|marker|highlight|underline|eraser
+  color: '#f39c12',
+  size: 8,
+  drawing: false,
+  ctx: null,
+  canvas: null,
+  lastX: 0, lastY: 0,
+  pointerEl: null,
+  visible: false,   // toolbar shown
+  remoteVisible: false  // student side receiving via data channel (future)
+};
+
+var _rtcQuality = { level: 'good', lastCheck: 0, rtt: 0 };
+
+var _rtcRecordings = [];  // [{id,date,dur,label,blob,url}]
+
+/* ─── COLOUR PALETTE ────────────────────────────── */
+var ANNOT_COLORS = [
+  {c:'#f39c12',label:'Gold'},
+  {c:'#e74c3c',label:'Red'},
+  {c:'#2ecc71',label:'Green'},
+  {c:'#3498db',label:'Blue'},
+  {c:'#ffffff',label:'White'}
+];
+
+/* ══════════════════════════════════════════════════
+   STEP 1 — Inject UI elements into call-state-active
+══════════════════════════════════════════════════ */
+function _injectCallUI(){
+  var activePanel = document.getElementById('call-state-active');
+  if(!activePanel || activePanel._rtcUpgraded) return;
+  activePanel._rtcUpgraded = true;
+
+  /* Bandwidth bar */
+  activePanel.insertAdjacentHTML('afterbegin',
+    '<div id="rtc-bw-bar"><div id="rtc-bw-fill"></div></div>'
+  );
+
+  /* Recording badge */
+  activePanel.insertAdjacentHTML('beforeend',
+    '<div id="rtc-rec-badge" style="display:none;align-items:center;gap:7px;">' +
+    '<div class="rec-dot"></div>REC</div>'
+  );
+
+  /* Screen-share indicator: quality badge */
+  activePanel.insertAdjacentHTML('beforeend',
+    '<div id="rtc-quality-badge"></div>'
+  );
+
+  /* Annotation canvas */
+  activePanel.insertAdjacentHTML('beforeend',
+    '<canvas id="rtc-annot-canvas"></canvas>'
+  );
+
+  /* Annotation pointer dot */
+  activePanel.insertAdjacentHTML('beforeend',
+    '<div id="rtc-annot-pointer" style="position:absolute;width:20px;height:20px;border-radius:50%;' +
+    'background:rgba(243,156,18,.9);border:3px solid #fff;box-shadow:0 0 14px rgba(243,156,18,.8);' +
+    'pointer-events:none;display:none;transform:translate(-50%,-50%);z-index:37;transition:left .05s,top .05s;"></div>'
+  );
+
+  /* Annotation toolbar */
+  var annotHtml = '<div id="rtc-annot-toolbar">' +
+    '<div class="annot-btn active" data-tool="pointer" title="Pointer" onclick="rtcAnnotTool(\'pointer\')">👆</div>' +
+    '<div class="annot-btn" data-tool="marker" title="Marker / Draw" onclick="rtcAnnotTool(\'marker\')">✏️</div>' +
+    '<div class="annot-btn" data-tool="highlight" title="Highlight" onclick="rtcAnnotTool(\'highlight\')">🟡</div>' +
+    '<div class="annot-btn" data-tool="underline" title="Underline" onclick="rtcAnnotTool(\'underline\')">_</div>' +
+    '<div class="annot-btn" data-tool="eraser" title="Eraser" onclick="rtcAnnotTool(\'eraser\')">🧹</div>' +
+    '<div style="height:1px;background:rgba(255,255,255,.1);margin:2px 0;"></div>' +
+    '<div class="annot-color-strip">' +
+    ANNOT_COLORS.map(function(c,i){
+      return '<div class="annot-color-dot'+(i===0?' active':'')+'" style="background:'+c.c+';" ' +
+        'data-color="'+c.c+'" title="'+c.label+'" onclick="rtcAnnotColor(\''+c.c+'\')"></div>';
+    }).join('') +
+    '</div>' +
+    '<div class="annot-size-wrap"><label>SIZE</label>' +
+    '<input type="range" id="rtc-brush-size" min="3" max="30" value="8" ' +
+    'style="-webkit-appearance:slider-vertical;" oninput="rtcAnnotSize(this.value)">' +
+    '</div>' +
+    '<div class="annot-btn" title="Clear All" onclick="rtcAnnotClear()" style="font-size:13px;font-weight:900;color:#e74c3c;">CLR</div>' +
+    '</div>';
+  activePanel.insertAdjacentHTML('beforeend', annotHtml);
+
+  /* Extra control row (inject above secondary controls) */
+  var secRow = activePanel.querySelector('.call-controls-secondary');
+  if(secRow){
+    secRow.insertAdjacentHTML('beforebegin',
+      '<div id="rtc-extra-controls" class="call-controls-secondary">' +
+        '<button class="rtc-extra-btn" onclick="rtcToggleRecording()" title="Record class">' +
+          '<div class="rtc-extra-circle" id="rtc-rec-circle">⏺</div>' +
+          '<span class="rtc-extra-lbl" id="rtc-rec-lbl">Record</span>' +
+        '</button>' +
+        '<button class="rtc-extra-btn" onclick="rtcToggleAnnotToolbar()" title="Annotation tools">' +
+          '<div class="rtc-extra-circle" id="rtc-annot-circle">🖊️</div>' +
+          '<span class="rtc-extra-lbl">Annotate</span>' +
+        '</button>' +
+        '<button class="rtc-extra-btn" onclick="rtcRequestPiP()" title="Picture-in-Picture">' +
+          '<div class="rtc-extra-circle" id="rtc-pip-circle">⧉</div>' +
+          '<span class="rtc-extra-lbl">PiP</span>' +
+        '</button>' +
+      '</div>'
+    );
+  }
+
+  /* Make extra controls visible */
+  var ec = document.getElementById('rtc-extra-controls');
+  if(ec) ec.classList.add('visible');
+
+  /* Initialise annotation canvas */
+  _initAnnotCanvas();
+}
+
+/* ══════════════════════════════════════════════════
+   STEP 2 — Annotation Canvas
+══════════════════════════════════════════════════ */
+function _initAnnotCanvas(){
+  var canvas = document.getElementById('rtc-annot-canvas');
+  if(!canvas) return;
+  _rtcAnnot.canvas = canvas;
+
+  function _resize(){
+    var parent = canvas.parentElement;
+    if(!parent) return;
+    canvas.width = parent.offsetWidth;
+    canvas.height = parent.offsetHeight;
+  }
+  _resize();
+  window.addEventListener('resize', _resize);
+
+  _rtcAnnot.ctx = canvas.getContext('2d');
+  _rtcAnnot.pointerEl = document.getElementById('rtc-annot-pointer');
+
+  /* Mouse events */
+  canvas.addEventListener('mousedown', _annotStart);
+  canvas.addEventListener('mousemove', _annotMove);
+  canvas.addEventListener('mouseup', _annotEnd);
+  canvas.addEventListener('mouseleave', _annotEnd);
+  /* Touch events */
+  canvas.addEventListener('touchstart', function(e){_annotStart(e.touches[0]);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchmove', function(e){_annotMove(e.touches[0]);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchend', function(e){_annotEnd();e.preventDefault();},{passive:false});
+}
+
+function _annotCoords(e){
+  var canvas = _rtcAnnot.canvas;
+  var r = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (canvas.width / r.width),
+    y: (e.clientY - r.top) * (canvas.height / r.height)
+  };
+}
+
+function _annotStart(e){
+  if(!_rtcAnnot.canvas || !_rtcAnnot.ctx) return;
+  var p = _annotCoords(e);
+  _rtcAnnot.drawing = true;
+  _rtcAnnot.lastX = p.x;
+  _rtcAnnot.lastY = p.y;
+  if(_rtcAnnot.tool === 'eraser'){
+    _rtcAnnot.ctx.clearRect(p.x-20, p.y-20, 40, 40);
+  }
+}
+
+function _annotMove(e){
+  var p = _annotCoords(e);
+
+  /* Pointer tool — just move dot */
+  if(_rtcAnnot.tool === 'pointer'){
+    var dot = _rtcAnnot.pointerEl;
+    if(dot){
+      var r = _rtcAnnot.canvas.getBoundingClientRect();
+      dot.style.left = e.clientX + 'px';
+      dot.style.top = e.clientY + 'px';
+      dot.style.display = 'block';
+    }
+    return;
+  }
+
+  if(!_rtcAnnot.drawing) return;
+  var ctx = _rtcAnnot.ctx;
+  if(!ctx) return;
+
+  if(_rtcAnnot.tool === 'eraser'){
+    ctx.clearRect(p.x-20, p.y-20, 40, 40);
+    _rtcAnnot.lastX = p.x; _rtcAnnot.lastY = p.y;
+    return;
+  }
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if(_rtcAnnot.tool === 'highlight'){
+    ctx.globalAlpha = 0.35;
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.strokeStyle = _rtcAnnot.color;
+    ctx.lineWidth = _rtcAnnot.size * 3;
+  } else if(_rtcAnnot.tool === 'underline'){
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = _rtcAnnot.color;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 4]);
+  } else {
+    /* marker */
+    ctx.globalAlpha = 0.92;
+    ctx.strokeStyle = _rtcAnnot.color;
+    ctx.lineWidth = _rtcAnnot.size;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(_rtcAnnot.lastX, _rtcAnnot.lastY);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  ctx.restore();
+
+  _rtcAnnot.lastX = p.x;
+  _rtcAnnot.lastY = p.y;
+}
+
+function _annotEnd(){
+  _rtcAnnot.drawing = false;
+}
+
+/* Public API */
+window.rtcAnnotTool = function(tool){
+  _rtcAnnot.tool = tool;
+  /* Update toolbar buttons */
+  document.querySelectorAll('#rtc-annot-toolbar .annot-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tool === tool);
+  });
+  var canvas = _rtcAnnot.canvas;
+  if(!canvas) return;
+  if(tool === 'pointer' || tool === 'eraser'){
+    canvas.classList.remove('drawing');
+    canvas.style.cursor = tool === 'eraser' ? 'cell' : 'default';
+  } else {
+    canvas.classList.add('drawing');
+    canvas.style.cursor = 'crosshair';
+    var dot = _rtcAnnot.pointerEl;
+    if(dot) dot.style.display = 'none';
+  }
+  if(tool !== 'pointer'){
+    var dot = _rtcAnnot.pointerEl;
+    if(dot) dot.style.display = 'none';
+  }
+};
+
+window.rtcAnnotColor = function(color){
+  _rtcAnnot.color = color;
+  document.querySelectorAll('.annot-color-dot').forEach(function(d){
+    d.classList.toggle('active', d.dataset.color === color);
+  });
+};
+
+window.rtcAnnotSize = function(val){
+  _rtcAnnot.size = parseInt(val, 10);
+};
+
+window.rtcAnnotClear = function(){
+  var ctx = _rtcAnnot.ctx;
+  var canvas = _rtcAnnot.canvas;
+  if(ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  var dot = _rtcAnnot.pointerEl;
+  if(dot) dot.style.display = 'none';
+  if(typeof showToast === 'function') showToast('🧹 Annotations cleared');
+};
+
+window.rtcToggleAnnotToolbar = function(){
+  var tb = document.getElementById('rtc-annot-toolbar');
+  if(!tb) return;
+  _rtcAnnot.visible = !_rtcAnnot.visible;
+  tb.classList.toggle('visible', _rtcAnnot.visible);
+  var circle = document.getElementById('rtc-annot-circle');
+  if(circle) circle.classList.toggle('active', _rtcAnnot.visible);
+  if(typeof showToast === 'function')
+    showToast(_rtcAnnot.visible ? '🖊️ Annotation tools open' : 'Annotation tools closed');
+};
+
+/* ══════════════════════════════════════════════════
+   STEP 3 — Class Recording
+══════════════════════════════════════════════════ */
+window.rtcToggleRecording = function(){
+  if(_rtcRec.active){
+    _stopRecording();
+  } else {
+    _startRecording();
+  }
+};
+
+async function _startRecording(){
+  if(_rtcRec.active) return;
+
+  /* Build a composite stream: local + remote */
+  var streams = [];
+
+  /* Local stream */
+  if(typeof _localStream !== 'undefined' && _localStream){
+    streams.push(_localStream);
+  }
+
+  /* Remote video/audio */
+  var rv = document.getElementById('remote-video');
+  if(rv && rv.srcObject) streams.push(rv.srcObject);
+  var ra = document.getElementById('remote-audio');
+  if(ra && ra.srcObject) streams.push(ra.srcObject);
+
+  /* Screen share */
+  if(typeof _screenShareStream !== 'undefined' && _screenShareStream){
+    streams.push(_screenShareStream);
+  }
+
+  if(streams.length === 0){
+    if(typeof showToast === 'function') showToast('❌ No active streams to record');
+    return;
+  }
+
+  /* Combine audio tracks */
+  var audioCtx, dest;
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    dest = audioCtx.createMediaStreamDestination();
+    streams.forEach(function(s){
+      s.getAudioTracks().forEach(function(){
+        try{ audioCtx.createMediaStreamSource(s).connect(dest); }catch(e){}
+      });
+    });
+  }catch(e){}
+
+  /* Video: prefer screen share, then remote video */
+  var videoTrack = null;
+  var ssv = document.getElementById('screenshare-view');
+  if(ssv && ssv.srcObject && ssv.srcObject.getVideoTracks().length){
+    videoTrack = ssv.srcObject.getVideoTracks()[0];
+  } else if(rv && rv.srcObject && rv.srcObject.getVideoTracks().length){
+    videoTrack = rv.srcObject.getVideoTracks()[0];
+  }
+
+  var composite = new MediaStream();
+  if(videoTrack) composite.addTrack(videoTrack);
+  if(dest) dest.stream.getAudioTracks().forEach(function(t){ composite.addTrack(t); });
+  else {
+    streams.forEach(function(s){ s.getAudioTracks().forEach(function(t){ composite.addTrack(t); }); });
+  }
+
+  var mimeType = '';
+  var types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','audio/webm'];
+  for(var i=0;i<types.length;i++){
+    if(MediaRecorder.isTypeSupported(types[i])){ mimeType = types[i]; break; }
+  }
+
+  try{
+    _rtcRec.mediaRecorder = new MediaRecorder(composite, mimeType ? {mimeType:mimeType} : {});
+    _rtcRec.chunks = [];
+    _rtcRec.mediaRecorder.ondataavailable = function(e){
+      if(e.data && e.data.size > 0) _rtcRec.chunks.push(e.data);
+    };
+    _rtcRec.mediaRecorder.onstop = _onRecordingStopped;
+    _rtcRec.mediaRecorder.start(1000);
+    _rtcRec.active = true;
+    _rtcRec.startTime = Date.now();
+    _rtcRec.stream = composite;
+
+    /* Update UI */
+    var badge = document.getElementById('rtc-rec-badge');
+    if(badge) badge.style.display = 'flex';
+    var circle = document.getElementById('rtc-rec-circle');
+    if(circle){ circle.classList.add('rec-active'); circle.textContent = '⏹'; }
+    var lbl = document.getElementById('rtc-rec-lbl');
+    if(lbl) lbl.textContent = 'Stop Rec';
+
+    if(typeof showToast === 'function') showToast('⏺ Recording started');
+  } catch(err){
+    if(typeof showToast === 'function') showToast('❌ Recording failed: ' + err.message);
+  }
+}
+
+function _stopRecording(){
+  if(!_rtcRec.active || !_rtcRec.mediaRecorder) return;
+  try{ _rtcRec.mediaRecorder.stop(); } catch(e){}
+  _rtcRec.active = false;
+
+  /* Update UI */
+  var badge = document.getElementById('rtc-rec-badge');
+  if(badge) badge.style.display = 'none';
+  var circle = document.getElementById('rtc-rec-circle');
+  if(circle){ circle.classList.remove('rec-active'); circle.textContent = '⏺'; }
+  var lbl = document.getElementById('rtc-rec-lbl');
+  if(lbl) lbl.textContent = 'Record';
+}
+
+function _onRecordingStopped(){
+  var dur = _rtcRec.startTime ? Math.round((Date.now() - _rtcRec.startTime) / 1000) : 0;
+  var blob = new Blob(_rtcRec.chunks, {type: 'video/webm'});
+  var url = URL.createObjectURL(blob);
+  var now = new Date();
+  var label = 'Class · ' + now.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) +
+              ' · ' + now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  var rec = {
+    id: 'rec_' + Date.now(),
+    date: now.toISOString(),
+    dur: dur,
+    label: label,
+    blob: blob,
+    url: url
+  };
+
+  _rtcRecordings.unshift(rec);
+  _saveRecordingsMeta();
+  _renderRecordingsLib();
+
+  if(typeof showToast === 'function') showToast('✅ Recording saved — ' + _fmtDur(dur));
+
+  /* Auto-download prompt */
+  setTimeout(function(){
+    if(confirm('Recording ready! Download now?\n"' + label + '" · ' + _fmtDur(dur))){
+      _downloadRecording(rec);
+    }
+  }, 500);
+}
+
+function _fmtDur(s){
+  var m = Math.floor(s/60);
+  return m + 'm ' + (s%60) + 's';
+}
+
+function _downloadRecording(rec){
+  var a = document.createElement('a');
+  a.href = rec.url;
+  a.download = rec.label.replace(/[^a-zA-Z0-9 ·\-]/g,'') + '.webm';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function _saveRecordingsMeta(){
+  try{
+    var meta = _rtcRecordings.map(function(r){
+      return {id:r.id, date:r.date, dur:r.dur, label:r.label};
+    });
+    localStorage.setItem(RTC_REC_KEY, JSON.stringify(meta));
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════════════
+   STEP 4 — Recordings Library
+══════════════════════════════════════════════════ */
+function _renderRecordingsLib(){
+  var list = document.getElementById('rtc-rl-list');
+  if(!list) return;
+  if(_rtcRecordings.length === 0){
+    list.innerHTML = '<p style="text-align:center;color:#4a5e4a;padding:30px 0;">No recordings yet.</p>';
+    return;
+  }
+  list.innerHTML = _rtcRecordings.map(function(rec){
+    return '<div class="rtc-rec-card">' +
+      '<div class="rc-icon">🎬</div>' +
+      '<div class="rc-info">' +
+        '<div class="rc-title">' + rec.label + '</div>' +
+        '<div class="rc-meta">Duration: ' + _fmtDur(rec.dur) + '</div>' +
+      '</div>' +
+      '<div class="rc-actions">' +
+        (rec.url ?
+          '<button class="btn btn-g btn-sm" onclick="rtcDownloadRec(\'' + rec.id + '\')" style="font-size:11px;padding:6px 12px;">⬇ Download</button>' :
+          '<span style="color:#4a5e4a;font-size:11px;">Expired</span>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+window.rtcDownloadRec = function(id){
+  var rec = _rtcRecordings.find(function(r){ return r.id === id; });
+  if(!rec || !rec.url){ if(typeof showToast === 'function') showToast('❌ Recording no longer available (page was refreshed)'); return; }
+  _downloadRecording(rec);
+};
+
+window.rtcOpenRecordingsLib = function(){
+  _renderRecordingsLib();
+  document.getElementById('rtc-recordings-lib').classList.add('open');
+};
+
+/* ══════════════════════════════════════════════════
+   STEP 5 — Picture-in-Picture
+══════════════════════════════════════════════════ */
+window.rtcRequestPiP = async function(){
+  /* Try native PiP on remote video first, then local */
+  var videoEl = document.getElementById('remote-video') ||
+                document.getElementById('screenshare-view') ||
+                document.getElementById('local-video');
+  if(!videoEl){ if(typeof showToast==='function') showToast('❌ No video available for PiP'); return; }
+  if(!document.pictureInPictureEnabled){
+    if(typeof showToast==='function') showToast('⚠️ PiP not supported on this browser'); return;
+  }
+  try{
+    await videoEl.requestPictureInPicture();
+    var notice = document.getElementById('rtc-pip-notice');
+    if(notice){ notice.style.display='block'; setTimeout(function(){ notice.style.display='none'; }, 3000); }
+    if(typeof showToast==='function') showToast('⧉ Picture-in-Picture active');
+  }catch(err){
+    if(typeof showToast==='function') showToast('❌ PiP failed: ' + err.message);
+  }
+};
+
+/* Auto-request PiP when user switches tabs during screen-share */
+document.addEventListener('visibilitychange', async function(){
+  if(document.hidden && typeof _callState !== 'undefined' && _callState === 'connected'){
+    if(typeof _screenShareStream !== 'undefined' && _screenShareStream &&
+       document.pictureInPictureEnabled && !document.pictureInPictureElement){
+      var ssv = document.getElementById('screenshare-view');
+      if(ssv && ssv.srcObject){
+        try{ await ssv.requestPictureInPicture(); }catch(e){}
+      }
+    }
+  }
+});
+
+/* ══════════════════════════════════════════════════
+   STEP 6 — Adaptive Quality
+══════════════════════════════════════════════════ */
+function _adaptQuality(){
+  var pc = typeof _pc !== 'undefined' ? _pc : null;
+  if(!pc || pc.connectionState !== 'connected') return;
+
+  pc.getStats().then(function(stats){
+    var rtt = 0, packetsLost = 0, packetsReceived = 0;
+    stats.forEach(function(report){
+      if(report.type === 'remote-inbound-rtp' && report.kind === 'audio'){
+        if(report.roundTripTime) rtt = report.roundTripTime * 1000; // ms
+      }
+      if(report.type === 'inbound-rtp'){
+        if(report.packetsLost) packetsLost += report.packetsLost;
+        if(report.packetsReceived) packetsReceived += report.packetsReceived;
+      }
+    });
+
+    var lossRate = packetsReceived > 0 ? packetsLost / (packetsLost + packetsReceived) : 0;
+    var level;
+    if(rtt < 150 && lossRate < 0.02) level = 'good';
+    else if(rtt < 400 && lossRate < 0.08) level = 'mid';
+    else level = 'poor';
+
+    if(level !== _rtcQuality.level){
+      _rtcQuality.level = level;
+      _updateQualityUI(level, rtt, lossRate);
+
+      /* Adaptive bitrate: reduce video quality when poor */
+      var sender = pc.getSenders ? pc.getSenders().find(function(s){ return s.track && s.track.kind==='video'; }) : null;
+      if(sender && sender.getParameters){
+        var params = sender.getParameters();
+        if(params.encodings && params.encodings.length){
+          if(level === 'poor'){
+            params.encodings[0].maxBitrate = 150000; // 150kbps
+          } else if(level === 'mid'){
+            params.encodings[0].maxBitrate = 500000; // 500kbps
+          } else {
+            delete params.encodings[0].maxBitrate;
+          }
+          try{ sender.setParameters(params); }catch(e){}
+        }
+      }
+    }
+
+    /* Update bandwidth bar */
+    _updateBwBar(level);
+  }).catch(function(){});
+}
+
+function _updateQualityUI(level, rtt, loss){
+  var badge = document.getElementById('rtc-quality-badge');
+  if(!badge) return;
+  badge.className = 'q-' + level;
+  var labels = {good:'● Network Good', mid:'▲ Network Fair', poor:'▼ Network Weak'};
+  badge.textContent = labels[level] || '';
+  badge.style.display = 'block';
+  badge.style.opacity = '1';
+  setTimeout(function(){
+    badge.style.opacity = '0';
+    setTimeout(function(){ badge.style.display = 'none'; badge.style.opacity = '1'; }, 600);
+  }, 3500);
+}
+
+function _updateBwBar(level){
+  var bar = document.getElementById('rtc-bw-bar');
+  var fill = document.getElementById('rtc-bw-fill');
+  if(!bar || !fill) return;
+  bar.style.display = 'block';
+  if(level === 'good'){ fill.style.background = '#2ecc71'; fill.style.width = '100%'; }
+  else if(level === 'mid'){ fill.style.background = '#f39c12'; fill.style.width = '65%'; }
+  else { fill.style.background = '#e74c3c'; fill.style.width = '30%'; }
+}
+
+/* Start quality monitor when call connects */
+var _qualityInterval = null;
+function _startQualityMonitor(){
+  if(_qualityInterval) clearInterval(_qualityInterval);
+  _qualityInterval = setInterval(_adaptQuality, 4000);
+}
+function _stopQualityMonitor(){
+  if(_qualityInterval){ clearInterval(_qualityInterval); _qualityInterval = null; }
+}
+
+/* ══════════════════════════════════════════════════
+   STEP 7 — Post-class modal & Lesson PDF
+══════════════════════════════════════════════════ */
+function _buildSurahChips(){
+  var grid = document.getElementById('rtc-lesson-chips');
+  if(!grid) return;
+  var surahs = typeof window.HIFDH_SURAHS !== 'undefined' ? window.HIFDH_SURAHS : [];
+  if(!surahs.length){
+    /* Fallback short list */
+    surahs = [
+      {n:112,name:'Al-Ikhlas',ar:'الإخلاص'},{n:113,name:'Al-Falaq',ar:'الفلق'},{n:114,name:'An-Nas',ar:'الناس'},
+      {n:1,name:'Al-Fatiha',ar:'الفاتحة'},{n:67,name:'Al-Mulk',ar:'الملك'},{n:36,name:'Ya-Sin',ar:'يس'},
+      {n:55,name:'Ar-Rahman',ar:'الرحمن'},{n:2,name:'Al-Baqarah',ar:'البقرة'},{n:18,name:'Al-Kahf',ar:'الكهف'},
+      {n:56,name:'Al-Waqiah',ar:'الواقعة'},{n:78,name:"An-Naba'",ar:'النبأ'},{n:87,name:'Al-Ala',ar:'الأعلى'}
+    ];
+  }
+  grid.innerHTML = surahs.slice(0,24).map(function(s){
+    return '<div class="rtc-surah-chip" data-n="'+s.n+'" onclick="this.classList.toggle(\'selected\')">' +
+      '<span style="font-family:\'Amiri\',serif;font-size:15px;direction:rtl;">' + s.ar + '</span><br>' +
+      '<span style="font-size:10px;">' + s.n + '. ' + s.name + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function _showPostClassModal(){
+  _buildSurahChips();
+  document.getElementById('rtc-post-class-modal').classList.add('open');
+}
+
+window.rtcDownloadLessonPDF = function(){
+  var selected = [];
+  document.querySelectorAll('.rtc-surah-chip.selected').forEach(function(el){
+    selected.push(el.querySelector('span:last-child').textContent);
+  });
+  var note = (document.getElementById('rtc-lesson-note') || {}).value || '';
+  var date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+
+  var teacher = '';
+  if(typeof currentUser !== 'undefined' && currentUser) teacher = currentUser.name || 'Teacher';
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Lato,sans-serif;background:#fff;color:#222;padding:40px;}' +
+    '.header{text-align:center;border-bottom:3px solid #1a7a3c;padding-bottom:24px;margin-bottom:28px;}' +
+    '.header h1{font-family:Cinzel,serif;color:#1a7a3c;font-size:24px;margin-bottom:6px;}' +
+    '.header .ar{font-family:Amiri,serif;font-size:22px;color:#c9a84c;direction:rtl;}' +
+    '.meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px;padding:16px;background:#f8f8f0;border-radius:10px;}' +
+    '.meta-item label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888;}' +
+    '.meta-item p{font-size:14px;font-weight:700;color:#222;margin-top:2px;}' +
+    '.section{margin-bottom:20px;}.section h2{font-family:Cinzel,serif;color:#1a7a3c;font-size:14px;margin-bottom:12px;letter-spacing:1px;}' +
+    '.chip{display:inline-block;background:#e8f5ee;color:#1a7a3c;border:1px solid #1a7a3c;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;margin:4px;}' +
+    '.note{background:#fffde8;border:1px solid #c9a84c;border-radius:8px;padding:14px;font-size:13px;line-height:1.8;}' +
+    '.footer{margin-top:32px;text-align:center;color:#999;font-size:11px;border-top:1px solid #eee;padding-top:16px;}' +
+    '.print-btn{position:fixed;bottom:20px;right:20px;background:#1a7a3c;color:#fff;border:none;border-radius:10px;padding:12px 24px;cursor:pointer;font-size:13px;font-weight:700;}' +
+    '@media print{.print-btn{display:none!important;}}' +
+    '</style></head><body>' +
+    '<div class="header"><div class="ar">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div><h1>Qur\'an Quest — Lesson Summary</h1></div>' +
+    '<div class="meta">' +
+      '<div class="meta-item"><label>Date</label><p>' + date + '</p></div>' +
+      '<div class="meta-item"><label>Teacher</label><p>' + (teacher||'—') + '</p></div>' +
+    '</div>' +
+    '<div class="section"><h2>📖 Covered Today</h2><div>' +
+    (selected.length ? selected.map(function(s){ return '<span class="chip">'+s+'</span>'; }).join('') : '<p style="color:#999;font-size:13px;">No surahs selected.</p>') +
+    '</div></div>' +
+    (note ? '<div class="section"><h2>📝 Teacher Notes</h2><div class="note">' + note + '</div></div>' : '') +
+    '<div class="section"><h2>🏠 Homework Reminder</h2><p style="font-size:13px;color:#555;line-height:1.9;">Please revise the above surahs before the next class. Recite aloud at least 3 times per surah. JazākAllāhu Khayran.</p></div>' +
+    '<div class="footer">Qur\'an Quest Learning Platform · May Allah bless your memorisation journey · آمين</div>' +
+    '<button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>' +
+    '</body></html>';
+
+  var blob = new Blob([html], {type:'text/html'});
+  var url = URL.createObjectURL(blob);
+  var w = window.open(url, '_blank');
+  if(!w && typeof showToast === 'function') showToast('Allow popups to view the PDF');
+  else if(typeof showToast === 'function') showToast('📄 Lesson PDF ready — use Ctrl+P to save');
+};
+
+window.rtcSendToParents = function(){
+  var selected = [];
+  document.querySelectorAll('.rtc-surah-chip.selected').forEach(function(el){
+    selected.push(el.querySelector('span:last-child').textContent);
+  });
+  var note = (document.getElementById('rtc-lesson-note') || {}).value || '';
+  var teacher = '';
+  if(typeof currentUser !== 'undefined' && currentUser) teacher = currentUser.name || 'Teacher';
+
+  /* Find the class code and push a parent notification */
+  var classCode = typeof myClassCode !== 'undefined' ? myClassCode : null;
+  if(!classCode && typeof _callCode !== 'undefined') classCode = _callCode;
+
+  var msg = '📚 Lesson update from ' + (teacher||'your teacher') + ': ' +
+    (selected.length ? 'Covered today — ' + selected.join(', ') + '. ' : '') +
+    'Please revise before the next class. ' +
+    (note ? 'Note: ' + note + ' ' : '') +
+    'JazākAllāhu Khayran.';
+
+  if(classCode && typeof _fbPush === 'function'){
+    _fbPush('classes/' + classCode + '/messages', {
+      from: teacher || 'Teacher',
+      role: 'teacher',
+      msg: msg,
+      date: new Date().toISOString().slice(0,10),
+      time: new Date().toLocaleTimeString(),
+      isLessonUpdate: true,
+      read: false
+    });
+    var status = document.getElementById('rtc-pcm-status');
+    if(status) status.textContent = '✅ Parents notified via class message board!';
+    if(typeof showToast === 'function') showToast('📨 Parent notification sent!');
+  } else {
+    var status = document.getElementById('rtc-pcm-status');
+    if(status) status.textContent = '⚠️ No active class linked — save the PDF and share manually.';
+  }
+};
+
+/* ══════════════════════════════════════════════════
+   STEP 8 — Hook into existing callShowActive & callEnd
+   (Monkey-patch via safe save/restore pattern)
+══════════════════════════════════════════════════ */
+var _origCallShowActive = window.callShowActive;
+window.callShowActive = function(peerName, isVideo){
+  if(typeof _origCallShowActive === 'function') _origCallShowActive.apply(this, arguments);
+  /* Inject our UI elements now that the active panel is visible */
+  setTimeout(function(){
+    _injectCallUI();
+    _startQualityMonitor();
+    /* Ensure extra controls are visible */
+    var ec = document.getElementById('rtc-extra-controls');
+    if(ec) ec.classList.add('visible');
+  }, 200);
+};
+
+var _origCallEnd = window.callEnd;
+window.callEnd = function(){
+  /* Stop recording if active */
+  if(_rtcRec.active) _stopRecording();
+  /* Stop quality monitor */
+  _stopQualityMonitor();
+  /* Clear annotations */
+  rtcAnnotClear();
+  /* Hide annotation toolbar */
+  var tb = document.getElementById('rtc-annot-toolbar');
+  if(tb) tb.classList.remove('visible');
+  /* Exit PiP */
+  if(document.pictureInPictureElement){
+    try{ document.exitPictureInPicture(); }catch(e){}
+  }
+
+  if(typeof _origCallEnd === 'function') _origCallEnd.apply(this, arguments);
+
+  /* Show post-class modal for teachers */
+  if(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'teacher'){
+    setTimeout(_showPostClassModal, 600);
+  }
+};
+
+var _origCallCleanupConnection = window.callCleanupConnection;
+window.callCleanupConnection = function(){
+  /* Also reset extra controls */
+  var ec = document.getElementById('rtc-extra-controls');
+  if(ec) ec.classList.remove('visible');
+  if(typeof _origCallCleanupConnection === 'function') _origCallCleanupConnection.apply(this, arguments);
+};
+
+/* ══════════════════════════════════════════════════
+   STEP 9 — Enhance Teacher Dashboard with
+             "Recordings Library" button
+══════════════════════════════════════════════════ */
+function _injectTeacherDashboardLinks(){
+  /* Find the real-teacher-dash modal if it exists, or inject a button into
+     the nav Teacher Mode toolbar */
+  var tb = document.getElementById('tm-toolbar');
+  if(tb && !tb._rtcRecBtn){
+    tb._rtcRecBtn = true;
+    var btn = document.createElement('button');
+    btn.className = 'tm-tool-btn';
+    btn.title = 'Class Recordings Library';
+    btn.textContent = '🎬';
+    btn.onclick = function(){ window.rtcOpenRecordingsLib(); };
+    /* Insert before last separator if exists */
+    var sep = tb.querySelector('.tm-tool-sep:last-of-type');
+    if(sep) tb.insertBefore(btn, sep);
+    else tb.appendChild(btn);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   STEP 10 — TURN server enhancement for better NAT
+   Augments ICE_SERVERS if defined
+══════════════════════════════════════════════════ */
+(function _augmentIce(){
+  if(typeof ICE_SERVERS === 'undefined') return;
+  /* Add additional free public STUN servers for redundancy */
+  var extra = [
+    {urls:'stun:stun3.l.google.com:19302'},
+    {urls:'stun:stun4.l.google.com:19302'},
+    {urls:'stun:stun.cloudflare.com:3478'}
+  ];
+  var existing = (ICE_SERVERS.iceServers||[]).map(function(s){ return s.urls; });
+  extra.forEach(function(e){
+    if(existing.indexOf(e.urls) === -1) ICE_SERVERS.iceServers.push(e);
+  });
+})();
+
+/* ══════════════════════════════════════════════════
+   STEP 11 — Improve audio constraints for Quran recitation
+   Patches getUserMedia audio to add noise suppression & echo cancellation
+══════════════════════════════════════════════════ */
+var _origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+navigator.mediaDevices.getUserMedia = function(constraints){
+  if(constraints && constraints.audio === true){
+    constraints.audio = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      sampleRate: 48000,
+      channelCount: 1
+    };
+  } else if(constraints && constraints.audio && typeof constraints.audio === 'object'){
+    constraints.audio = Object.assign({
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      sampleRate: 48000
+    }, constraints.audio);
+  }
+  return _origGetUserMedia(constraints);
+};
+
+/* ══════════════════════════════════════════════════
+   STEP 12 — Init
+══════════════════════════════════════════════════ */
+function _rtcUpgradeInit(){
+  /* Try injecting toolbar button */
+  _injectTeacherDashboardLinks();
+  /* Observe for teacher toolbar to appear */
+  var obs = new MutationObserver(function(){
+    _injectTeacherDashboardLinks();
+  });
+  obs.observe(document.body, {childList:true, subtree:true});
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', _rtcUpgradeInit);
+} else {
+  _rtcUpgradeInit();
+}
+
+console.log('[QQ RTC Upgrade v1.0] Loaded — Recording, Annotations, PiP, Adaptive Quality active.');
+
+})(); // end IIFE
+</script>
+</body>
