@@ -797,6 +797,112 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 }
 
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ── FIREBASE INIT ──
+const firebaseConfig = {
+  apiKey: "AIzaSyD_4SWxQ9MXi7iI3tynq_iK9dQ5Z81rL5s",
+  authDomain: "qur-an-quest-app.firebaseapp.com",
+  databaseURL: "https://qur-an-quest-app-default-rtdb.firebaseio.com",
+  projectId: "qur-an-quest-app",
+  storageBucket: "qur-an-quest-app.firebasestorage.app",
+  messagingSenderId: "258365684163",
+  appId: "1:258365684163:web:0e006ba5691211f21b6576"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+// ── FIREBASE CLASS HELPERS ──
+
+// Write a class to Firebase
+function fbSetClass(code, data){
+  return db.ref('classes/'+code).set(data);
+}
+
+// Read a class once from Firebase
+function fbGetClass(code, cb){
+  db.ref('classes/'+code).once('value', function(snap){
+    cb(snap.exists() ? snap.val() : null);
+  });
+}
+
+// Listen to a class in real-time
+function fbListenClass(code, cb){
+  db.ref('classes/'+code).on('value', function(snap){
+    cb(snap.exists() ? snap.val() : null);
+  });
+}
+
+// Stop listening to a class
+function fbUnlistenClass(code){
+  db.ref('classes/'+code).off();
+}
+
+// Update part of a class
+function fbUpdateClass(code, data){
+  return db.ref('classes/'+code).update(data);
+}
+
+// Push a student into a class
+function fbAddStudent(code, studentName){
+  return db.ref('classes/'+code+'/students/'+studentName.replace(/[.#$/\[\]]/g,'_')).set({
+    name: studentName,
+    joined: new Date().toISOString().slice(0,10)
+  });
+}
+
+// Push an assignment to a class
+function fbAddAssignment(code, assignment){
+  var ref = db.ref('classes/'+code+'/assignments').push();
+  assignment.id = ref.key;
+  assignment.submissions = {};
+  assignment.sentDate = new Date().toISOString().slice(0,10);
+  return ref.set(assignment);
+}
+
+// Submit an assignment (student)
+function fbSubmitAssignment(code, assignId, studentName){
+  var key = studentName.replace(/[.#$/\[\]]/g,'_');
+  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).set({
+    name: studentName,
+    date: new Date().toISOString().slice(0,10),
+    score: null,
+    marked: false
+  });
+}
+
+// Mark an assignment (teacher)
+function fbMarkAssignment(code, assignId, studentName, score){
+  var key = studentName.replace(/[.#$/\[\]]/g,'_');
+  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).update({
+    score: parseInt(score),
+    marked: true
+  });
+}
+
+// Send announcement
+function fbSendAnnouncement(code, message, teacherName){
+  return db.ref('classes/'+code+'/announcements').push({
+    message: message,
+    from: teacherName,
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString()
+  });
+}
+
+// Listen for announcements
+function fbListenAnnouncements(code, cb){
+  db.ref('classes/'+code+'/announcements').on('value', function(snap){
+    var list = [];
+    if(snap.exists()) snap.forEach(function(c){ list.push(c.val()); });
+    cb(list.reverse());
+  });
+}
+
+var _fbClassListener = null;
+</script>
 </head>
 <body>
 
@@ -1044,112 +1150,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script>
-// ── FIREBASE INIT ──
-const firebaseConfig = {
-  apiKey: "AIzaSyD_4SWxQ9MXi7iI3tynq_iK9dQ5Z81rL5s",
-  authDomain: "qur-an-quest-app.firebaseapp.com",
-  databaseURL: "https://qur-an-quest-app-default-rtdb.firebaseio.com",
-  projectId: "qur-an-quest-app",
-  storageBucket: "qur-an-quest-app.firebasestorage.app",
-  messagingSenderId: "258365684163",
-  appId: "1:258365684163:web:0e006ba5691211f21b6576"
-};
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
 
-// ── FIREBASE CLASS HELPERS ──
-
-// Write a class to Firebase
-function fbSetClass(code, data){
-  return db.ref('classes/'+code).set(data);
-}
-
-// Read a class once from Firebase
-function fbGetClass(code, cb){
-  db.ref('classes/'+code).once('value', function(snap){
-    cb(snap.exists() ? snap.val() : null);
-  });
-}
-
-// Listen to a class in real-time
-function fbListenClass(code, cb){
-  db.ref('classes/'+code).on('value', function(snap){
-    cb(snap.exists() ? snap.val() : null);
-  });
-}
-
-// Stop listening to a class
-function fbUnlistenClass(code){
-  db.ref('classes/'+code).off();
-}
-
-// Update part of a class
-function fbUpdateClass(code, data){
-  return db.ref('classes/'+code).update(data);
-}
-
-// Push a student into a class
-function fbAddStudent(code, studentName){
-  return db.ref('classes/'+code+'/students/'+studentName.replace(/[.#$/\[\]]/g,'_')).set({
-    name: studentName,
-    joined: new Date().toISOString().slice(0,10)
-  });
-}
-
-// Push an assignment to a class
-function fbAddAssignment(code, assignment){
-  var ref = db.ref('classes/'+code+'/assignments').push();
-  assignment.id = ref.key;
-  assignment.submissions = {};
-  assignment.sentDate = new Date().toISOString().slice(0,10);
-  return ref.set(assignment);
-}
-
-// Submit an assignment (student)
-function fbSubmitAssignment(code, assignId, studentName){
-  var key = studentName.replace(/[.#$/\[\]]/g,'_');
-  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).set({
-    name: studentName,
-    date: new Date().toISOString().slice(0,10),
-    score: null,
-    marked: false
-  });
-}
-
-// Mark an assignment (teacher)
-function fbMarkAssignment(code, assignId, studentName, score){
-  var key = studentName.replace(/[.#$/\[\]]/g,'_');
-  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).update({
-    score: parseInt(score),
-    marked: true
-  });
-}
-
-// Send announcement
-function fbSendAnnouncement(code, message, teacherName){
-  return db.ref('classes/'+code+'/announcements').push({
-    message: message,
-    from: teacherName,
-    date: new Date().toISOString().slice(0,10),
-    time: new Date().toLocaleTimeString()
-  });
-}
-
-// Listen for announcements
-function fbListenAnnouncements(code, cb){
-  db.ref('classes/'+code+'/announcements').on('value', function(snap){
-    var list = [];
-    if(snap.exists()) snap.forEach(function(c){ list.push(c.val()); });
-    cb(list.reverse());
-  });
-}
-
-var _fbClassListener = null;
-</script>
 
 <script>
 /* ===============================================
