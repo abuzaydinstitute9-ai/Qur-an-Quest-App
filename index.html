@@ -1044,6 +1044,113 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   </div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ── FIREBASE INIT ──
+const firebaseConfig = {
+  apiKey: "AIzaSyD_4SWxQ9MXi7iI3tynq_iK9dQ5Z81rL5s",
+  authDomain: "qur-an-quest-app.firebaseapp.com",
+  databaseURL: "https://qur-an-quest-app-default-rtdb.firebaseio.com",
+  projectId: "qur-an-quest-app",
+  storageBucket: "qur-an-quest-app.firebasestorage.app",
+  messagingSenderId: "258365684163",
+  appId: "1:258365684163:web:0e006ba5691211f21b6576"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+// ── FIREBASE CLASS HELPERS ──
+
+// Write a class to Firebase
+function fbSetClass(code, data){
+  return db.ref('classes/'+code).set(data);
+}
+
+// Read a class once from Firebase
+function fbGetClass(code, cb){
+  db.ref('classes/'+code).once('value', function(snap){
+    cb(snap.exists() ? snap.val() : null);
+  });
+}
+
+// Listen to a class in real-time
+function fbListenClass(code, cb){
+  db.ref('classes/'+code).on('value', function(snap){
+    cb(snap.exists() ? snap.val() : null);
+  });
+}
+
+// Stop listening to a class
+function fbUnlistenClass(code){
+  db.ref('classes/'+code).off();
+}
+
+// Update part of a class
+function fbUpdateClass(code, data){
+  return db.ref('classes/'+code).update(data);
+}
+
+// Push a student into a class
+function fbAddStudent(code, studentName){
+  return db.ref('classes/'+code+'/students/'+studentName.replace(/[.#$/\[\]]/g,'_')).set({
+    name: studentName,
+    joined: new Date().toISOString().slice(0,10)
+  });
+}
+
+// Push an assignment to a class
+function fbAddAssignment(code, assignment){
+  var ref = db.ref('classes/'+code+'/assignments').push();
+  assignment.id = ref.key;
+  assignment.submissions = {};
+  assignment.sentDate = new Date().toISOString().slice(0,10);
+  return ref.set(assignment);
+}
+
+// Submit an assignment (student)
+function fbSubmitAssignment(code, assignId, studentName){
+  var key = studentName.replace(/[.#$/\[\]]/g,'_');
+  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).set({
+    name: studentName,
+    date: new Date().toISOString().slice(0,10),
+    score: null,
+    marked: false
+  });
+}
+
+// Mark an assignment (teacher)
+function fbMarkAssignment(code, assignId, studentName, score){
+  var key = studentName.replace(/[.#$/\[\]]/g,'_');
+  return db.ref('classes/'+code+'/assignments/'+assignId+'/submissions/'+key).update({
+    score: parseInt(score),
+    marked: true
+  });
+}
+
+// Send announcement
+function fbSendAnnouncement(code, message, teacherName){
+  return db.ref('classes/'+code+'/announcements').push({
+    message: message,
+    from: teacherName,
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString()
+  });
+}
+
+// Listen for announcements
+function fbListenAnnouncements(code, cb){
+  db.ref('classes/'+code+'/announcements').on('value', function(snap){
+    var list = [];
+    if(snap.exists()) snap.forEach(function(c){ list.push(c.val()); });
+    cb(list.reverse());
+  });
+}
+
+var _fbClassListener = null;
+</script>
+
 <script>
 /* ===============================================
    QUR'AN QUEST -- Complete Platform v3
@@ -5153,106 +5260,114 @@ function getNextSalah(){
 }
 
 // ═══════════════════════════════════════
-// ── CLASS CODE SYSTEM ──
+// ── CLASS CODE SYSTEM (Firebase-powered) ──
 // ═══════════════════════════════════════
 let myClassCode = '';
+let _liveClassData = null; // holds real-time class data for student
 
-// Teacher generates a class code
+// Teacher generates a class code and saves to Firebase
 function generateClassCode(){
   const code = 'QQ-'+Math.random().toString(36).substr(2,4).toUpperCase();
-  // Store in localStorage so students can "join"
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    const teacherName = currentUser?.name || 'Teacher';
-    classes[code] = {
-      teacher: teacherName,
-      created: new Date().toISOString().slice(0,10),
-      students: [],
-      assignments: []
-    };
-    localStorage.setItem('qq_classes', JSON.stringify(classes));
-    // Add to teacher's groups
+  const teacherName = currentUser?.name || 'Teacher';
+  const classData = {
+    teacher: teacherName,
+    created: new Date().toISOString().slice(0,10),
+    students: {},
+    assignments: {},
+    announcements: {}
+  };
+  fbSetClass(code, classData).then(function(){
+    // Also add to teacher groups locally
     const newId = Math.max(0,...teacherGroups.map(g=>g.id))+1;
     teacherGroups.push({id:newId, name:'Class '+code, students:[], color:'var(--em)', code});
     saveTData();
-  }catch(e){}
-  showToast('✅ Class code: '+code+' — Share with students!');
-  renderDashboard();
+    showToast('✅ Class code: '+code+' — Share with students!');
+    renderDashboard();
+  }).catch(function(){ showToast('❌ Could not create class. Check internet.'); });
 }
 
 function joinClassByCode(){
   const code = ($('join-code-input')||{value:''}).value.trim().toUpperCase();
   if(!code){ showToast('Enter a class code'); return; }
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    if(!classes[code]){ showToast('❌ Class code not found'); return; }
+  showToast('🔄 Connecting...');
+  fbGetClass(code, function(cls){
+    if(!cls){ showToast('❌ Class code not found'); return; }
     myClassCode = code;
     const studentName = currentUser?.name || 'Student';
-    if(!classes[code].students.includes(studentName)){
-      classes[code].students.push(studentName);
-    }
-    localStorage.setItem('qq_classes', JSON.stringify(classes));
-    saveAppState();
-    showToast('✅ Joined class! Teacher: '+classes[code].teacher);
-    renderDashboard();
-  }catch(e){ showToast('❌ Could not join class'); }
+    fbAddStudent(code, studentName).then(function(){
+      saveAppState();
+      // Start listening for live updates
+      _startClassListener(code);
+      showToast('✅ Joined class! Teacher: '+cls.teacher);
+      renderDashboard();
+    });
+  });
+}
+
+function _startClassListener(code){
+  if(_fbClassListener) fbUnlistenClass(_fbClassListener);
+  _fbClassListener = code;
+  fbListenClass(code, function(cls){
+    _liveClassData = cls;
+    // Refresh dashboard if student is viewing assignments
+    if(typeof renderDashboard === 'function') renderDashboard();
+  });
 }
 
 function getMyAssignments(){
   if(!myClassCode) return [];
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    const cls = classes[myClassCode];
-    if(!cls) return [];
-    return cls.assignments||[];
-  }catch(e){ return []; }
+  if(!_liveClassData) return [];
+  const assignments = _liveClassData.assignments || {};
+  return Object.values(assignments);
 }
 
 function submitAssignment(assignId){
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    const cls = classes[myClassCode];
+  if(!myClassCode){ showToast('You are not in a class'); return; }
+  const studentName = currentUser?.name||'Student';
+  fbGetClass(myClassCode, function(cls){
     if(!cls) return;
-    const a = (cls.assignments||[]).find(x=>x.id===assignId);
-    if(!a){ showToast('Assignment not found'); return; }
-    const studentName = currentUser?.name||'Student';
-    if(!a.submissions) a.submissions=[];
-    if(a.submissions.find(s=>s.name===studentName)){ showToast('Already submitted!'); return; }
-    a.submissions.push({name:studentName, date:new Date().toISOString().slice(0,10), score:null, marked:false});
-    localStorage.setItem('qq_classes', JSON.stringify(classes));
-    showToast('✅ Assignment submitted!');
-    renderDashboard();
-  }catch(e){}
+    const assignments = cls.assignments||{};
+    if(!assignments[assignId]){ showToast('Assignment not found'); return; }
+    const subs = assignments[assignId].submissions||{};
+    const key = studentName.replace(/[.#$/\[\]]/g,'_');
+    if(subs[key]){ showToast('Already submitted!'); return; }
+    fbSubmitAssignment(myClassCode, assignId, studentName).then(function(){
+      showToast('✅ Assignment submitted!');
+      renderDashboard();
+    });
+  });
 }
 
 // Teacher: mark student assignment
 function markAssignment(code, assignId, studentName, score){
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    const cls = classes[code];
-    if(!cls) return;
-    const a = (cls.assignments||[]).find(x=>x.id===assignId);
-    if(!a) return;
-    const sub = (a.submissions||[]).find(s=>s.name===studentName);
-    if(sub){ sub.score=parseInt(score); sub.marked=true; }
-    localStorage.setItem('qq_classes', JSON.stringify(classes));
+  fbMarkAssignment(code, assignId, studentName, score).then(function(){
     showToast('✅ Marked: '+studentName+' — '+score+'%');
     renderDashboard();
-  }catch(e){}
+  });
 }
 
 // Teacher: send assignment to class
 function sendAssignmentToClass(code, assignment){
-  try{
-    const classes = JSON.parse(localStorage.getItem('qq_classes')||'{}');
-    if(!classes[code]) return;
-    if(!classes[code].assignments) classes[code].assignments=[];
-    const newId = Math.max(0,...(classes[code].assignments.map(a=>a.id)||[0]))+1;
-    classes[code].assignments.push({...assignment, id:newId, submissions:[], sentDate:new Date().toISOString().slice(0,10)});
-    localStorage.setItem('qq_classes', JSON.stringify(classes));
+  fbAddAssignment(code, assignment).then(function(){
     showToast('✅ Assignment sent to class '+code+'!');
-  }catch(e){}
+  }).catch(function(){ showToast('❌ Failed to send. Check internet.'); });
 }
+
+// Teacher: send announcement to class
+function sendAnnouncement(code, message){
+  if(!message||!message.trim()){ showToast('Enter a message'); return; }
+  const teacherName = currentUser?.name||'Teacher';
+  fbSendAnnouncement(code, message.trim(), teacherName).then(function(){
+    showToast('📢 Announcement sent!');
+  });
+}
+
+// Auto-resume class listener when app loads (if student was already in a class)
+(function resumeClassListener(){
+  setTimeout(function(){
+    if(myClassCode){ _startClassListener(myClassCode); }
+  }, 1500);
+})();
 
 function saveTData(){
   try{ localStorage.setItem('qq_tgroups', JSON.stringify(teacherGroups)); }catch(e){}
