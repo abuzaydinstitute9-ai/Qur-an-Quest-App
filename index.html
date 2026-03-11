@@ -1045,11 +1045,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   QUR'ĀN QUEST — Complete Platform v3
-   All 114 Surahs · 80+ Tajweed Qs · Voice/TTS
-   Rotating Questions · Stages · Mobile Fixed
-═══════════════════════════════════════════════ */
+/* ===============================================
+   QUR'AN QUEST -- Complete Platform v3
+   All 114 Surahs | 80+ Tajweed Qs | Voice/TTS
+   Rotating Questions | Stages | Mobile Fixed
+=============================================== */
 
 // ══════════════════════════════════════════════════
 // QQ ALARM ENGINE
@@ -2238,6 +2238,18 @@ function renderHome(){
         <p style="color:var(--greyd);font-size:11px;line-height:1.6;margin-bottom:12px;">This app is Sadaqah Jariyah — free forever. Support its growth:</p>
         <a href="https://ko-fi.com/adamusuleiman" target="_blank" style="display:block;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#000;text-align:center;padding:9px 14px;border-radius:20px;font-weight:700;font-size:12px;text-decoration:none;margin-bottom:8px;">☕ Ko-fi — Buy Me a Coffee</a>
         <a href="https://launchgood.com" target="_blank" style="display:block;background:rgba(26,122,60,.2);border:1px solid var(--em);color:var(--emb);text-align:center;padding:9px 14px;border-radius:20px;font-weight:700;font-size:12px;text-decoration:none;">🤲 LaunchGood — Sadaqah</a>
+      </div>
+      <div>
+        <div style="color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;">📬 CONTACT US</div>
+        <a href="https://wa.me/2349073528916" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
+          <span style="font-size:16px;">💬</span><span>WhatsApp</span>
+        </a>
+        <a href="mailto:quranquest111@gmail.com" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
+          <span style="font-size:16px;">📧</span><span>quranquest111@gmail.com</span>
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61582699600555" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
+          <span style="font-size:16px;">👥</span><span>Facebook</span>
+        </a>
       </div>
     </div>
     <div style="text-align:center;border-top:1px solid var(--border);padding-top:16px;">
@@ -4185,7 +4197,10 @@ function renderHifdhPage(){
     <div class="hifdh-layout" style="display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:start;">
       <div id="hifdh-sidebar-col">
         <div style="max-height:75vh;overflow-y:auto;border-radius:12px;background:var(--card);border:1px solid var(--border);padding:8px;">
-          <input class="inp" id="surah-search" placeholder="Search..." oninput="filterHifdhSurahs()" style="font-size:12px;padding:7px 10px;margin-bottom:6px;">
+          <div style="position:relative;">
+            <input class="inp" id="surah-search" placeholder="Search..." oninput="filterHifdhSurahs()" style="font-size:12px;padding:7px 10px;margin-bottom:6px;" style="padding-right:32px;" >>
+            <button onclick="var el=document.getElementById('surah-search');if(el){el.value='';filterHifdhSurahs();}" title="Clear" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;">✕</button>
+          </div>
           <div id="surah-list"></div>
         </div>
       </div>
@@ -4327,7 +4342,7 @@ function qqFocusNext(){
   } else {
     // Mark progress and exit
     var prog = hifdhProgress[s.n] || 0;
-    if(prog < 100){ hifdhProgress[s.n] = Math.min(100, prog + 20); saveProgress(); }
+    if(prog < 100){ hifdhProgress[s.n] = Math.min(100, prog + 20); saveAppState(); }
     exitFocusMode();
     showToast('MāshāAllāh! Surah '+s.name+' completed 🌙');
   }
@@ -5868,6 +5883,7 @@ function renderSalahTab(){
         <input class="inp" id="salah-city-input" placeholder="Enter city e.g. Lagos, Cairo, London…" style="flex:1;font-size:13px;" value="${userSalahCity}" onkeydown="if(event.key==='Enter')searchCityTimes()">
         <button class="btn btn-gold btn-sm" onclick="searchCityTimes()">🔍 Search</button>
         <button class="btn btn-g btn-sm" onclick="detectLocation()">📍 GPS</button>
+        <button onclick="var el=document.getElementById('salah-city-input');if(el){el.value='';el.focus();}" title="Clear" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;flex-shrink:0;">✕</button>
       </div>
       ${next?`
         <div style="background:rgba(26,122,60,.15);border:1px solid var(--em);border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;">
@@ -6017,7 +6033,11 @@ function renderStudentClassTab(){
           <button class="btn btn-r btn-sm" style="width:100%;" onclick="myClassCode='';saveAppState();renderDashboard()">Leave Class</button>
         `:`
           <p style="color:var(--greyd);font-size:12px;line-height:1.7;margin-bottom:12px;">Ask your teacher for a class code to join and receive assignments.</p>
-          <input class="inp" id="join-code-input" placeholder="e.g. QQ-AB12" style="margin-bottom:10px;font-size:14px;text-transform:uppercase;letter-spacing:3px;text-align:center;" maxlength="8" onkeydown="if(event.key==='Enter')joinClassByCode()">
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <input class="inp" id="join-code-input" placeholder="e.g. QQ-AB12" style="flex:1;font-size:14px;text-transform:uppercase;letter-spacing:3px;text-align:center;" maxlength="8" onkeydown="if(event.key==='Enter')joinClassByCode()">
+            <button onclick="var el=document.getElementById('join-code-input');if(el){el.value=el.value.slice(0,-1);el.focus();}" title="Backspace" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--grey);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:15px;flex-shrink:0;">⌫</button>
+            <button onclick="var el=document.getElementById('join-code-input');if(el){el.value='';el.focus();}" title="Clear" style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);color:#e74c3c;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>
+          </div>
           <button class="btn btn-g" style="width:100%;" onclick="joinClassByCode()">Join Class →</button>
         `}
       </div>
@@ -11185,7 +11205,9 @@ function bqBuildPage(){
         <span style="color:var(--greyd);font-size:11px;">🎓 Student:</span>
         <input id="bq-student-name" placeholder="Enter student name for certificates…" value="${bqStudentName}"
           oninput="bqStudentName=this.value;bqSave()"
-          style="background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--white);border-radius:20px;padding:4px 14px;font-size:12px;outline:none;width:220px;text-align:center;">
+          style="background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--white);border-radius:20px;padding:4px 14px;font-size:12px;outline:none;width:180px;text-align:center;">
+        <button onclick="var el=document.getElementById('bq-student-name');if(el){el.value=el.value.slice(0,-1);bqStudentName=el.value;bqSave();el.focus();}" title="Backspace" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--greyd);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:13px;">⌫</button>
+        <button onclick="var el=document.getElementById('bq-student-name');if(el){el.value='';bqStudentName='';bqSave();el.focus();}" title="Clear" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--greyd);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;">✕</button>
         ${Object.keys(bqCertificates).length>0?`<button onclick="bqShowAllCertificates()" style="background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);color:var(--goldl);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:11px;font-weight:700;">🏆 ${Object.keys(bqCertificates).length} Certificate${Object.keys(bqCertificates).length!==1?'s':''}`:``}
       </div>
       <!-- Teacher live tools -->
@@ -14109,7 +14131,10 @@ function p1RenderPanel(){
         </div>`).join('')}
       <div id="p1-new-form" style="display:none;margin-top:14px;padding:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;">
         <div style="font-size:11px;color:var(--greyd);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">New Profile</div>
-        <input id="p1-name-inp" placeholder="Student name…" maxlength="24" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--white);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;margin-bottom:10px;">
+        <div style="position:relative;margin-bottom:10px;">
+          <input id="p1-name-inp" placeholder="Student name…" maxlength="24" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--white);border-radius:8px;padding:9px 36px 9px 12px;font-size:13px;outline:none;">
+          <button onclick="var el=document.getElementById('p1-name-inp');if(el){el.value=el.value.slice(0,-1);el.focus();}" title="Backspace" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">⌫</button>
+        </div>
         <div style="margin-bottom:10px;">
           <div style="font-size:10px;color:var(--greyd);margin-bottom:6px;">Choose avatar</div>
           <div id="p1-av-grid" style="display:flex;gap:7px;flex-wrap:wrap;">${P1_AVATARS.map((a,i)=>`<span onclick="p1SelAv('${a}',this)" data-av="${a}" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .18s;">${a}</span>`).join('')}</div>
@@ -16266,7 +16291,10 @@ function openMobileSurahDrawer(){
         <h3 class="dp" style="color:var(--goldl);font-size:15px;">📿 Select Surah</h3>
         <button onclick="document.getElementById('surah-drawer').remove()" style="background:none;border:none;color:var(--grey);font-size:18px;cursor:pointer;">✕</button>
       </div>
-      <input id="drawer-search" class="inp" placeholder="Search surahs..." oninput="drawerFilter(this.value)" style="margin-bottom:10px;font-size:13px;">
+      <div style="position:relative;">
+        <input id="drawer-search" class="inp" placeholder="Search surahs..." oninput="drawerFilter(this.value)" style="margin-bottom:10px;font-size:13px;" style="padding-right:32px;" >>
+        <button onclick="var el=document.getElementById('drawer-search');if(el){el.value='';drawerFilter('');}" title="Clear" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;">✕</button>
+      </div>
       <div id="drawer-list" style="overflow-y:auto;flex:1;">
         ${surahs.map((s,idx)=>{
           const p=(window.hifdhProgress||{})[s.n]||0;
@@ -16323,6 +16351,7 @@ function openGlobalSearch(){
         <input id="gs-input" placeholder="Search surahs, tajweed rules, topics…" autofocus
           style="flex:1;background:none;border:none;outline:none;color:var(--white);font-size:15px;font-family:Lato,sans-serif;"
           oninput="gsSearch(this.value)">
+        <button onclick="var el=document.getElementById('gs-input');if(el){el.value=el.value.slice(0,-1);gsSearch(el.value);el.focus();}" title="Backspace" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:15px;cursor:pointer;padding:4px 6px;flex-shrink:0;">⌫</button>
         <button onclick="document.getElementById('global-search-modal').remove()" style="background:none;border:none;color:var(--greyd);cursor:pointer;font-size:16px;">✕</button>
       </div>
       <div id="gs-results" style="max-height:400px;overflow-y:auto;padding:8px;">
@@ -16854,7 +16883,10 @@ window.addEventListener('load', function w3Init(){
     <!-- Student Name -->
     <div style="margin-bottom:14px;">
       <label style="color:#f39c12;font-size:10px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">Student Name</label>
-      <input id="tm-exp-student" class="inp" placeholder="e.g. Maryam Abdullah" style="border-color:rgba(243,156,18,.3);">
+      <div style="position:relative;">
+        <input id="tm-exp-student" class="inp" placeholder="e.g. Maryam Abdullah" style="border-color:rgba(243,156,18,.3);padding-right:36px;">
+        <button onclick="var el=document.getElementById('tm-exp-student');if(el){el.value='';el.focus();}" title="Clear" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">✕</button>
+      </div>
     </div>
 
     <!-- Lesson Section -->
@@ -16894,8 +16926,8 @@ window.addEventListener('load', function w3Init(){
 
     <!-- Export buttons -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button onclick="typeof tmExportPDF===\'function'&&tmExportPDF()" style="flex:1;background:linear-gradient(135deg,#e74c3c,#c0392b);border:none;color:#fff;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:\'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📄 Download Certificate</button>
-      <button onclick="typeof tmExportImage===\'function'&&tmExportImage()" style="flex:1;background:linear-gradient(135deg,#2980b9,#1a6fa8);border:none;color:#fff;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:\'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📤 Share / Download</button>
+      <button onclick="typeof tmExportPDF==='function'&&tmExportPDF()" style="flex:1;background:linear-gradient(135deg,#e74c3c,#c0392b);border:none;color:#fff;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📄 Download Homework Sheet</button>
+      <button onclick="typeof tmExportImage==='function'&&tmExportImage()" style="flex:1;background:linear-gradient(135deg,#2980b9,#1a6fa8);border:none;color:#fff;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📤 Share / Download</button>
     </div>
     <div id="tm-export-status" style="margin-top:10px;font-size:12px;color:var(--greyd);text-align:center;"></div>
   </div>
@@ -16909,18 +16941,21 @@ window.addEventListener('load', function w3Init(){
         <div style="color:var(--goldl);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:4px;">🎓 Certificate Generator</div>
         <h3 style="color:var(--white);font-size:18px;font-weight:700;margin:0;">Award a Certificate</h3>
       </div>
-      <button onclick="typeof tmCloseCert===\'function'&&tmCloseCert()" style="background:rgba(255,255,255,.08);border:none;color:var(--white);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      <button onclick="typeof tmCloseCert==='function'&&tmCloseCert()" style="background:rgba(255,255,255,.08);border:none;color:var(--white);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
     </div>
 
     <!-- Certificate Form -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;" class="grid2">
       <div>
         <label style="color:var(--goldl);font-size:10px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">Student Name *</label>
-        <input id="tm-cert-student" class="inp" placeholder="e.g. Ibrahim Yusuf">
+        <div style="position:relative;">
+          <input id="tm-cert-student" class="inp" placeholder="e.g. Ibrahim Yusuf" style="padding-right:36px;">
+          <button onclick="var el=document.getElementById('tm-cert-student');if(el){el.value='';el.focus();typeof tmUpdateCertPreview==='function'&&tmUpdateCertPreview();}" title="Clear" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">✕</button>
+        </div>
       </div>
       <div>
         <label style="color:var(--goldl);font-size:10px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">Achievement *</label>
-        <select id="tm-cert-stage" class="inp" onchange="typeof tmUpdateCertPreview===\'function'&&tmUpdateCertPreview()">
+        <select id="tm-cert-stage" class="inp" onchange="typeof tmUpdateCertPreview==='function'&&tmUpdateCertPreview()">
           <optgroup label="Beginner Programme">
             <option value="Completion of Arabic Letters">🌱 Completion of Letters</option>
             <option value="Completion of Letter Forms">بـ Completion of Forms</option>
@@ -16961,8 +16996,8 @@ window.addEventListener('load', function w3Init(){
 
     <!-- Download buttons -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button onclick="typeof tmDownloadCertPDF===\'function'&&tmDownloadCertPDF()" style="flex:1;background:linear-gradient(135deg,var(--gold),var(--goldl));border:none;color:#080c08;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:\'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📄 Download PDF</button>
-      <button onclick="typeof tmDownloadCertImage===\'function'&&tmDownloadCertImage()" style="flex:1;background:linear-gradient(135deg,rgba(46,204,113,.2),rgba(46,204,113,.1));border:1px solid rgba(46,204,113,.4);color:var(--emb);border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:\'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">🖼 Download Image</button>
+      <button onclick="typeof tmDownloadCertPDF==='function'&&tmDownloadCertPDF()" style="flex:1;background:linear-gradient(135deg,var(--gold),var(--goldl));border:none;color:#080c08;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">📄 Download PDF</button>
+      <button onclick="typeof tmDownloadCertImage==='function'&&tmDownloadCertImage()" style="flex:1;background:linear-gradient(135deg,rgba(46,204,113,.2),rgba(46,204,113,.1));border:1px solid rgba(46,204,113,.4);color:var(--emb);border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:13px;font-family:'Lato',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">🖼 Download Image</button>
     </div>
     <div id="tm-cert-status" style="margin-top:8px;font-size:12px;color:var(--greyd);text-align:center;"></div>
   </div>
@@ -17453,47 +17488,65 @@ function tmUpdateCertPreview(){
 }
 
 function tmBuildCertHTML(student, stage, teacher, dateStr, preview){
-  var scale = preview ? 'transform:scale(0.62);transform-origin:top left;' : '';
-  var wrapH = preview ? 'height:380px;overflow:hidden;' : '';
-  return '<div style="'+(preview?'width:680px;'+wrapH:'')+'">' +
-  '<div id="tm-cert-inner" style="width:680px;background:#fff;font-family:Lato,sans-serif;'+scale+'">' +
-  '<div style="background:linear-gradient(135deg,#071a0e 0%,#0d2b14 50%,#1a4a25 100%);padding:40px 48px 32px;position:relative;overflow:hidden;">' +
-  '<div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,255,255,.02) 40px,rgba(255,255,255,.02) 41px);"></div>' +
+  var scale = preview ? 'transform:scale(0.58);transform-origin:top left;' : '';
+  var wrapH = preview ? 'height:340px;overflow:hidden;' : '';
+  return '<div style="'+(preview?'width:610px;'+wrapH:'')+'">' +
+  '<div id="tm-cert-inner" style="width:610px;max-width:100%;background:#fff;font-family:Lato,sans-serif;border-radius:'+(preview?'0':'12px')+';overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1);'+scale+'">' +
+
+  '<div style="background:linear-gradient(135deg,#071a0e 0%,#0d2b14 50%,#1a4a25 100%);padding:24px 32px 20px;position:relative;overflow:hidden;">' +
+  '<div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 36px,rgba(255,255,255,.015) 36px,rgba(255,255,255,.015) 37px);"></div>' +
   '<div style="position:relative;z-index:1;text-align:center;">' +
-  '<div style="font-family:Amiri,serif;font-size:28px;color:rgba(201,168,76,.6);direction:rtl;letter-spacing:4px;margin-bottom:8px;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>' +
-  '<div style="width:80px;height:2px;background:linear-gradient(to right,transparent,#c9a84c,transparent);margin:0 auto 16px;"></div>' +
-  '<div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:5px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px;">Qur\'ān Quest</div>' +
-  '<h1 style="font-family:Cinzel,serif;font-size:30px;color:#fff;letter-spacing:3px;margin:0 0 4px;">Certificate of Achievement</h1>' +
-  '<div style="font-size:12px;color:rgba(255,255,255,.6);letter-spacing:2px;">Abu Zayd Solution</div>' +
+  '<div style="font-family:Amiri,serif;font-size:20px;color:rgba(201,168,76,.8);direction:rtl;margin-bottom:6px;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>' +
+  '<div style="width:50px;height:1px;background:linear-gradient(to right,transparent,#c9a84c,transparent);margin:0 auto 8px;"></div>' +
+  '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:5px;color:#c9a84c;text-transform:uppercase;margin-bottom:4px;">Qur\'ān Quest</div>' +
+  '<div style="font-family:Cinzel,serif;font-size:22px;color:#fff;letter-spacing:2px;margin:0 0 3px;">Certificate of Achievement</div>' +
+  '<div style="font-size:10px;color:rgba(255,255,255,.45);letter-spacing:2px;">Qur\'ān Learning Programme</div>' +
   '</div></div>' +
-  '<div style="padding:36px 48px;background:#fff;">' +
-  '<div style="text-align:center;margin-bottom:28px;">' +
-  '<div style="font-size:12px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">This is to certify that</div>' +
-  '<div style="font-family:Cinzel,serif;font-size:28px;color:#1a7a3c;border-bottom:2px solid #c9a84c;display:inline-block;padding-bottom:4px;min-width:300px;letter-spacing:2px;">'+student+'</div>' +
+
+  '<div style="padding:20px 28px 18px;background:#fff;">' +
+
+  '<div style="text-align:center;margin-bottom:14px;">' +
+  '<div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.3);border-radius:50px;padding:5px 16px;">' +
+  '<span style="font-size:15px;">🌟</span>' +
+  '<span style="font-family:Cinzel,serif;font-size:12px;color:#c9a84c;font-weight:700;letter-spacing:2px;">Mā Shā Allāh</span>' +
+  '<span style="font-size:15px;">🌟</span>' +
+  '</div></div>' +
+
+  '<div style="text-align:center;margin-bottom:12px;">' +
+  '<div style="font-size:10px;color:#bbb;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">This is to certify that</div>' +
+  '<div style="font-family:Cinzel,serif;font-size:22px;color:#1a7a3c;border-bottom:2px solid #c9a84c;display:inline-block;padding-bottom:3px;min-width:240px;letter-spacing:1px;">'+student+'</div>' +
   '</div>' +
-  '<div style="text-align:center;margin-bottom:24px;">' +
-  '<div style="font-size:13px;color:#555;margin-bottom:8px;">has successfully completed</div>' +
-  '<div style="background:linear-gradient(135deg,rgba(26,122,60,.08),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:14px 24px;display:inline-block;">' +
-  '<span style="font-family:Cinzel,serif;font-size:18px;color:#1a4a25;letter-spacing:1px;">'+stage+'</span>' +
+
+  '<div style="text-align:center;margin-bottom:18px;">' +
+  '<div style="font-size:11px;color:#999;margin-bottom:7px;">has successfully completed</div>' +
+  '<div style="background:linear-gradient(135deg,rgba(26,122,60,.07),rgba(201,168,76,.07));border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:9px 18px;display:inline-block;max-width:88%;">' +
+  '<span style="font-family:Cinzel,serif;font-size:14px;color:#1a4a25;letter-spacing:1px;">'+stage+'</span>' +
   '</div></div>' +
-  '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:32px;padding-top:20px;border-top:1px solid #eee;">' +
-  '<div style="text-align:center;">' +
-  '<div style="border-top:2px solid #1a7a3c;width:180px;padding-top:8px;margin-top:32px;">' +
-  '<div style="font-size:12px;color:#555;font-weight:700;">'+teacher+'</div>' +
-  '<div style="font-size:10px;color:#999;letter-spacing:1px;text-transform:uppercase;">Authorised by</div>' +
+
+  '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:14px;border-top:1px solid #eee;gap:6px;">' +
+  '<div style="text-align:center;flex:1;">' +
+  '<div style="height:22px;"></div>' +
+  '<div style="border-top:1.5px solid #1a7a3c;padding-top:5px;">' +
+  '<div style="font-size:10px;color:#444;font-weight:700;">'+teacher+'</div>' +
+  '<div style="font-size:8px;color:#bbb;letter-spacing:1px;text-transform:uppercase;margin-top:1px;">Awarded by</div>' +
   '</div></div>' +
-  '<div style="text-align:center;">' +
-  '<div style="font-size:40px;margin-bottom:4px;">🌟</div>' +
-  '<div style="font-size:11px;color:#c9a84c;font-weight:700;letter-spacing:1px;">MāshāAllāh</div>' +
+  '<div style="text-align:center;flex:1;">' +
+  '<div style="font-family:Amiri,serif;font-size:18px;color:#1a7a3c;direction:rtl;line-height:1.5;margin-bottom:2px;">بَارَكَ اللَّهُ فِيكَ</div>' +
+  '<div style="font-size:8px;color:#bbb;font-style:italic;">May Allah bless you</div>' +
   '</div>' +
-  '<div style="text-align:center;">' +
-  '<div style="border-top:2px solid #c9a84c;width:180px;padding-top:8px;margin-top:32px;">' +
-  '<div style="font-size:12px;color:#555;font-weight:700;">'+dateStr+'</div>' +
-  '<div style="font-size:10px;color:#999;letter-spacing:1px;text-transform:uppercase;">Date of Award</div>' +
-  '</div></div></div>' +
-  '<div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #eee;">' +
-  '<div style="font-size:10px;color:#bbb;letter-spacing:1px;">Qur\'ān Quest · Abu Zayd Solution · May Allah bless this student\'s journey</div>' +
-  '</div></div></div></div>';
+  '<div style="text-align:center;flex:1;">' +
+  '<div style="height:22px;"></div>' +
+  '<div style="border-top:1.5px solid #c9a84c;padding-top:5px;">' +
+  '<div style="font-size:10px;color:#444;font-weight:700;">'+dateStr+'</div>' +
+  '<div style="font-size:8px;color:#bbb;letter-spacing:1px;text-transform:uppercase;margin-top:1px;">Date of Award</div>' +
+  '</div></div>' +
+  '</div>' +
+
+  '<div style="text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid #f5f5f5;">' +
+  '<div style="font-size:8px;color:#ddd;letter-spacing:1px;">Qur\'ān Quest &nbsp;·&nbsp; May Allāh bless this student\'s journey &nbsp;·&nbsp; آمِين</div>' +
+  '</div>' +
+
+  '</div></div></div>';
 }
 
 // ── Download Certificate as PDF ──
@@ -17511,77 +17564,82 @@ function tmDownloadCertPDF(){
   var f = tmGetCertFields();
   var status = document.getElementById('tm-cert-status');
   if(!f.student || f.student === 'Student Name'){ showToast('Please enter the student name'); return; }
-  if(status) status.textContent = 'Building certificate…';
+  if(status) status.textContent = 'Building certificate\u2026';
+
+  var css = [
+    '*{box-sizing:border-box;margin:0;padding:0;}',
+    'body{font-family:Lato,sans-serif;background:#f0f0ec;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;}',
+    '.cert{background:#fff;width:100%;max-width:640px;border-radius:14px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,.12);}',
+    '.cert-top{background:linear-gradient(135deg,#071a0e 0%,#0d2b14 50%,#1a4a25 100%);padding:24px 32px 20px;text-align:center;position:relative;}',
+    '.cert-pat{position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 36px,rgba(255,255,255,.015) 36px,rgba(255,255,255,.015) 37px);}',
+    '.cert-inner{position:relative;z-index:1;}',
+    '.bismi{font-family:Amiri,serif;font-size:20px;color:rgba(201,168,76,.8);direction:rtl;margin-bottom:6px;}',
+    '.divider{width:50px;height:1px;background:linear-gradient(to right,transparent,#c9a84c,transparent);margin:0 auto 8px;}',
+    '.brand{font-family:Cinzel,serif;font-size:9px;letter-spacing:5px;color:#c9a84c;text-transform:uppercase;margin-bottom:4px;}',
+    '.cert-title{font-family:Cinzel,serif;font-size:22px;color:#fff;letter-spacing:2px;margin-bottom:3px;}',
+    '.cert-sub{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:2px;}',
+    '.cert-body{padding:20px 28px 18px;}',
+    '.masha{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.3);border-radius:50px;padding:5px 16px;margin-bottom:14px;}',
+    '.masha-text{font-family:Cinzel,serif;font-size:12px;color:#c9a84c;font-weight:700;letter-spacing:2px;}',
+    '.certify{font-size:10px;color:#bbb;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:8px;}',
+    '.sname{font-family:Cinzel,serif;font-size:22px;color:#1a7a3c;border-bottom:2px solid #c9a84c;display:block;text-align:center;padding-bottom:3px;margin-bottom:14px;letter-spacing:1px;}',
+    '.done{font-size:11px;color:#999;text-align:center;margin-bottom:7px;}',
+    '.ach{background:linear-gradient(135deg,rgba(26,122,60,.07),rgba(201,168,76,.07));border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:9px 18px;text-align:center;margin-bottom:18px;}',
+    '.ach span{font-family:Cinzel,serif;font-size:14px;color:#1a4a25;letter-spacing:1px;}',
+    '.sigs{display:flex;justify-content:space-between;align-items:flex-end;padding-top:14px;border-top:1px solid #eee;gap:6px;}',
+    '.sig{text-align:center;flex:1;}',
+    '.sl-g{border-top:1.5px solid #1a7a3c;padding-top:5px;margin-top:22px;}',
+    '.sl-gold{border-top:1.5px solid #c9a84c;padding-top:5px;margin-top:22px;}',
+    '.sn{font-size:10px;color:#444;font-weight:700;}',
+    '.sl{font-size:8px;color:#bbb;letter-spacing:1px;text-transform:uppercase;margin-top:1px;}',
+    '.dua{font-family:Amiri,serif;font-size:18px;color:#1a7a3c;direction:rtl;line-height:1.5;margin-bottom:2px;}',
+    '.dua-en{font-size:8px;color:#bbb;font-style:italic;}',
+    '.foot{text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid #f5f5f5;font-size:8px;color:#ddd;letter-spacing:1px;}',
+    '.pbar{margin-top:20px;text-align:center;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}',
+    '.pbtn{background:#1a7a3c;color:#fff;border:none;padding:11px 24px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif;}',
+    '.sbtn{background:#c9a84c;color:#080c08;border:none;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif;}',
+    '@media print{.pbar{display:none!important;}body{background:#fff;padding:0;}}',
+    '@media(max-width:500px){.cert-top{padding:20px 18px 16px;}.cert-body{padding:16px 18px;}.cert-title{font-size:18px;}.sname{font-size:18px;min-width:0;width:100%;}.sigs{flex-direction:column;gap:16px;align-items:center;}}'
+  ].join('');
 
   var certHTML = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>Certificate — ' + f.student + '</title>'
+    + '<title>Certificate \u2014 ' + f.student + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">'
-    + '<style>'
-    + '*{box-sizing:border-box;margin:0;padding:0;}'
-    + 'body{font-family:Lato,sans-serif;background:#f0f0ec;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;}'
-    + '.cert{background:#fff;width:100%;max-width:700px;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.15);}'
-    + '.cert-top{background:linear-gradient(135deg,#071a0e 0%,#0d2b14 50%,#1a4a25 100%);padding:40px 48px 32px;text-align:center;position:relative;}'
-    + '.bismi{font-family:Amiri,serif;font-size:22px;color:rgba(201,168,76,.7);direction:rtl;margin-bottom:10px;}'
-    + '.divider{width:80px;height:2px;background:linear-gradient(to right,transparent,#c9a84c,transparent);margin:0 auto 16px;}'
-    + '.brand{font-family:Cinzel,serif;font-size:11px;letter-spacing:5px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px;}'
-    + '.cert-title{font-family:Cinzel,serif;font-size:28px;color:#fff;letter-spacing:3px;margin-bottom:4px;}'
-    + '.cert-sub{font-size:12px;color:rgba(255,255,255,.6);letter-spacing:2px;}'
-    + '.cert-body{padding:36px 48px;}'
-    + '.certify-text{font-size:12px;color:#888;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:14px;}'
-    + '.student-name{font-family:Cinzel,serif;font-size:30px;color:#1a7a3c;border-bottom:2px solid #c9a84c;display:block;text-align:center;padding-bottom:6px;margin-bottom:24px;letter-spacing:2px;}'
-    + '.completed-text{font-size:13px;color:#555;text-align:center;margin-bottom:12px;}'
-    + '.achievement{background:linear-gradient(135deg,rgba(26,122,60,.08),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:14px 24px;text-align:center;margin-bottom:28px;}'
-    + '.achievement span{font-family:Cinzel,serif;font-size:17px;color:#1a4a25;letter-spacing:1px;}'
-    + '.sig-row{display:flex;justify-content:space-between;align-items:flex-end;padding-top:20px;border-top:1px solid #eee;}'
-    + '.sig{text-align:center;}'
-    + '.sig-line{border-top:2px solid #1a7a3c;width:180px;padding-top:8px;margin-top:32px;}'
-    + '.sig-name{font-size:12px;color:#555;font-weight:700;}'
-    + '.sig-label{font-size:10px;color:#999;letter-spacing:1px;text-transform:uppercase;}'
-    + '.star{font-size:36px;}'
-    + '.star-text{font-size:11px;color:#c9a84c;font-weight:700;letter-spacing:1px;}'
-    + '.cert-footer{text-align:center;padding-top:16px;border-top:1px solid #eee;margin-top:16px;font-size:10px;color:#bbb;letter-spacing:1px;}'
-    + '.print-bar{margin-top:24px;text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}'
-    + '.btn-print{background:#1a7a3c;color:#fff;border:none;padding:13px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif;}'
-    + '.btn-share{background:#c9a84c;color:#080c08;border:none;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Lato,sans-serif;}'
-    + '@media print{.print-bar{display:none!important;}body{background:#fff;padding:0;}}'
-    + '@media(max-width:500px){.cert-top{padding:28px 24px 22px;}.cert-body{padding:24px;}.cert-title{font-size:20px;}.student-name{font-size:22px;}.sig-row{flex-direction:column;gap:20px;align-items:center;}.sig-line{width:220px;}}'
-    + '</style></head><body>'
+    + '<style>' + css + '</style></head><body>'
     + '<div class="cert">'
-    + '<div class="cert-top">'
-    + '<div class="bismi">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>'
-    + '<div class="divider"></div>'
-    + '<div class="brand">Qur\'an Quest</div>'
-    + '<div class="cert-title">Certificate of Achievement</div>'
-    + '<div class="cert-sub">Abu Zayd Solution</div>'
+      + '<div class="cert-top">'
+        + '<div class="cert-pat"></div>'
+        + '<div class="cert-inner">'
+          + '<div class="bismi">\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064e\u0647\u0650 \u0627\u0644\u0631\u0651\u064e\u062d\u0652\u0645\u064e\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064e\u062d\u0650\u064a\u0645\u0650</div>'
+          + '<div class="divider"></div>'
+          + '<div class="brand">Qur\u02bcān Quest</div>'
+          + '<div class="cert-title">Certificate of Achievement</div>'
+          + '<div class="cert-sub">Qur\u02bcān Learning Programme</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="cert-body">'
+        + '<div style="text-align:center;">'
+          + '<div class="masha"><span style="font-size:15px;">\uD83C\uDF1F</span><span class="masha-text">M\u0101 Sh\u0101 All\u0101h</span><span style="font-size:15px;">\uD83C\uDF1F</span></div>'
+        + '</div>'
+        + '<div class="certify">This is to certify that</div>'
+        + '<div class="sname">' + f.student + '</div>'
+        + '<div class="done">has successfully completed</div>'
+        + '<div class="ach"><span>' + f.stage + '</span></div>'
+        + '<div class="sigs">'
+          + '<div class="sig"><div class="sl-g"><div class="sn">' + f.teacher + '</div><div class="sl">Awarded by</div></div></div>'
+          + '<div class="sig"><div class="dua">\u0628\u064e\u0627\u0631\u064e\u0643\u064e \u0627\u0644\u0644\u0651\u064e\u0647\u064f \u0641\u0650\u064a\u0643\u064e</div><div class="dua-en">May Allah bless you</div></div>'
+          + '<div class="sig"><div class="sl-gold"><div class="sn">' + f.dateStr + '</div><div class="sl">Date of Award</div></div></div>'
+        + '</div>'
+        + '<div class="foot">Qur\u02bcān Quest &middot; May All\u0101h bless this student\u2019s journey &middot; \u0622m\u012bn</div>'
+      + '</div>'
     + '</div>'
-    + '<div class="cert-body">'
-    + '<div class="certify-text">This is to certify that</div>'
-    + '<div class="student-name">' + f.student + '</div>'
-    + '<div class="completed-text">has successfully completed</div>'
-    + '<div class="achievement"><span>' + f.stage + '</span></div>'
-    + '<div class="sig-row">'
-    + '<div class="sig"><div class="sig-line"><div class="sig-name">' + f.teacher + '</div><div class="sig-label">Authorised by</div></div></div>'
-    + '<div class="sig" style="text-align:center;"><div class="star">🌟</div><div class="star-text">MashaAllah</div></div>'
-    + '<div class="sig"><div class="sig-line"><div class="sig-name">' + f.dateStr + '</div><div class="sig-label">Date of Award</div></div></div>'
+    + '<div class="pbar">'
+      + '<button class="pbtn" onclick="window.print()">\uD83D\uDDA8\uFE0F Print / Save as PDF</button>'
+      + '<button class="sbtn" onclick="if(navigator.share){navigator.share({title:\'Certificate\',text:\'' + f.student.replace(/'/g,"\\'") + ' completed ' + f.stage.replace(/'/g,"\\'") + '\'}).catch(function(){});}else{window.print();}">\uD83D\uDCE4 Share</button>'
     + '</div>'
-    + '<div class="cert-footer">Qur\'an Quest &nbsp;·&nbsp; Abu Zayd Solution &nbsp;·&nbsp; May Allah bless this student\'s journey</div>'
-    + '</div></div>'
-    + '<div class="print-bar">'
-    + '<button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>'
-    + '<button class="btn-share" onclick="tmShareCert()">📤 Share</button>'
-    + '</div>'
-    + '<script>'
-    + 'function tmShareCert(){'
-    + '  if(navigator.share){'
-    + '    navigator.share({title:"Certificate — ' + f.student.replace(/'/g,"'") + '",text:"' + f.student.replace(/'/g,"'") + ' has completed: ' + f.stage.replace(/'/g,"'") + ' — Qur\'an Quest",url:window.location.href})'
-    + '    .catch(function(){});'
-    + '  } else { window.print(); }'
-    + '}'
-    + '<\/script>'
     + '</body></html>';
 
-  // Download as .html file — works on ALL devices including mobile
   var blob = new Blob([certHTML], {type: 'text/html;charset=utf-8'});
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
@@ -17591,12 +17649,10 @@ function tmDownloadCertPDF(){
   a.click();
   document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-
   if(status) status.textContent = '';
-  showToast('🎓 Certificate downloaded! Open the file and tap Print to save as PDF.');
+  showToast('\uD83C\uDF93 Certificate downloaded! Open the file and tap Print to save as PDF.');
 }
 
-// ── Share / Image button — uses Web Share API on mobile, falls back to download ──
 function tmDownloadCertImage(){
   var f = tmGetCertFields();
   var status = document.getElementById('tm-cert-status');
