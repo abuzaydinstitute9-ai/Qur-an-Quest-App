@@ -19392,6 +19392,98 @@ var _origCallStartBtn = null;
   }
 })();
 
+// ══════════════════════════════
+// INCOMING CALL POLLER
+// ══════════════════════════════
+
+var _incomingPollInterval = null;
+var _seenCallIds = {};
+
+function startIncomingCallPoller(){
+  if(_incomingPollInterval) return;
+  _incomingPollInterval = setInterval(_checkIncomingCalls, 2000);
+  setTimeout(_checkIncomingCalls, 500);
+}
+
+function _checkIncomingCalls(){
+  if(!currentUser) return;
+  if(_callState !== 'idle') return;
+  _fbGet('calls', function(allCalls){
+    if(!allCalls || typeof allCalls !== 'object') return;
+    var myName = (currentUser.name||'').trim().toLowerCase();
+    Object.keys(allCalls).forEach(function(cid){
+      if(_seenCallIds[cid]) return;
+      var call = allCalls[cid];
+      if(!call || !call.meta) return;
+      var meta = call.meta;
+      if(!meta.to || !meta.status) return;
+      var toName = (meta.to||'').trim().toLowerCase();
+      if(toName === myName && meta.status === 'ringing'){
+        _seenCallIds[cid] = true;
+        _showIncomingCall(cid, meta, call.offer);
+      }
+      if(meta.status === 'ended' || meta.status === 'declined'){
+        setTimeout(function(){ delete _seenCallIds[cid]; }, 30000);
+      }
+    });
+  });
+}
+
+function stopIncomingCallPoller(){
+  if(_incomingPollInterval){ clearInterval(_incomingPollInterval); _incomingPollInterval = null; }
+}
+
+function _showIncomingCall(callId, meta, offer){
+  if(_callState !== 'idle') return;
+  _callState = 'ringing';
+  _callId = callId;
+  _callRole = 'callee';
+  _callType = meta.type || 'voice';
+  _callPeer = meta.from;
+  _callCode = meta.classCode;
+  _pendingOffer = offer;
+  var typeLabel = _callType === 'video' ? '📹 Video Call' : '📞 Voice Call';
+  callShowRinging(
+    typeLabel + ' from ' + meta.from,
+    meta.fromRole === 'teacher' ? '🏫 Your Teacher' : '👤 Classmate',
+    '<button class="call-btn accept" onclick="callAccept()" title="Accept">📞</button>' +
+    '<button class="call-btn decline" onclick="callDecline()" title="Decline">📵</button>'
+  );
+  var av = document.getElementById('call-avatar-emoji');
+  if(av) av.textContent = _callType === 'video' ? '📹' : '📞';
+  if(typeof updateStudentCallBanner === 'function') setTimeout(updateStudentCallBanner, 50);
+  _callRing();
+}
+
+var _pendingOffer = null;
+var _ringOscInterval = null;
+
+function _callRing(){
+  try{
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 440;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(); osc.stop(ctx.currentTime + 0.8);
+    _ringOscInterval = setInterval(function(){
+      if(_callState !== 'ringing'){ clearInterval(_ringOscInterval); return; }
+      try{
+        var c2 = new (window.AudioContext || window.webkitAudioContext)();
+        var o2 = c2.createOscillator();
+        var g2 = c2.createGain();
+        o2.connect(g2); g2.connect(c2.destination);
+        o2.frequency.value = 480;
+        g2.gain.setValueAtTime(0.25, c2.currentTime);
+        g2.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.6);
+        o2.start(); o2.stop(c2.currentTime + 0.6);
+      }catch(e){}
+    }, 1500);
+  }catch(e){}
+}
+
 // START POLLING ON INIT
 // ══════════════════════════════
 
