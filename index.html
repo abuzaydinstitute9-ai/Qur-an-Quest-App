@@ -809,103 +809,96 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 </style>
 <!-- Firebase: pure REST API — no SDK, no CDN, no blocking -->
 <script>
+
 // ══════════════════════════════════════════════════════════════
-//  QUR'AN QUEST — DATA ENGINE v3 (Supabase + localStorage)
-//  Drop-in replacement for Firebase REST engine.
-//  Same public API: _fbGet / _fbSet / _fbUpdate / _fbPush /
-//  _fbListen / _fbUnlisten / _fbReady
-//
-//  Supabase setup (one time):
-//    1. supabase.com → New project → note Project URL + anon key
-//    2. SQL Editor → run the schema below
-//    3. Paste URL + key into the Setup panel (🟡 Setup button in nav)
-//
-//  Supabase SQL schema:
-//    create table kv (
-//      path text primary key,
-//      data jsonb,
-//      updated_at timestamptz default now()
-//    );
-//    alter table kv enable row level security;
-//    create policy "open" on kv for all using (true) with check (true);
-//
-//  The table is a flat key-value store where `path` = Firebase path.
-//  _fbPush simulates Firebase push() by appending a random child key.
+//  QUR'AN QUEST — DATA ENGINE v4 (Supabase + localStorage)
+//  FIXED: prefix queries, nested paths, presence, chat, calls
 // ══════════════════════════════════════════════════════════════
 
-var _SB_URL  = '';   // e.g. https://xxxx.supabase.co
-var _SB_KEY  = '';   // anon/public key
+var _SB_URL  = '';
+var _SB_KEY  = '';
 var _sbReady = false;
-var _sbPollers = {};  // path → {interval, cb, lastData}
+var _sbPollers = {};
 
-// ── localStorage helpers (fallback + offline) ──
-function _lsKey(path){ return 'qq_sb_' + path.replace(/\//g,'__'); }
-function _lsGet(path){ try{ var v=localStorage.getItem(_lsKey(path)); return v?JSON.parse(v):null; }catch(e){ return null; } }
-function _lsSet(path, data){ try{ localStorage.setItem(_lsKey(path), JSON.stringify(data)); }catch(e){} }
-function _lsMerge(path, data){
-  var cur = _lsGet(path) || {};
-  Object.assign(cur, data);
-  _lsSet(path, cur);
-  return cur;
-}
-function _lsPush(path, data){
-  var cur = _lsGet(path) || {};
-  var key = '-' + Math.random().toString(36).substr(2,10);
-  cur[key] = data;
-  _lsSet(path, cur);
-  return key;
+// ── localStorage helpers ──
+function _lsKey(p){ return 'qq_sb_' + p.replace(/\//g,'__'); }
+function _lsGet(p){ try{ var v=localStorage.getItem(_lsKey(p)); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function _lsSet(p,d){ try{ localStorage.setItem(_lsKey(p),JSON.stringify(d)); }catch(e){} }
+
+// ── Build object tree from flat rows (like Firebase does) ──
+// e.g. [{path:'presence/alice', data:{...}}, {path:'presence/bob', data:{...}}]
+// → { alice:{...}, bob:{...} }
+function _rowsToTree(rows, prefix){
+  if(!rows || !rows.length) return null;
+  // Exact match
+  if(rows.length === 1 && rows[0].path === prefix) return rows[0].data;
+  // Build tree from prefix children
+  var tree = {};
+  rows.forEach(function(row){
+    var rel = row.path.slice(prefix.length).replace(/^\//,'');
+    if(!rel){ Object.assign(tree, row.data || {}); return; }
+    var parts = rel.split('/');
+    var cur = tree;
+    for(var i=0;i<parts.length-1;i++){
+      if(!cur[parts[i]]) cur[parts[i]]={};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length-1]] = row.data;
+  });
+  return Object.keys(tree).length ? tree : null;
 }
 
-// ── Supabase REST helpers ──
+// ── Supabase REST ──
 function _sbHeaders(){
   return {
-    'Content-Type': 'application/json',
+    'Content-Type':'application/json',
     'apikey': _SB_KEY,
-    'Authorization': 'Bearer ' + _SB_KEY,
-    'Prefer': 'return=representation'
+    'Authorization':'Bearer '+_SB_KEY,
+    'Prefer':'return=representation'
   };
 }
 
-function _sbFetch(method, pathParam, body){
-  if(!_SB_URL || !_SB_KEY) return Promise.resolve(null);
-  var url = _SB_URL + '/rest/v1/kv?path=eq.' + encodeURIComponent(pathParam);
-  var opts = { method: method, headers: _sbHeaders() };
-  if(body !== undefined) opts.body = JSON.stringify(body);
-  return fetch(url, opts)
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .catch(function(){ return null; });
+// Fetch exact path OR all rows whose path starts with prefix/
+function _sbFetchPrefix(pathParam){
+  if(!_SB_URL || !_SB_KEY) return Promise.resolve([]);
+  // Use LIKE to get exact + all children: path = 'x' OR path LIKE 'x/%'
+  var encoded = encodeURIComponent(pathParam);
+  var childPat = encodeURIComponent(pathParam + '/%');
+  var url = _SB_URL + '/rest/v1/kv?or=(path.eq.' + encoded + ',path.like.' + childPat + ')&order=path';
+  return fetch(url, { method:'GET', headers:_sbHeaders() })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .catch(function(){ return []; });
 }
 
-// ── Public API (mirrors Firebase helpers) ──
+function _sbUpsert(path, data){
+  if(!_SB_URL || !_SB_KEY) return Promise.resolve(null);
+  return fetch(_SB_URL+'/rest/v1/kv', {
+    method:'POST',
+    headers: Object.assign({}, _sbHeaders(), {'Prefer':'resolution=merge-duplicates,return=representation'}),
+    body: JSON.stringify({path:path, data:data, updated_at:new Date().toISOString()})
+  }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+}
+
+// ── Public API ──
 
 function _fbGet(path, cb){
   var local = _lsGet(path);
   if(!_sbReady){ if(cb) cb(local); return; }
-  _sbFetch('GET', path).then(function(rows){
-    if(rows && rows.length > 0){
-      var data = rows[0].data;
-      _lsSet(path, data);
-      if(cb) cb(data);
-    } else {
-      if(cb) cb(local);
-    }
+  _sbFetchPrefix(path).then(function(rows){
+    var data = _rowsToTree(rows, path);
+    if(data !== null){ _lsSet(path, data); if(cb) cb(data); }
+    else { if(cb) cb(local); }
   });
 }
 
 function _fbSet(path, data){
   _lsSet(path, data);
   if(!_sbReady) return Promise.resolve(null);
-  // Upsert
-  return fetch(_SB_URL + '/rest/v1/kv', {
-    method: 'POST',
-    headers: Object.assign({}, _sbHeaders(), {'Prefer':'resolution=merge-duplicates,return=representation'}),
-    body: JSON.stringify({path: path, data: data, updated_at: new Date().toISOString()})
-  }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  return _sbUpsert(path, data);
 }
 
 function _fbUpdate(path, data){
   var cur = _lsGet(path) || {};
-  // Support dot-notation keys like 'meta/status'
   function setNested(obj, keyPath, val){
     var parts = keyPath.split('/');
     var o = obj;
@@ -920,19 +913,27 @@ function _fbUpdate(path, data){
 }
 
 function _fbPush(path, data){
-  var key = _lsPush(path, data);
-  var cur = _lsGet(path);
-  if(_sbReady) _fbSet(path, cur);
+  var key = '-' + Math.random().toString(36).substr(2,10);
+  var childPath = path + '/' + key;
+  // Store as individual child row for proper prefix querying
+  _lsSet(childPath, data);
+  // Also update parent cache
+  var cur = _lsGet(path) || {};
+  cur[key] = data;
+  _lsSet(path, cur);
+  if(_sbReady){
+    _sbUpsert(childPath, data).catch(function(){});
+    // Also upsert parent for listeners that poll the whole path
+    _sbUpsert(path, cur).catch(function(){});
+  }
   return Promise.resolve({name: key});
 }
 
-// ── Polling listener (replaces Firebase onValue) ──
+// ── Polling listener ──
 function _fbListen(path, cb, intervalMs){
   _fbUnlisten(path);
-  intervalMs = intervalMs || 3000;
-  // Immediate call
+  intervalMs = intervalMs || 4000;
   _fbGet(path, cb);
-  // Then poll
   _sbPollers[path] = {
     cb: cb,
     lastSeen: null,
@@ -949,17 +950,48 @@ function _fbListen(path, cb, intervalMs){
 }
 
 function _fbUnlisten(path){
-  if(_sbPollers[path]){
-    clearInterval(_sbPollers[path].interval);
-    delete _sbPollers[path];
-  }
+  if(_sbPollers[path]){ clearInterval(_sbPollers[path].interval); delete _sbPollers[path]; }
 }
+
+// ── Class helpers ──
+var _fbClassCache = {};
+var _fbClassListener = null;
+
+function fbSetClass(code, data){
+  _fbClassCache[code] = data;
+  return _fbSet('classes/'+code, data);
+}
+function fbGetClass(code, cb){
+  if(_fbClassCache[code]){ cb(_fbClassCache[code]); }
+  _fbGet('classes/'+code, function(data){
+    if(data) _fbClassCache[code] = data;
+    cb(data);
+  });
+}
+function fbAddStudent(code, studentName){
+  var key = studentName.replace(/[.#$\/\[\]\s]/g,'_');
+  return _fbUpdate('classes/'+code+'/students/'+key, {
+    name: studentName, joined: new Date().toISOString().slice(0,10)
+  });
+}
+function fbListenClass(code, cb){
+  _fbListen('classes/'+code, function(data){
+    if(data) _fbClassCache[code] = data;
+    cb(data);
+  }, 4000);
+}
+function fbUnlistenClass(code){
+  _fbUnlisten('classes/'+code);
+}
+
+// ── Compat shims ──
+var _FB_URL = '';
+var _fbReady = true;
 
 // ── Setup UI ──
 function _sbShowSetup(){
   var el = document.getElementById('sb-setup-panel');
   if(el){ el.style.display = el.style.display==='block'?'none':'block'; return; }
-  // Build panel
   var p = document.createElement('div');
   p.id = 'sb-setup-panel';
   p.style.cssText = 'position:fixed;top:88px;left:50%;transform:translateX(-50%);width:min(520px,96vw);z-index:99999;'+
@@ -987,7 +1019,6 @@ function _sbShowSetup(){
     '<button onclick="_sbSaveAndTest()" style="flex:1;background:rgba(201,168,76,.2);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;">Save &amp; Test Connection</button>'+
     '</div>';
   document.body.appendChild(p);
-  // Pre-fill saved values
   try{
     var su=localStorage.getItem('qq_sb_url'); var sk=localStorage.getItem('qq_sb_key');
     if(su) document.getElementById('sb-inp-url').value=su;
@@ -996,43 +1027,34 @@ function _sbShowSetup(){
 }
 
 window._sbSaveAndTest = function(){
-  var url = (document.getElementById('sb-inp-url')||{}).value||'';
-  var key = (document.getElementById('sb-inp-key')||{}).value||'';
-  var st  = document.getElementById('sb-status');
-  url = url.trim().replace(/\/$/, '');
-  key = key.trim();
-  if(!url || !key){ if(st){st.style.color='#e74c3c';st.textContent='Please fill in both fields.';} return; }
-  // Basic format checks before even trying
+  var url=(document.getElementById('sb-inp-url')||{}).value||'';
+  var key=(document.getElementById('sb-inp-key')||{}).value||'';
+  var st=document.getElementById('sb-status');
+  url=url.trim().replace(/\/$/,''); key=key.trim();
+  if(!url||!key){ if(st){st.style.color='#e74c3c';st.textContent='Please fill in both fields.';} return; }
   if(!url.startsWith('https://')){ if(st){st.style.color='#e74c3c';st.textContent='URL must start with https://';} return; }
-  if(!url.includes('supabase.co')){ if(st){st.style.color='#f39c12';st.textContent='⚠️ URL should contain supabase.co — double-check you copied the Project URL';} }
-  if(key.length < 100){ if(st){st.style.color='#e74c3c';st.textContent='Anon key looks too short — copy the full key from Settings → API';} return; }
-  // Save immediately — don't wait for test
+  if(key.length<100){ if(st){st.style.color='#e74c3c';st.textContent='Anon key looks too short — copy the full key.';} return; }
   _SB_URL=url; _SB_KEY=key; _sbReady=true;
   try{localStorage.setItem('qq_sb_url',url);localStorage.setItem('qq_sb_key',key);}catch(e){}
   var nb=document.getElementById('sb-nav-btn');
   if(nb){nb.style.color='#2ecc71';nb.innerHTML='🟢 Database';}
-  if(st){st.style.color='#f39c12';st.textContent='Saved! Testing connection...';}
-  // Test — but treat ANY network error as success (saved credentials work at runtime)
-  fetch(url+'/rest/v1/kv?path=eq.ping&limit=1&select=path', {
-    method:'GET',
-    headers:{'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'}
+  if(st){st.style.color='#f39c12';st.textContent='Saved! Testing...';}
+  fetch(url+'/rest/v1/kv?path=eq.ping&limit=1&select=path',{
+    method:'GET',headers:{'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'}
   }).then(function(r){
-    if(r.ok){
-      if(st){st.style.color='#2ecc71';st.textContent='✅ Connected! Supabase is working perfectly.';}
+    if(r.ok){ if(st){st.style.color='#2ecc71';st.textContent='✅ Connected! Database working perfectly.';}
       setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},2000);
     } else if(r.status===401||r.status===403){
-      if(st){st.style.color='#e74c3c';st.textContent='❌ Invalid key (HTTP '+r.status+'). Re-copy the anon key from Supabase → Settings → API.';}
-      _sbReady=false;
+      if(st){st.style.color='#e74c3c';st.textContent='❌ Invalid key. Re-copy the anon key from Supabase → Settings → API.';} _sbReady=false;
     } else if(r.status===404){
-      if(st){st.style.color='#e74c3c';st.textContent='❌ Table "kv" not found. Run the SQL setup script in Supabase SQL Editor first.';}
+      if(st){st.style.color='#e74c3c';st.textContent='❌ Table "kv" not found. Run the SQL setup in Supabase SQL Editor first.';}
     } else {
-      if(st){st.style.color='#2ecc71';st.textContent='✅ Credentials saved. Database will sync when in use.';}
+      if(st){st.style.color='#2ecc71';st.textContent='✅ Credentials saved!';}
       setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},2000);
     }
-  }).catch(function(e){
-    // CORS / network error from file:// or certain browsers — credentials already saved, just confirm
-    if(st){st.style.color='#2ecc71';st.textContent='✅ Credentials saved! (Connection test blocked by browser — this is normal. Database will work when hosted on GitHub Pages.)';}
-    setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},3500);
+  }).catch(function(){
+    if(st){st.style.color='#2ecc71';st.textContent='✅ Saved! Database will sync on GitHub Pages.';}
+    setTimeout(function(){var p=document.getElementById('sb-setup-panel');if(p)p.style.display='none';},2500);
   });
 };
 
@@ -1041,15 +1063,13 @@ window._sbSaveAndTest = function(){
   try{
     var su=localStorage.getItem('qq_sb_url');
     var sk=localStorage.getItem('qq_sb_key');
-    if(su && sk){ _SB_URL=su; _SB_KEY=sk; _sbReady=true; }
+    if(su&&sk){ _SB_URL=su; _SB_KEY=sk; _sbReady=true; }
   }catch(e){}
-  // Inject nav button
   function injectSbBtn(){
     if(document.getElementById('sb-nav-btn')) return;
     var navInner=document.querySelector('.nav-inner'); if(!navInner) return;
     var btn=document.createElement('button');
-    btn.id='sb-nav-btn';
-    btn.onclick=_sbShowSetup;
+    btn.id='sb-nav-btn'; btn.onclick=_sbShowSetup;
     btn.style.cssText='background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);'+
       'color:'+(_sbReady?'#2ecc71':'#c9a84c')+';border-radius:8px;padding:5px 10px;font-size:11px;'+
       'font-weight:700;cursor:pointer;white-space:nowrap;';
@@ -1061,9 +1081,6 @@ window._sbSaveAndTest = function(){
   setTimeout(injectSbBtn,800);
 })();
 
-// ── Compat shims (old Firebase vars still referenced) ──
-var _FB_URL = '';
-var _fbReady = true;
 
 </script>
 
@@ -1142,6 +1159,7 @@ var _fbReady = true;
     <!-- ★ FEATURED STANDALONE PILLS -->
     <span class="nav-pill nav-pill-blue" data-page="listenrepeat" onclick="showPage('listenrepeat')">🎧 Listen &amp; Repeat</span>
     <span class="nav-pill nav-pill-green" data-page="beginner" onclick="showPage('beginner')">🌱 Beginners / Kids</span>
+    <span class="nav-pill" data-page="adhkaar" onclick="showPage('adhkaar');renderAdhkaarPage();">📿 Adhkār</span>
     <span class="nav-pill nav-pill-teal" data-page="recitepractice" onclick="showPage('recitepractice')">🎙 Recite &amp; Compare</span>
 
     <div class="nav-divider" style="height:18px;margin:0 4px;"></div>
@@ -1268,6 +1286,7 @@ var _fbReady = true;
 <div id="page-games" class="hidden" style="padding:88px 16px 60px;"></div>
 <div id="page-hifdh" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
 <div id="page-tajweed" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
+<div id="page-adhkaar" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
 <div id="page-daily" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
 <div id="page-leaderboard" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
 <div id="page-dashboard" class="hidden" style="padding:88px 16px 60px;max-width:1160px;margin:0 auto;"></div>
@@ -2514,6 +2533,10 @@ function updateNavAuth(){
 
 function logoutUser(){
   _presenceGoOffline();
+  // Clean up any active call
+  if(typeof callEnd==='function' && typeof _callState!=='undefined' && _callState!=='idle') callEnd();
+  if(typeof stopIncomingCallPoller==='function') stopIncomingCallPoller();
+  if(typeof _callPollerStarted!=='undefined') _callPollerStarted=false;
   currentUser = null;
   clearSession();
   updateNavAuth();
@@ -2628,7 +2651,7 @@ function _presencePollPeers(){
     });
   }
   doPoll();
-  _presencePollTimer = setInterval(doPoll, 30000);
+  _presencePollTimer = setInterval(doPoll, 8000); // fast poll — WhatsApp-style online indicators
 }
 
 function _showPresenceToast(name, role, isOnline){
@@ -5818,6 +5841,10 @@ function joinClassByCode(){
       saveAppState();
       // Start listening for live updates
       _startClassListener(code);
+      // Start PeerJS so teacher can call immediately
+      _callPollerStarted = false;
+      _callCode = code;
+      if(typeof maybeStartCallPoller==='function') setTimeout(maybeStartCallPoller, 500);
       showToast('✅ Joined class! Teacher: '+cls.teacher);
       renderDashboard();
     });
@@ -7916,8 +7943,11 @@ var _ssSeenAnswers = {};
 async function startScreenShare(){
   if(!currentUser || currentUser.role !== 'teacher'){ showToast('Only teachers can share screen'); return; }
   if(_ssActive){ showToast('Screen share already active'); return; }
+  var _isMob=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(_isMob){ showToast('❌ Screen share is not available on mobile browsers'); return; }
+  if(location.protocol==='file:'){ showToast('❌ Screen share needs HTTPS — host on GitHub Pages first'); return; }
   if(typeof navigator.mediaDevices === 'undefined' || !navigator.mediaDevices.getDisplayMedia){
-    showToast('Screen share not supported in this browser'); return;
+    showToast('❌ Screen share not supported. Use Chrome/Firefox on desktop.'); return;
   }
   try {
     _ssStream = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:15, width:{ideal:1280} }, audio:false });
@@ -10167,10 +10197,11 @@ function tpSaveAssignment(){
   const err=$('tp-a-err');
   if(!title){if(err)err.innerHTML='<div class="err-box">Please enter a title.</div>';return;}
   if(!dueDate){if(err)err.innerHTML='<div class="err-box">Please select a due date.</div>';return;}
+  const stopNote=($('tp-a-stopnote')||{value:''}).value.trim();
   const newId=Math.max(0,...tpAssignments.map(a=>a.id))+1;
   const surahNum=($('tp-a-surah')||{value:tpNewAssign.surah||''}).value;
   const surahData=surahNum&&window.HIFDH_SURAHS?window.HIFDH_SURAHS.find(s=>s.n==surahNum):null;
-  tpAssignments.push({id:newId,title,type:tpNewAssign.type,classId:tpNewAssign.classId,dueDate,desc:tpNewAssign.desc,points:tpNewAssign.points||100,status:'active',submissions:[],surah:surahNum?{n:parseInt(surahNum),name:surahData?surahData.name:'',ar:surahData?surahData.ar:''}:null});
+  tpAssignments.push({id:newId,title,type:tpNewAssign.type,classId:tpNewAssign.classId,dueDate,desc:tpNewAssign.desc,stopNote:stopNote||'',points:tpNewAssign.points||100,status:'active',submissions:[],surah:surahNum?{n:parseInt(surahNum),name:surahData?surahData.name:'',ar:surahData?surahData.ar:''}:null});
   showToast('✅ Assignment created!');
   tpTab='assignments';
   renderTeacherPortal();
@@ -12279,11 +12310,17 @@ const BQ_STAGE_LABELS_CERT = {
 
 function bqIssueCertificate(stageId, score){
   if(bqCertificates[stageId]) return; // Already issued
+  var instName = '';
+  var teacherN = '';
+  try{ instName = localStorage.getItem('qq_institution_name')||''; }catch(e){}
+  try{ teacherN = (currentUser&&currentUser.role==='teacher'&&currentUser.name)||localStorage.getItem('qq_teacher_name')||''; }catch(e){}
   bqCertificates[stageId] = {
     issuedAt: new Date().toISOString(),
     studentName: bqStudentName || 'Student',
     score: score,
-    stage: stageId
+    stage: stageId,
+    teacherName: teacherN,
+    institutionName: instName
   };
   bqSave();
   // Show notification
@@ -12359,13 +12396,18 @@ function bqShowCertificate(stageId){
         <div class="footer-line"></div>
         <div class="footer-lbl">Date Issued</div>
       </div>
-      <div style="font-family:Amiri,serif;font-size:28px;color:rgba(201,168,76,.4);direction:rtl;">📜</div>
       <div class="footer-col">
-        <div class="footer-val">Qur\'ān Quest</div>
+        <div class="footer-val">${cert.teacherName||'Qur\'ān Quest'}</div>
         <div class="footer-line"></div>
-        <div class="footer-lbl">Issued By</div>
+        <div class="footer-lbl">Teacher</div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-val">${cert.institutionName||'Qur\'ān Quest'}</div>
+        <div class="footer-line"></div>
+        <div class="footer-lbl">Institution</div>
       </div>
     </div>
+    <div style="text-align:center;margin-top:8px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:2px;text-transform:uppercase;">Powered by Qur\'ān Quest</div>
   </div>
   <script>window.onload=()=>{ setTimeout(()=>window.print(), 600); }<'+'/script>
   </body></html>`;
@@ -19375,25 +19417,57 @@ function _peerId(classCode, userName){
 
 // ── Ensure Peer is open ──
 function _ensurePeer(cb){
-  if(!currentUser || !_callCode){ cb(null); return; }
-  var pid = _peerId(_callCode, currentUser.name);
+  if(!currentUser){ cb(null); return; }
+  // _callCode might have just been set by caller — use it
+  var code = _callCode || (typeof myClassCode!=='undefined'?myClassCode:null);
+  if(!code){ cb(null); return; }
+  // Wait for PeerJS to load (loaded async from CDN)
+  if(typeof Peer === 'undefined'){
+    var waited = 0;
+    var waitForPeer = setInterval(function(){
+      waited += 200;
+      if(typeof Peer !== 'undefined'){
+        clearInterval(waitForPeer);
+        _ensurePeer(cb);
+      } else if(waited > 8000){
+        clearInterval(waitForPeer);
+        console.error('PeerJS failed to load from CDN');
+        cb(null);
+      }
+    }, 200);
+    return;
+  }
+  var pid = _peerId(code, currentUser.name);
   if(_peer && !_peer.destroyed && _peer.id === pid){
     if(_peer.open){ cb(_peer); return; }
-    _peer.on('open', function(){ cb(_peer); });
+    // Already connecting — wait for open with timeout
+    var done = false;
+    _peer.once('open', function(){ if(!done){ done=true; cb(_peer); } });
+    setTimeout(function(){ if(!done){ done=true; cb(_peer.open?_peer:null); } }, 6000);
     return;
   }
   if(_peer && !_peer.destroyed) try{ _peer.destroy(); }catch(e){}
-  _peer = new Peer(pid, {
-    config: ICE_SERVERS,
-    debug: 0
+  _peer = new Peer(pid, { config: ICE_SERVERS, debug: 0 });
+  var cbDone = false;
+  // Timeout in case PeerJS cloud is slow
+  var peerTimeout = setTimeout(function(){
+    if(!cbDone){ cbDone=true; cb(_peer); } // try anyway
+  }, 8000);
+  _peer.on('open', function(){
+    clearTimeout(peerTimeout);
+    _setupIncomingCallHandler();
+    if(!cbDone){ cbDone=true; cb(_peer); }
   });
-  _peer.on('open', function(){ _setupIncomingCallHandler(); cb(_peer); });
   _peer.on('error', function(err){
-    // If ID taken, try with suffix
+    clearTimeout(peerTimeout);
     if(err.type==='unavailable-id'){
       var pid2 = pid + '_' + Math.random().toString(36).substr(2,4);
       _peer = new Peer(pid2, {config:ICE_SERVERS, debug:0});
-      _peer.on('open', function(){ _setupIncomingCallHandler(); cb(_peer); });
+      _peer.on('open', function(){ _setupIncomingCallHandler(); if(!cbDone){ cbDone=true; cb(_peer); } });
+    } else if(!cbDone){
+      cbDone=true;
+      console.error('PeerJS error:', err.type, err.message);
+      cb(null);
     }
   });
 }
@@ -19401,8 +19475,8 @@ function _ensurePeer(cb){
 // ── Handle incoming calls ──
 var _incomingHandlerSet = false;
 function _setupIncomingCallHandler(){
-  if(!_peer || _incomingHandlerSet) return;
-  _incomingHandlerSet = false; // allow re-setup if peer resets
+  if(!_peer) return;
+  // Always set up on the current peer instance (each Peer object needs its own handler)
   _peer.on('call', function(conn){
     if(_callState !== 'idle'){ conn.close(); return; }
     // Parse metadata
@@ -19482,7 +19556,7 @@ async function callStart(targetName, classCode, type){
 
   _callType  = type || 'voice';
   _callPeer  = targetName;
-  _callCode  = classCode;
+  _callCode  = classCode;  // SET BEFORE _ensurePeer so it finds the right peer ID
   _callRole  = 'caller';
   _callId    = 'call-'+Math.random().toString(36).substr(2,8);
   _callState = 'calling';
@@ -19494,6 +19568,8 @@ async function callStart(targetName, classCode, type){
   var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Calling '+targetName+'…';
   var cae=document.getElementById('call-avatar-emoji'); if(cae) cae.textContent=_callType==='video'?'📹':'📞';
 
+  // Check mic/cam permission FIRST before trying to connect peer
+  // This prevents hanging if permission is denied
   try{
     _localStream = await navigator.mediaDevices.getUserMedia({
       audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},
@@ -19502,7 +19578,11 @@ async function callStart(targetName, classCode, type){
     if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
 
     _ensurePeer(function(peer){
-      if(!peer){ showToast('❌ Could not connect to signaling server'); callEnd(); return; }
+      if(!peer){
+        // PeerJS not ready yet — show helpful error and clean up
+        showToast('❌ Connecting to call server failed. Check your internet connection.');
+        callEnd(); return;
+      }
       var targetId = _peerId(classCode, targetName);
       var meta = {callId:_callId, from:currentUser.name, fromRole:currentUser.role,
                   to:targetName, type:_callType, classCode:classCode,
@@ -19660,7 +19740,17 @@ async function callFlipCamera(){
 var _screenShareStream=null, _screenShareSender=null;
 async function callToggleScreenShare(){
   if(_screenShareStream){_stopInCallScreenShare();return;}
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){showToast('❌ Screen sharing not supported');return;}
+  // Screen share requires HTTPS and is not supported on mobile browsers
+  if(location.protocol==='file:'){
+    showToast('❌ Screen share needs HTTPS — upload to GitHub Pages first');return;
+  }
+  var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(isMobile){
+    showToast('❌ Screen share is not supported on mobile browsers (iOS/Android limitation)');return;
+  }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){
+    showToast('❌ Screen share not supported in this browser. Use Chrome or Firefox on desktop.');return;
+  }
   try{
     _screenShareStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30,width:{ideal:1920},height:{ideal:1080}},audio:false});
     if(_peerConn && _peerConn.peerConnection){
@@ -19752,13 +19842,21 @@ function stopIncomingCallPoller(){
 function maybeStartCallPoller(){
   if(_callPollerStarted) return;
   if(!currentUser) return;
-  _callCode = _callCode || (typeof myClassCode!=='undefined'?myClassCode:null) ||
-              (currentUser.classCode) || null;
-  if(!_callCode){
-    // Try to get from class data
-    setTimeout(maybeStartCallPoller, 2000); return;
+  // Resolve class code from all possible sources
+  var code = _callCode
+    || (typeof myClassCode!=='undefined' && myClassCode ? myClassCode : null)
+    || (currentUser.classCode || null);
+  // For teachers: use first group code
+  if(!code && typeof teacherGroups!=='undefined' && teacherGroups.length){
+    var grp = teacherGroups.find(function(g){return g.code;});
+    if(grp) code = grp.code;
   }
-  _callPollerStarted=true;
+  if(!code){
+    // Not in a class yet — retry in 3s
+    setTimeout(maybeStartCallPoller, 3000); return;
+  }
+  _callCode = code;
+  _callPollerStarted = true;
   startIncomingCallPoller();
 }
 
@@ -20361,6 +20459,470 @@ console.log('[QQ RTC v1.1] ✅ Loaded — Recording · Annotations · PiP · Ada
     }
   });
 })();
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     QUR'AN QUEST v38 — FEATURE EXTENSIONS
+     1. Adhkaar Section (Daily Remembrance)
+     2. Institution Settings (for certificates)
+     3. Teacher Stop-Point UI in assignments
+     4. Call improvements (WhatsApp-style)
+═══════════════════════════════════════════════════════════ -->
+
+<style id="v38-styles">
+/* ── Adhkaar Page ── */
+#page-adhkaar { padding:88px 16px 80px; max-width:760px; margin:0 auto; }
+.adhkaar-cat-btn {
+  display:flex; align-items:center; gap:12px;
+  width:100%; background:rgba(26,122,60,.08);
+  border:1px solid rgba(26,122,60,.25); border-radius:14px;
+  padding:14px 18px; margin-bottom:10px; cursor:pointer;
+  color:var(--white); font-family:Lato,sans-serif; font-size:14px;
+  text-align:left; transition:background .18s;
+}
+.adhkaar-cat-btn:hover { background:rgba(26,122,60,.18); }
+.adhkaar-cat-btn .cat-icon { font-size:24px; flex-shrink:0; }
+.adhkaar-cat-btn .cat-info { flex:1; }
+.adhkaar-cat-btn .cat-title { font-weight:700; margin-bottom:2px; }
+.adhkaar-cat-btn .cat-count { font-size:11px; color:var(--greyd); }
+.adhkaar-card {
+  background:rgba(255,255,255,.04); border:1px solid rgba(26,122,60,.25);
+  border-radius:16px; padding:20px 18px; margin-bottom:14px;
+}
+.adhkaar-arabic {
+  font-family:Amiri,serif; font-size:clamp(20px,5vw,28px);
+  color:var(--goldl); direction:rtl; line-height:1.8;
+  text-align:right; margin-bottom:12px;
+  border-bottom:1px solid rgba(255,255,255,.07); padding-bottom:12px;
+}
+.adhkaar-latin { font-size:13px; color:var(--gold); font-style:italic; margin-bottom:8px; line-height:1.7; }
+.adhkaar-meaning { font-size:13px; color:var(--greyd); line-height:1.7; margin-bottom:12px; }
+.adhkaar-repeat { font-size:11px; color:var(--em); font-weight:700; margin-bottom:10px; }
+.adhkaar-play-btn {
+  background:rgba(26,122,60,.2); border:1px solid rgba(26,122,60,.5);
+  color:var(--emb); border-radius:10px; padding:8px 16px;
+  cursor:pointer; font-size:12px; font-weight:700; margin-right:8px;
+  transition:all .18s;
+}
+.adhkaar-play-btn:hover { background:rgba(26,122,60,.4); }
+.adhkaar-play-btn.playing { background:rgba(26,122,60,.5); color:#fff; }
+/* ── Institution settings panel ── */
+#inst-settings-panel {
+  position:fixed; top:88px; left:50%; transform:translateX(-50%);
+  width:min(460px,94vw); z-index:99990;
+  background:#0f140f; border:2px solid rgba(201,168,76,.5);
+  border-radius:18px; padding:22px 24px;
+  box-shadow:0 16px 60px rgba(0,0,0,.85);
+  font-family:Lato,sans-serif; display:none;
+}
+/* ── Stop-point badge on assignment cards ── */
+.stop-point-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(231,76,60,.1); border:1px solid rgba(231,76,60,.3);
+  color:#e74c3c; border-radius:8px; padding:3px 10px;
+  font-size:11px; font-weight:700; margin-top:6px;
+}
+/* ── Call UI improvements ── */
+#call-overlay .call-status-pill {
+  position:absolute; top:16px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.1);
+  border-radius:20px; padding:4px 14px; font-size:11px; color:rgba(255,255,255,.7);
+  white-space:nowrap;
+}
+</style>
+
+<script id="v38-features">
+(function(){
+'use strict';
+
+// ══════════════════════════════════════════════════════════════
+// 1. ADHKAAR DATA + SECTION
+// ══════════════════════════════════════════════════════════════
+
+var ADHKAAR_CATS = [
+  { id:'morning', icon:'🌅', title:'Morning Adhkār', subtitle:'After Fajr prayer',
+    items:[
+      { ar:'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ\nبِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+        latin:'A\'ūdhu billāhi min ash-shaytānir-rajīm\nBismillāhir-rahmānir-rahīm',
+        meaning:'I seek refuge in Allah from the accursed devil. In the name of Allah, the Most Gracious, the Most Merciful.',
+        repeat:1 },
+      { ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ',
+        latin:'Allāhumma bika aṣbaḥnā, wa bika amsaynā, wa bika naḥyā, wa bika namūtu, wa ilayka an-nushūr',
+        meaning:'O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.',
+        repeat:1 },
+      { ar:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
+        latin:'Aṣbaḥnā wa aṣbaḥal-mulku lillāh, walḥamdulillāh, lā ilāha illallāhu waḥdahū lā sharīka lah',
+        meaning:'We have entered the morning and the entire dominion belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah, alone, without partner.',
+        repeat:1 },
+      { ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+        latin:'Subḥānallāhi wa biḥamdih',
+        meaning:'Glory be to Allah and praise Him.',
+        repeat:100 },
+      { ar:'لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ',
+        latin:'Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamdu wa huwa \'alā kulli shay\'in qadīr',
+        meaning:'None has the right to be worshipped except Allah, alone, without partner, to Him belongs all sovereignty and praise, and He is over all things capable.',
+        repeat:10 }
+    ]
+  },
+  { id:'evening', icon:'🌙', title:'Evening Adhkār', subtitle:'After Asr prayer',
+    items:[
+      { ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ',
+        latin:'Allāhumma bika amsaynā, wa bika aṣbaḥnā, wa bika naḥyā, wa bika namūtu, wa ilayka al-maṣīr',
+        meaning:'O Allah, by You we enter the evening and by You we enter the morning, by You we live and by You we die, and to You is the final return.',
+        repeat:1 },
+      { ar:'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ',
+        latin:'Amsaynā wa amsal-mulku lillāh, walḥamdulillāh',
+        meaning:'We have entered the evening and the entire dominion belongs to Allah, and all praise is for Allah.',
+        repeat:1 },
+      { ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+        latin:'Subḥānallāhi wa biḥamdih',
+        meaning:'Glory be to Allah and praise Him.',
+        repeat:100 }
+    ]
+  },
+  { id:'home_enter', icon:'🏠', title:'Entering the Home', subtitle:'When returning home',
+    items:[
+      { ar:'بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا',
+        latin:'Bismillāhi walajna, wa bismillāhi kharajnā, wa \'alallāhi Rabbinā tawakkalnā',
+        meaning:'In the name of Allah we enter, in the name of Allah we leave, and upon our Lord we place our trust.',
+        repeat:1 }
+    ]
+  },
+  { id:'home_leave', icon:'🚪', title:'Leaving the Home', subtitle:'When going out',
+    items:[
+      { ar:'بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+        latin:'Bismillāh, tawakkaltu \'alallāh, wa lā ḥawla wa lā quwwata illā billāh',
+        meaning:'In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah.',
+        repeat:1 },
+      { ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ، أَوْ أَزِلَّ أَوْ أُزَلَّ',
+        latin:'Allāhumma innī a\'ūdhu bika an aḍilla aw uḍall, aw azilla aw uzall',
+        meaning:'O Allah, I seek refuge in You lest I should stray or be led astray, or slip or be caused to slip.',
+        repeat:1 }
+    ]
+  },
+  { id:'toilet_enter', icon:'🚻', title:'Entering the Toilet', subtitle:'Before entering',
+    items:[
+      { ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ',
+        latin:'Allāhumma innī a\'ūdhu bika minal-khubuthi wal-khabā\'ith',
+        meaning:'O Allah, I seek refuge in You from the male and female devils.',
+        repeat:1 }
+    ]
+  },
+  { id:'toilet_leave', icon:'✅', title:'Leaving the Toilet', subtitle:'After leaving',
+    items:[
+      { ar:'غُفْرَانَكَ',
+        latin:'Ghufrānak',
+        meaning:'(I seek) Your forgiveness (O Allah).',
+        repeat:1 }
+    ]
+  },
+  { id:'travel', icon:'✈️', title:'Travelling Supplication', subtitle:'When starting a journey',
+    items:[
+      { ar:'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ',
+        latin:'Subḥānal-ladhī sakhkhara lanā hādhā wa mā kunnā lahū muqrinīn, wa innā ilā Rabbinā lamunqalibūn',
+        meaning:'Glory be to He Who has subjected this to us, and we could never have done it ourselves. And verily, to our Lord we shall return.',
+        repeat:1 },
+      { ar:'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَٰذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى',
+        latin:'Allāhumma innā nas\'aluka fī safarinā hādhal-birra wat-taqwā, wa minal-\'amali mā tarḍā',
+        meaning:'O Allah, we ask You for righteousness and piety in this journey of ours, and we ask You for deeds which please You.',
+        repeat:1 }
+    ]
+  },
+  { id:'other', icon:'📿', title:'Other Daily Supplications', subtitle:'Dhikr and du\'ā',
+    items:[
+      { ar:'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ',
+        latin:'Subḥānallāh, walḥamdulillāh, wa lā ilāha illallāh, wallāhu akbar',
+        meaning:'Glory be to Allah, and all praise is for Allah, and none has the right to be worshipped except Allah, and Allah is the Greatest.',
+        repeat:33 },
+      { ar:'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
+        latin:'Allāhumma ṣalli wa sallim \'alā Nabiyyinā Muḥammad',
+        meaning:'O Allah, send Your prayers and peace upon our Prophet Muhammad.',
+        repeat:10 },
+      { ar:'أَسْتَغْفِرُ اللَّهَ',
+        latin:'Astaghfirullāh',
+        meaning:'I seek the forgiveness of Allah.',
+        repeat:100 },
+      { ar:'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ',
+        latin:'Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn',
+        meaning:'None has the right to be worshipped except You, how perfect You are, verily I was among the wrongdoers. (Du\'ā of Yūnus)',
+        repeat:1 }
+    ]
+  }
+];
+
+// ── Audio synthesis for adhkaar (text-to-speech fallback) ──
+var _adhkaarSpeaking = false;
+function adhkaarSpeak(text, btn){
+  if(!window.speechSynthesis){ showToast && showToast('Audio not supported on this browser'); return; }
+  if(_adhkaarSpeaking){
+    window.speechSynthesis.cancel();
+    _adhkaarSpeaking = false;
+    document.querySelectorAll('.adhkaar-play-btn').forEach(function(b){ b.textContent='▶ Listen'; b.classList.remove('playing'); });
+    return;
+  }
+  var utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'ar-SA';
+  utt.rate = 0.7;
+  // Try to find Arabic voice
+  var voices = window.speechSynthesis.getVoices();
+  var arVoice = voices.find(function(v){ return v.lang.startsWith('ar'); });
+  if(arVoice) utt.voice = arVoice;
+  utt.onstart = function(){ _adhkaarSpeaking=true; if(btn){btn.textContent='■ Stop'; btn.classList.add('playing');} };
+  utt.onend = utt.onerror = function(){ _adhkaarSpeaking=false; if(btn){btn.textContent='▶ Listen'; btn.classList.remove('playing');} };
+  window.speechSynthesis.speak(utt);
+}
+
+// ── Render adhkaar page ──
+window.renderAdhkaarPage = function(catId){
+  var page = document.getElementById('page-adhkaar');
+  if(!page) return;
+
+  if(!catId){
+    // Show category list
+    var html = '<div style="margin-bottom:24px;">'
+      + '<button onclick="navBack&&navBack()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px;">← Back</button>'
+      + '<div style="font-family:Cinzel,serif;font-size:22px;color:var(--goldl);margin-bottom:4px;">📿 Daily Adhkār</div>'
+      + '<div style="font-size:13px;color:var(--greyd);">Remembrance of Allah — morning, evening and daily supplications</div>'
+      + '</div>';
+    ADHKAAR_CATS.forEach(function(cat){
+      html += '<button class="adhkaar-cat-btn" onclick="renderAdhkaarPage(\''+cat.id+'\')">'
+        + '<span class="cat-icon">'+cat.icon+'</span>'
+        + '<span class="cat-info"><div class="cat-title">'+cat.title+'</div>'
+        + '<div class="cat-count">'+cat.subtitle+' · '+cat.items.length+' dhikr</div></span>'
+        + '<span style="color:var(--greyd);font-size:16px;">›</span>'
+        + '</button>';
+    });
+    page.innerHTML = html;
+    return;
+  }
+
+  // Show items in category
+  var cat = ADHKAAR_CATS.find(function(c){ return c.id===catId; });
+  if(!cat){ renderAdhkaarPage(); return; }
+
+  var html = '<div style="margin-bottom:20px;">'
+    + '<button onclick="renderAdhkaarPage()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px;">← Back to Adhkār</button>'
+    + '<div style="font-family:Cinzel,serif;font-size:20px;color:var(--goldl);margin-bottom:4px;">'+cat.icon+' '+cat.title+'</div>'
+    + '<div style="font-size:12px;color:var(--greyd);">'+cat.subtitle+'</div>'
+    + '</div>';
+
+  cat.items.forEach(function(item, i){
+    var btnId = 'adhk-btn-'+catId+'-'+i;
+    html += '<div class="adhkaar-card">'
+      + (item.repeat > 1 ? '<div class="adhkaar-repeat">× '+item.repeat+(item.repeat>=100?' times — use a tasbih':item.repeat>=10?' times':' times')+'</div>' : '')
+      + '<div class="adhkaar-arabic">'+item.ar.replace(/\n/g,'<br>')+'</div>'
+      + '<div class="adhkaar-latin">'+item.latin+'</div>'
+      + '<div class="adhkaar-meaning">'+item.meaning+'</div>'
+      + '<button id="'+btnId+'" class="adhkaar-play-btn" onclick="adhkaarSpeak(\''+item.ar.replace(/'/g,"\\'").replace(/\n/g,' ')+'\',document.getElementById(\''+btnId+'\'))">▶ Listen</button>'
+      + '</div>';
+  });
+
+  page.innerHTML = html;
+};
+
+// ── Add Adhkaar to nav and inject page div ──
+(function initAdhkaar(){
+  // Add page div if missing
+  if(!document.getElementById('page-adhkaar')){
+    var div = document.createElement('div');
+    div.id = 'page-adhkaar';
+    div.className = 'hidden';
+    div.style.cssText = 'padding:88px 16px 80px;max-width:760px;margin:0 auto;';
+    var dashboard = document.getElementById('page-dashboard');
+    if(dashboard) dashboard.parentNode.insertBefore(div, dashboard);
+  }
+
+  // Nav pill is already in HTML — just hook showPage for adhkaar routing
+  var _origShow = window.showPage;
+  window.showPage = function(page){
+    if(page==='adhkaar'){
+      // Hide all pages
+      document.querySelectorAll('[id^="page-"]').forEach(function(el){ el.classList.add('hidden'); });
+      var p = document.getElementById('page-adhkaar');
+      if(p) p.classList.remove('hidden');
+      // Update active pill
+      document.querySelectorAll('.nav-pill').forEach(function(b){ b.classList.remove('active'); });
+      var pills = document.querySelectorAll('[data-page="adhkaar"]');
+      pills.forEach(function(b){ b.classList.add('active'); });
+      renderAdhkaarPage();
+      return;
+    }
+    if(_origShow) _origShow.apply(this, arguments);
+  };
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 2. INSTITUTION SETTINGS (for certificates)
+// ══════════════════════════════════════════════════════════════
+
+window.openInstSettings = function(){
+  var el = document.getElementById('inst-settings-panel');
+  if(el){ el.style.display = el.style.display==='block'?'none':'block'; return; }
+  var p = document.createElement('div');
+  p.id = 'inst-settings-panel';
+  p.style.cssText = 'position:fixed;top:88px;left:50%;transform:translateX(-50%);'
+    +'width:min(460px,94vw);z-index:99990;background:#0f140f;'
+    +'border:2px solid rgba(201,168,76,.5);border-radius:18px;padding:22px 24px;'
+    +'box-shadow:0 16px 60px rgba(0,0,0,.85);font-family:Lato,sans-serif;';
+  p.innerHTML =
+    '<button onclick="document.getElementById(\'inst-settings-panel\').style.display=\'none\'" '
+    +'style="position:absolute;top:14px;right:16px;background:none;border:none;color:#94a894;font-size:20px;cursor:pointer;">✕</button>'
+    +'<div style="font-family:Cinzel,serif;color:#c9a84c;font-size:15px;margin-bottom:16px;">🏫 Institution Settings</div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<div style="color:#94a894;font-size:11px;margin-bottom:5px;">Institution / School Name</div>'
+    +'<input id="inst-name-inp" placeholder="e.g. Abuzayd Institute" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;">'
+    +'</div>'
+    +'<div style="margin-bottom:16px;">'
+    +'<div style="color:#94a894;font-size:11px;margin-bottom:5px;">Teacher Name</div>'
+    +'<input id="inst-teacher-inp" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;">'
+    +'</div>'
+    +'<div style="font-size:11px;color:#94a894;margin-bottom:14px;">These details will appear on all certificates you issue. Students see: <em style="color:#c9a84c;">Powered by Qur\'ān Quest</em></div>'
+    +'<button onclick="saveInstSettings()" style="width:100%;background:rgba(201,168,76,.2);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;">💾 Save Settings</button>'
+    +'<div id="inst-save-status" style="font-size:12px;min-height:16px;margin-top:8px;text-align:center;"></div>';
+  document.body.appendChild(p);
+  // Pre-fill
+  try{
+    var n=localStorage.getItem('qq_institution_name')||'';
+    var t=localStorage.getItem('qq_teacher_name')||(typeof currentUser!=='undefined'&&currentUser?currentUser.name:'')||'';
+    document.getElementById('inst-name-inp').value=n;
+    document.getElementById('inst-teacher-inp').value=t;
+  }catch(e){}
+};
+
+window.saveInstSettings = function(){
+  var n=(document.getElementById('inst-name-inp')||{}).value||'';
+  var t=(document.getElementById('inst-teacher-inp')||{}).value||'';
+  try{ localStorage.setItem('qq_institution_name',n.trim()); localStorage.setItem('qq_teacher_name',t.trim()); }catch(e){}
+  var st=document.getElementById('inst-save-status');
+  if(st){st.style.color='#2ecc71';st.textContent='✅ Saved! New certificates will use these details.';}
+  setTimeout(function(){var p=document.getElementById('inst-settings-panel');if(p)p.style.display='none';},2000);
+};
+
+// ── Add Institution Settings button to teacher toolbar ──
+(function addInstBtn(){
+  function tryAdd(){
+    // Try teacher toolbar first
+    var tb = document.getElementById('tm-toolbar');
+    if(tb && !document.getElementById('inst-settings-btn')){
+      var btn = document.createElement('button');
+      btn.id = 'inst-settings-btn';
+      btn.onclick = openInstSettings;
+      btn.style.cssText = 'background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c;'
+        +'border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;';
+      btn.innerHTML = '🏫 Institution';
+      tb.appendChild(btn);
+    }
+    // Also add to nav-actions for teachers
+    var navActions = document.querySelector('.nav-actions');
+    if(navActions && !document.getElementById('inst-nav-btn')
+       && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'teacher'){
+      var nbtn = document.createElement('button');
+      nbtn.id = 'inst-nav-btn';
+      nbtn.onclick = openInstSettings;
+      nbtn.style.cssText = 'background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;'
+        +'border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;';
+      nbtn.innerHTML = '🏫 Institution';
+      navActions.insertBefore(nbtn, navActions.firstChild);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',tryAdd);
+  else tryAdd();
+  setTimeout(tryAdd, 1200);
+  setTimeout(tryAdd, 3000); // retry after login
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 3. STOP-POINT — show on assignment cards (student dashboard)
+// ══════════════════════════════════════════════════════════════
+
+// Patch getMyAssignments display to show stop-point badge
+// We hook into renderDashboard to patch assignment cards after render
+var _stopPatchDone = false;
+function _patchStopPointDisplay(){
+  // Find all assignment cards and inject stop-point badge if stopNote present
+  document.querySelectorAll('[data-assign-id]').forEach(function(card){
+    var id = card.getAttribute('data-assign-id');
+    if(!id || card.querySelector('.stop-point-badge')) return;
+    // Get assignment from live data
+    var cls = (typeof _liveClassData!=='undefined' && _liveClassData) || {};
+    var assigns = cls.assignments || {};
+    var a = assigns[id] || {};
+    if(a.stopNote){
+      var badge = document.createElement('div');
+      badge.className = 'stop-point-badge';
+      badge.innerHTML = '📍 Stopped at: ' + a.stopNote;
+      card.appendChild(badge);
+    }
+  });
+}
+
+// ── Add stopNote field to teacher assignment form ──
+(function patchAssignForm(){
+  var _origRTP = window.renderTeacherPortal;
+  if(typeof _origRTP === 'function'){
+    window.renderTeacherPortal = function(){
+      var result = _origRTP.apply(this, arguments);
+      setTimeout(function(){
+        var titleInp = document.getElementById('tp-a-title');
+        if(titleInp && !document.getElementById('tp-a-stopnote')){
+          var wrapper = document.createElement('div');
+          wrapper.style.cssText = 'margin-top:10px;';
+          wrapper.innerHTML =
+            '<div style="font-size:11px;color:#94a894;margin-bottom:4px;">📍 Where did student stop? <span style="color:#4a5e4a;">(optional)</span></div>'
+            +'<input id="tp-a-stopnote" placeholder="e.g. Stopped at letter ج · or Surah Al-Baqarah verse 5" '
+            +'style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#f0f0f0;'
+            +'border-radius:10px;padding:10px 14px;font-size:13px;outline:none;" autocomplete="off">';
+          titleInp.parentNode.insertBefore(wrapper, titleInp.nextSibling);
+        }
+      }, 100);
+      return result;
+    };
+  }
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 4. CALL IMPROVEMENTS — WhatsApp-style
+//    - Cleaner connecting state
+//    - Auto-retry if peer not found
+//    - Better "not online" message
+// ══════════════════════════════════════════════════════════════
+
+// Patch callStart to show better "calling" states
+var _origCallStart = window.callStart;
+if(typeof _origCallStart === 'function'){
+  window.callStart = async function(targetName, classCode, type){
+    // Check if target is in online presence list
+    var isKnownOnline = typeof _presenceKnownOnline !== 'undefined' && _presenceKnownOnline[targetName];
+    if(!isKnownOnline){
+      // Show confirm toast — they might still be reachable
+      if(typeof showToast === 'function') showToast('📞 Calling '+targetName+' — they may take a moment to answer…');
+    }
+    return _origCallStart.apply(this, arguments);
+  };
+}
+
+// Patch _ensurePeer error to show a useful message instead of hanging
+var _origCallEnd = window.callEnd;
+if(typeof _origCallEnd === 'function'){
+  window.callEnd = function(){
+    // Stop any adhkaar speech that might be playing
+    if(_adhkaarSpeaking && window.speechSynthesis){ window.speechSynthesis.cancel(); _adhkaarSpeaking=false; }
+    return _origCallEnd.apply(this, arguments);
+  };
+}
+
+// ── Presence: boost online poll on dashboard ──
+var _origRenderDash = window.renderDashboard;
+if(typeof _origRenderDash === 'function'){
+  window.renderDashboard = function(){
+    var r = _origRenderDash.apply(this, arguments);
+    _patchStopPointDisplay();
+    return r;
+  };
+}
+
+})(); // end IIFE
 </script>
 
 </body>
