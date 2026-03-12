@@ -20462,467 +20462,275 @@ console.log('[QQ RTC v1.1] ✅ Loaded — Recording · Annotations · PiP · Ada
 </script>
 
 
-<!-- ═══════════════════════════════════════════════════════════
-     QUR'AN QUEST v38 — FEATURE EXTENSIONS
-     1. Adhkaar Section (Daily Remembrance)
-     2. Institution Settings (for certificates)
-     3. Teacher Stop-Point UI in assignments
-     4. Call improvements (WhatsApp-style)
-═══════════════════════════════════════════════════════════ -->
 
 <style id="v38-styles">
-/* ── Adhkaar Page ── */
-#page-adhkaar { padding:88px 16px 80px; max-width:760px; margin:0 auto; }
-.adhkaar-cat-btn {
-  display:flex; align-items:center; gap:12px;
-  width:100%; background:rgba(26,122,60,.08);
-  border:1px solid rgba(26,122,60,.25); border-radius:14px;
-  padding:14px 18px; margin-bottom:10px; cursor:pointer;
-  color:var(--white); font-family:Lato,sans-serif; font-size:14px;
-  text-align:left; transition:background .18s;
-}
-.adhkaar-cat-btn:hover { background:rgba(26,122,60,.18); }
-.adhkaar-cat-btn .cat-icon { font-size:24px; flex-shrink:0; }
-.adhkaar-cat-btn .cat-info { flex:1; }
-.adhkaar-cat-btn .cat-title { font-weight:700; margin-bottom:2px; }
-.adhkaar-cat-btn .cat-count { font-size:11px; color:var(--greyd); }
-.adhkaar-card {
-  background:rgba(255,255,255,.04); border:1px solid rgba(26,122,60,.25);
-  border-radius:16px; padding:20px 18px; margin-bottom:14px;
-}
-.adhkaar-arabic {
-  font-family:Amiri,serif; font-size:clamp(20px,5vw,28px);
-  color:var(--goldl); direction:rtl; line-height:1.8;
-  text-align:right; margin-bottom:12px;
-  border-bottom:1px solid rgba(255,255,255,.07); padding-bottom:12px;
-}
-.adhkaar-latin { font-size:13px; color:var(--gold); font-style:italic; margin-bottom:8px; line-height:1.7; }
-.adhkaar-meaning { font-size:13px; color:var(--greyd); line-height:1.7; margin-bottom:12px; }
-.adhkaar-repeat { font-size:11px; color:var(--em); font-weight:700; margin-bottom:10px; }
-.adhkaar-play-btn {
-  background:rgba(26,122,60,.2); border:1px solid rgba(26,122,60,.5);
-  color:var(--emb); border-radius:10px; padding:8px 16px;
-  cursor:pointer; font-size:12px; font-weight:700; margin-right:8px;
-  transition:all .18s;
-}
-.adhkaar-play-btn:hover { background:rgba(26,122,60,.4); }
-.adhkaar-play-btn.playing { background:rgba(26,122,60,.5); color:#fff; }
-/* ── Institution settings panel ── */
-#inst-settings-panel {
-  position:fixed; top:88px; left:50%; transform:translateX(-50%);
-  width:min(460px,94vw); z-index:99990;
-  background:#0f140f; border:2px solid rgba(201,168,76,.5);
-  border-radius:18px; padding:22px 24px;
-  box-shadow:0 16px 60px rgba(0,0,0,.85);
-  font-family:Lato,sans-serif; display:none;
-}
-/* ── Stop-point badge on assignment cards ── */
-.stop-point-badge {
-  display:inline-flex; align-items:center; gap:5px;
-  background:rgba(231,76,60,.1); border:1px solid rgba(231,76,60,.3);
-  color:#e74c3c; border-radius:8px; padding:3px 10px;
-  font-size:11px; font-weight:700; margin-top:6px;
-}
-/* ── Call UI improvements ── */
-#call-overlay .call-status-pill {
-  position:absolute; top:16px; left:50%; transform:translateX(-50%);
-  background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.1);
-  border-radius:20px; padding:4px 14px; font-size:11px; color:rgba(255,255,255,.7);
-  white-space:nowrap;
-}
+/* ── Adhkaar cards ── */
+.adhkaar-cat-btn{display:flex;align-items:center;gap:12px;width:100%;background:rgba(26,122,60,.08);border:1px solid rgba(26,122,60,.25);border-radius:14px;padding:14px 18px;margin-bottom:10px;cursor:pointer;color:var(--white);font-family:Lato,sans-serif;font-size:14px;text-align:left;transition:background .18s;}
+.adhkaar-cat-btn:hover{background:rgba(26,122,60,.18);}
+.adhkaar-card{background:rgba(255,255,255,.04);border:1px solid rgba(26,122,60,.25);border-radius:16px;padding:20px 18px;margin-bottom:14px;}
+.adhkaar-arabic{font-family:Amiri,serif;font-size:clamp(20px,5vw,28px);color:var(--goldl);direction:rtl;line-height:1.8;text-align:right;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:12px;}
+.adhkaar-latin{font-size:13px;color:var(--gold);font-style:italic;margin-bottom:8px;line-height:1.7;}
+.adhkaar-meaning{font-size:13px;color:var(--greyd);line-height:1.7;margin-bottom:12px;}
+.adhkaar-repeat{font-size:11px;color:var(--em);font-weight:700;margin-bottom:10px;}
+.adhkaar-play-btn{background:rgba(26,122,60,.2);border:1px solid rgba(26,122,60,.5);color:#27ae60;border-radius:10px;padding:8px 16px;cursor:pointer;font-size:12px;font-weight:700;margin-right:8px;transition:all .18s;}
+.adhkaar-play-btn.playing{background:rgba(26,122,60,.5);color:#fff;}
+/* ── Institution settings ── */
+.stop-point-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;margin-top:6px;}
 </style>
 
 <script id="v38-features">
-(function(){
-'use strict';
+// ── ALL GLOBAL FUNCTIONS (no IIFE - must be on window scope) ──
 
-// ══════════════════════════════════════════════════════════════
-// 1. ADHKAAR DATA + SECTION
-// ══════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════
+// ADHKAAR DATA
+// ════════════════════════════════════════════
 var ADHKAAR_CATS = [
-  { id:'morning', icon:'🌅', title:'Morning Adhkār', subtitle:'After Fajr prayer',
-    items:[
-      { ar:'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ\nبِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-        latin:'A\'ūdhu billāhi min ash-shaytānir-rajīm\nBismillāhir-rahmānir-rahīm',
-        meaning:'I seek refuge in Allah from the accursed devil. In the name of Allah, the Most Gracious, the Most Merciful.',
-        repeat:1 },
-      { ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ',
-        latin:'Allāhumma bika aṣbaḥnā, wa bika amsaynā, wa bika naḥyā, wa bika namūtu, wa ilayka an-nushūr',
-        meaning:'O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.',
-        repeat:1 },
-      { ar:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
-        latin:'Aṣbaḥnā wa aṣbaḥal-mulku lillāh, walḥamdulillāh, lā ilāha illallāhu waḥdahū lā sharīka lah',
-        meaning:'We have entered the morning and the entire dominion belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah, alone, without partner.',
-        repeat:1 },
-      { ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
-        latin:'Subḥānallāhi wa biḥamdih',
-        meaning:'Glory be to Allah and praise Him.',
-        repeat:100 },
-      { ar:'لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ',
-        latin:'Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamdu wa huwa \'alā kulli shay\'in qadīr',
-        meaning:'None has the right to be worshipped except Allah, alone, without partner, to Him belongs all sovereignty and praise, and He is over all things capable.',
-        repeat:10 }
-    ]
-  },
-  { id:'evening', icon:'🌙', title:'Evening Adhkār', subtitle:'After Asr prayer',
-    items:[
-      { ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ',
-        latin:'Allāhumma bika amsaynā, wa bika aṣbaḥnā, wa bika naḥyā, wa bika namūtu, wa ilayka al-maṣīr',
-        meaning:'O Allah, by You we enter the evening and by You we enter the morning, by You we live and by You we die, and to You is the final return.',
-        repeat:1 },
-      { ar:'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ',
-        latin:'Amsaynā wa amsal-mulku lillāh, walḥamdulillāh',
-        meaning:'We have entered the evening and the entire dominion belongs to Allah, and all praise is for Allah.',
-        repeat:1 },
-      { ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
-        latin:'Subḥānallāhi wa biḥamdih',
-        meaning:'Glory be to Allah and praise Him.',
-        repeat:100 }
-    ]
-  },
-  { id:'home_enter', icon:'🏠', title:'Entering the Home', subtitle:'When returning home',
-    items:[
-      { ar:'بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا',
-        latin:'Bismillāhi walajna, wa bismillāhi kharajnā, wa \'alallāhi Rabbinā tawakkalnā',
-        meaning:'In the name of Allah we enter, in the name of Allah we leave, and upon our Lord we place our trust.',
-        repeat:1 }
-    ]
-  },
-  { id:'home_leave', icon:'🚪', title:'Leaving the Home', subtitle:'When going out',
-    items:[
-      { ar:'بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
-        latin:'Bismillāh, tawakkaltu \'alallāh, wa lā ḥawla wa lā quwwata illā billāh',
-        meaning:'In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah.',
-        repeat:1 },
-      { ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ، أَوْ أَزِلَّ أَوْ أُزَلَّ',
-        latin:'Allāhumma innī a\'ūdhu bika an aḍilla aw uḍall, aw azilla aw uzall',
-        meaning:'O Allah, I seek refuge in You lest I should stray or be led astray, or slip or be caused to slip.',
-        repeat:1 }
-    ]
-  },
-  { id:'toilet_enter', icon:'🚻', title:'Entering the Toilet', subtitle:'Before entering',
-    items:[
-      { ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ',
-        latin:'Allāhumma innī a\'ūdhu bika minal-khubuthi wal-khabā\'ith',
-        meaning:'O Allah, I seek refuge in You from the male and female devils.',
-        repeat:1 }
-    ]
-  },
-  { id:'toilet_leave', icon:'✅', title:'Leaving the Toilet', subtitle:'After leaving',
-    items:[
-      { ar:'غُفْرَانَكَ',
-        latin:'Ghufrānak',
-        meaning:'(I seek) Your forgiveness (O Allah).',
-        repeat:1 }
-    ]
-  },
-  { id:'travel', icon:'✈️', title:'Travelling Supplication', subtitle:'When starting a journey',
-    items:[
-      { ar:'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ',
-        latin:'Subḥānal-ladhī sakhkhara lanā hādhā wa mā kunnā lahū muqrinīn, wa innā ilā Rabbinā lamunqalibūn',
-        meaning:'Glory be to He Who has subjected this to us, and we could never have done it ourselves. And verily, to our Lord we shall return.',
-        repeat:1 },
-      { ar:'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَٰذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى',
-        latin:'Allāhumma innā nas\'aluka fī safarinā hādhal-birra wat-taqwā, wa minal-\'amali mā tarḍā',
-        meaning:'O Allah, we ask You for righteousness and piety in this journey of ours, and we ask You for deeds which please You.',
-        repeat:1 }
-    ]
-  },
-  { id:'other', icon:'📿', title:'Other Daily Supplications', subtitle:'Dhikr and du\'ā',
-    items:[
-      { ar:'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ',
-        latin:'Subḥānallāh, walḥamdulillāh, wa lā ilāha illallāh, wallāhu akbar',
-        meaning:'Glory be to Allah, and all praise is for Allah, and none has the right to be worshipped except Allah, and Allah is the Greatest.',
-        repeat:33 },
-      { ar:'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
-        latin:'Allāhumma ṣalli wa sallim \'alā Nabiyyinā Muḥammad',
-        meaning:'O Allah, send Your prayers and peace upon our Prophet Muhammad.',
-        repeat:10 },
-      { ar:'أَسْتَغْفِرُ اللَّهَ',
-        latin:'Astaghfirullāh',
-        meaning:'I seek the forgiveness of Allah.',
-        repeat:100 },
-      { ar:'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ',
-        latin:'Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn',
-        meaning:'None has the right to be worshipped except You, how perfect You are, verily I was among the wrongdoers. (Du\'ā of Yūnus)',
-        repeat:1 }
-    ]
-  }
+  {id:'morning', icon:'🌅', title:'Morning Adhkār', sub:'After Fajr prayer', items:[
+    {ar:'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ — بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', latin:"A'ūdhu billāhi min ash-shaytānir-rajīm — Bismillāhir-rahmānir-rahīm", meaning:'I seek refuge in Allah from the accursed devil. In the name of Allah, the Most Gracious, the Most Merciful.', repeat:1},
+    {ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ', latin:'Allāhumma bika aṣbaḥnā wa bika amsaynā wa bika naḥyā wa bika namūtu wa ilayka an-nushūr', meaning:'O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.', repeat:1},
+    {ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', latin:'Subḥānallāhi wa biḥamdih', meaning:'Glory be to Allah and praise Him.', repeat:100},
+    {ar:'لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ', latin:"Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamdu wa huwa 'alā kulli shay'in qadīr", meaning:'None has the right to be worshipped except Allah, alone, without partner. To Him belongs all sovereignty and praise, and He is over all things capable.', repeat:10}
+  ]},
+  {id:'evening', icon:'🌙', title:'Evening Adhkār', sub:'After Asr prayer', items:[
+    {ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ أَصْبَحْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ', latin:'Allāhumma bika amsaynā wa bika aṣbaḥnā wa bika naḥyā wa bika namūtu wa ilayka al-maṣīr', meaning:'O Allah, by You we enter the evening and by You we enter the morning, by You we live and by You we die, and to You is the final return.', repeat:1},
+    {ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', latin:'Subḥānallāhi wa biḥamdih', meaning:'Glory be to Allah and praise Him.', repeat:100},
+    {ar:'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', latin:'Astaghfirullāha wa atūbu ilayh', meaning:'I seek the forgiveness of Allah and repent to Him.', repeat:100}
+  ]},
+  {id:'home_enter', icon:'🏠', title:'Entering the Home', sub:'When returning home', items:[
+    {ar:'بِسْمِ اللَّهِ وَلَجْنَا وَبِسْمِ اللَّهِ خَرَجْنَا وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا', latin:"Bismillāhi walajna wa bismillāhi kharajnā wa 'alallāhi Rabbinā tawakkalnā", meaning:'In the name of Allah we enter, in the name of Allah we leave, and upon our Lord we place our trust.', repeat:1}
+  ]},
+  {id:'home_leave', icon:'🚪', title:'Leaving the Home', sub:'When going out', items:[
+    {ar:'بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', latin:"Bismillāh tawakkaltu 'alallāh wa lā ḥawla wa lā quwwata illā billāh", meaning:'In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah.', repeat:1},
+    {ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ', latin:"Allāhumma innī a'ūdhu bika an aḍilla aw uḍall", meaning:'O Allah, I seek refuge in You lest I should stray or be led astray.', repeat:1}
+  ]},
+  {id:'toilet_enter', icon:'🚻', title:'Entering the Toilet', sub:'Before entering', items:[
+    {ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ', latin:"Allāhumma innī a'ūdhu bika minal-khubuthi wal-khabā'ith", meaning:'O Allah, I seek refuge in You from the male and female devils.', repeat:1}
+  ]},
+  {id:'toilet_leave', icon:'✅', title:'Leaving the Toilet', sub:'After leaving', items:[
+    {ar:'غُفْرَانَكَ', latin:'Ghufrānak', meaning:'(I seek) Your forgiveness, O Allah.', repeat:1}
+  ]},
+  {id:'travel', icon:'✈️', title:'Travelling Supplication', sub:'When starting a journey', items:[
+    {ar:'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ', latin:'Subḥānal-ladhī sakhkhara lanā hādhā wa mā kunnā lahū muqrinīn wa innā ilā Rabbinā lamunqalibūn', meaning:'Glory be to He Who has subjected this to us, and we could never have done it ourselves. And verily, to our Lord we shall return.', repeat:1}
+  ]},
+  {id:'other', icon:'📿', title:'Other Daily Supplications', sub:"Dhikr and du'ā", items:[
+    {ar:'سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلٰهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ', latin:'Subḥānallāh walḥamdulillāh wa lā ilāha illallāh wallāhu akbar', meaning:'Glory be to Allah, praise be to Allah, none has the right to be worshipped except Allah, and Allah is the Greatest.', repeat:33},
+    {ar:'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', latin:"Allāhumma ṣalli wa sallim 'alā Nabiyyinā Muḥammad", meaning:'O Allah, send Your prayers and peace upon our Prophet Muhammad.', repeat:10},
+    {ar:'أَسْتَغْفِرُ اللَّهَ', latin:'Astaghfirullāh', meaning:'I seek the forgiveness of Allah.', repeat:100},
+    {ar:'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ', latin:"Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn", meaning:"None has the right to be worshipped except You, how perfect You are, verily I was among the wrongdoers. (Du'ā of Yūnus)", repeat:1}
+  ]}
 ];
 
-// ── Audio synthesis for adhkaar (text-to-speech fallback) ──
+// ════════════════════════════════════════════
+// ADHKAAR AUDIO (global scope)
+// ════════════════════════════════════════════
 var _adhkaarSpeaking = false;
-function adhkaarSpeak(text, btn){
-  if(!window.speechSynthesis){ showToast && showToast('Audio not supported on this browser'); return; }
-  if(_adhkaarSpeaking){
+var _adhkaarCurrentBtn = null;
+
+function adhkaarSpeak(text, btnId) {
+  var btn = document.getElementById(btnId);
+  if (!window.speechSynthesis) {
+    if (typeof showToast === 'function') showToast('Audio not supported on this browser');
+    return;
+  }
+  if (_adhkaarSpeaking) {
     window.speechSynthesis.cancel();
     _adhkaarSpeaking = false;
-    document.querySelectorAll('.adhkaar-play-btn').forEach(function(b){ b.textContent='▶ Listen'; b.classList.remove('playing'); });
+    if (_adhkaarCurrentBtn) { _adhkaarCurrentBtn.textContent = '▶ Listen'; _adhkaarCurrentBtn.classList.remove('playing'); }
+    _adhkaarCurrentBtn = null;
+    if (btn && _adhkaarCurrentBtn !== btn) { return; }
     return;
   }
   var utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'ar-SA';
-  utt.rate = 0.7;
-  // Try to find Arabic voice
+  utt.rate = 0.65;
   var voices = window.speechSynthesis.getVoices();
-  var arVoice = voices.find(function(v){ return v.lang.startsWith('ar'); });
-  if(arVoice) utt.voice = arVoice;
-  utt.onstart = function(){ _adhkaarSpeaking=true; if(btn){btn.textContent='■ Stop'; btn.classList.add('playing');} };
-  utt.onend = utt.onerror = function(){ _adhkaarSpeaking=false; if(btn){btn.textContent='▶ Listen'; btn.classList.remove('playing');} };
+  var arVoice = voices.find(function(v) { return v.lang && v.lang.startsWith('ar'); });
+  if (arVoice) utt.voice = arVoice;
+  _adhkaarSpeaking = true;
+  _adhkaarCurrentBtn = btn;
+  if (btn) { btn.textContent = '■ Stop'; btn.classList.add('playing'); }
+  utt.onend = utt.onerror = function() {
+    _adhkaarSpeaking = false;
+    _adhkaarCurrentBtn = null;
+    if (btn) { btn.textContent = '▶ Listen'; btn.classList.remove('playing'); }
+  };
   window.speechSynthesis.speak(utt);
 }
 
-// ── Render adhkaar page ──
-window.renderAdhkaarPage = function(catId){
+// ════════════════════════════════════════════
+// ADHKAAR PAGE RENDERER (global scope)
+// ════════════════════════════════════════════
+function renderAdhkaarPage(catId) {
   var page = document.getElementById('page-adhkaar');
-  if(!page) return;
-
-  if(!catId){
-    // Show category list
+  if (!page) return;
+  if (!catId) {
     var html = '<div style="margin-bottom:24px;">'
       + '<button onclick="navBack&&navBack()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px;">← Back</button>'
       + '<div style="font-family:Cinzel,serif;font-size:22px;color:var(--goldl);margin-bottom:4px;">📿 Daily Adhkār</div>'
       + '<div style="font-size:13px;color:var(--greyd);">Remembrance of Allah — morning, evening and daily supplications</div>'
       + '</div>';
-    ADHKAAR_CATS.forEach(function(cat){
-      html += '<button class="adhkaar-cat-btn" onclick="renderAdhkaarPage(\''+cat.id+'\')">'
-        + '<span class="cat-icon">'+cat.icon+'</span>'
-        + '<span class="cat-info"><div class="cat-title">'+cat.title+'</div>'
-        + '<div class="cat-count">'+cat.subtitle+' · '+cat.items.length+' dhikr</div></span>'
+    ADHKAAR_CATS.forEach(function(cat) {
+      html += '<button class="adhkaar-cat-btn" onclick="renderAdhkaarPage(\'' + cat.id + '\')">'
+        + '<span style="font-size:24px;flex-shrink:0;">' + cat.icon + '</span>'
+        + '<span style="flex:1;"><div style="font-weight:700;margin-bottom:2px;">' + cat.title + '</div>'
+        + '<div style="font-size:11px;color:var(--greyd);">' + cat.sub + ' · ' + cat.items.length + ' dhikr</div></span>'
         + '<span style="color:var(--greyd);font-size:16px;">›</span>'
         + '</button>';
     });
     page.innerHTML = html;
     return;
   }
-
-  // Show items in category
-  var cat = ADHKAAR_CATS.find(function(c){ return c.id===catId; });
-  if(!cat){ renderAdhkaarPage(); return; }
-
-  var html = '<div style="margin-bottom:20px;">'
-    + '<button onclick="renderAdhkaarPage()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px;">← Back to Adhkār</button>'
-    + '<div style="font-family:Cinzel,serif;font-size:20px;color:var(--goldl);margin-bottom:4px;">'+cat.icon+' '+cat.title+'</div>'
-    + '<div style="font-size:12px;color:var(--greyd);">'+cat.subtitle+'</div>'
-    + '</div>';
-
-  cat.items.forEach(function(item, i){
-    var btnId = 'adhk-btn-'+catId+'-'+i;
+  var cat = ADHKAAR_CATS.find(function(c) { return c.id === catId; });
+  if (!cat) { renderAdhkaarPage(); return; }
+  var html = '<button onclick="renderAdhkaarPage()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:16px;">← Back to Adhkār</button>'
+    + '<div style="font-family:Cinzel,serif;font-size:20px;color:var(--goldl);margin-bottom:4px;">' + cat.icon + ' ' + cat.title + '</div>'
+    + '<div style="font-size:12px;color:var(--greyd);margin-bottom:20px;">' + cat.sub + '</div>';
+  cat.items.forEach(function(item, i) {
+    var btnId = 'adhkbtn_' + catId + '_' + i;
+    // Encode Arabic text safely as data attribute to avoid quote issues
+    var safeAr = item.ar.replace(/\n/g, ' ');
     html += '<div class="adhkaar-card">'
-      + (item.repeat > 1 ? '<div class="adhkaar-repeat">× '+item.repeat+(item.repeat>=100?' times — use a tasbih':item.repeat>=10?' times':' times')+'</div>' : '')
-      + '<div class="adhkaar-arabic">'+item.ar.replace(/\n/g,'<br>')+'</div>'
-      + '<div class="adhkaar-latin">'+item.latin+'</div>'
-      + '<div class="adhkaar-meaning">'+item.meaning+'</div>'
-      + '<button id="'+btnId+'" class="adhkaar-play-btn" onclick="adhkaarSpeak(\''+item.ar.replace(/'/g,"\\'").replace(/\n/g,' ')+'\',document.getElementById(\''+btnId+'\'))">▶ Listen</button>'
+      + (item.repeat > 1 ? '<div class="adhkaar-repeat">Repeat × ' + item.repeat + '</div>' : '')
+      + '<div class="adhkaar-arabic">' + item.ar.replace(/\n/g, '<br>') + '</div>'
+      + '<div class="adhkaar-latin">' + item.latin + '</div>'
+      + '<div class="adhkaar-meaning">' + item.meaning + '</div>'
+      + '<button id="' + btnId + '" class="adhkaar-play-btn" '
+      + 'data-text="' + safeAr.replace(/"/g, '&quot;') + '" '
+      + 'onclick="adhkaarSpeak(this.getAttribute(\'data-text\'), \'' + btnId + '\')">▶ Listen</button>'
       + '</div>';
   });
-
   page.innerHTML = html;
-};
+}
 
-// ── Add Adhkaar to nav and inject page div ──
-(function initAdhkaar(){
-  // Add page div if missing
-  if(!document.getElementById('page-adhkaar')){
-    var div = document.createElement('div');
-    div.id = 'page-adhkaar';
-    div.className = 'hidden';
-    div.style.cssText = 'padding:88px 16px 80px;max-width:760px;margin:0 auto;';
-    var dashboard = document.getElementById('page-dashboard');
-    if(dashboard) dashboard.parentNode.insertBefore(div, dashboard);
-  }
-
-  // Nav pill is already in HTML — just hook showPage for adhkaar routing
-  var _origShow = window.showPage;
-  window.showPage = function(page){
-    if(page==='adhkaar'){
-      // Hide all pages
-      document.querySelectorAll('[id^="page-"]').forEach(function(el){ el.classList.add('hidden'); });
+// ════════════════════════════════════════════
+// SHOWPAGE EXTENSION FOR ADHKAAR
+// ════════════════════════════════════════════
+(function patchShowPage() {
+  var _orig = window.showPage;
+  window.showPage = function(page) {
+    if (page === 'adhkaar') {
+      document.querySelectorAll('[id^="page-"]').forEach(function(el) { el.classList.add('hidden'); });
       var p = document.getElementById('page-adhkaar');
-      if(p) p.classList.remove('hidden');
-      // Update active pill
-      document.querySelectorAll('.nav-pill').forEach(function(b){ b.classList.remove('active'); });
-      var pills = document.querySelectorAll('[data-page="adhkaar"]');
-      pills.forEach(function(b){ b.classList.add('active'); });
+      if (p) p.classList.remove('hidden');
+      document.querySelectorAll('.nav-pill').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('[data-page="adhkaar"]').forEach(function(b) { b.classList.add('active'); });
       renderAdhkaarPage();
       return;
     }
-    if(_origShow) _origShow.apply(this, arguments);
+    if (_orig) _orig.apply(this, arguments);
   };
 })();
 
-// ══════════════════════════════════════════════════════════════
-// 2. INSTITUTION SETTINGS (for certificates)
-// ══════════════════════════════════════════════════════════════
-
-window.openInstSettings = function(){
+// ════════════════════════════════════════════
+// INSTITUTION SETTINGS
+// ════════════════════════════════════════════
+function openInstSettings() {
   var el = document.getElementById('inst-settings-panel');
-  if(el){ el.style.display = el.style.display==='block'?'none':'block'; return; }
+  if (el) { el.style.display = el.style.display === 'block' ? 'none' : 'block'; return; }
   var p = document.createElement('div');
   p.id = 'inst-settings-panel';
   p.style.cssText = 'position:fixed;top:88px;left:50%;transform:translateX(-50%);'
-    +'width:min(460px,94vw);z-index:99990;background:#0f140f;'
-    +'border:2px solid rgba(201,168,76,.5);border-radius:18px;padding:22px 24px;'
-    +'box-shadow:0 16px 60px rgba(0,0,0,.85);font-family:Lato,sans-serif;';
-  p.innerHTML =
-    '<button onclick="document.getElementById(\'inst-settings-panel\').style.display=\'none\'" '
-    +'style="position:absolute;top:14px;right:16px;background:none;border:none;color:#94a894;font-size:20px;cursor:pointer;">✕</button>'
-    +'<div style="font-family:Cinzel,serif;color:#c9a84c;font-size:15px;margin-bottom:16px;">🏫 Institution Settings</div>'
-    +'<div style="margin-bottom:12px;">'
-    +'<div style="color:#94a894;font-size:11px;margin-bottom:5px;">Institution / School Name</div>'
-    +'<input id="inst-name-inp" placeholder="e.g. Abuzayd Institute" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;">'
-    +'</div>'
-    +'<div style="margin-bottom:16px;">'
-    +'<div style="color:#94a894;font-size:11px;margin-bottom:5px;">Teacher Name</div>'
-    +'<input id="inst-teacher-inp" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;">'
-    +'</div>'
-    +'<div style="font-size:11px;color:#94a894;margin-bottom:14px;">These details will appear on all certificates you issue. Students see: <em style="color:#c9a84c;">Powered by Qur\'ān Quest</em></div>'
-    +'<button onclick="saveInstSettings()" style="width:100%;background:rgba(201,168,76,.2);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;">💾 Save Settings</button>'
-    +'<div id="inst-save-status" style="font-size:12px;min-height:16px;margin-top:8px;text-align:center;"></div>';
+    + 'width:min(460px,94vw);z-index:99990;background:#0f140f;'
+    + 'border:2px solid rgba(201,168,76,.5);border-radius:18px;padding:22px 24px;'
+    + 'box-shadow:0 16px 60px rgba(0,0,0,.85);font-family:Lato,sans-serif;';
+  p.innerHTML = '<button onclick="document.getElementById(\'inst-settings-panel\').style.display=\'none\'" '
+    + 'style="position:absolute;top:14px;right:16px;background:none;border:none;color:#94a894;font-size:20px;cursor:pointer;">✕</button>'
+    + '<div style="font-family:Cinzel,serif;color:#c9a84c;font-size:15px;margin-bottom:16px;">🏫 Institution Settings</div>'
+    + '<div style="margin-bottom:12px;"><div style="color:#94a894;font-size:11px;margin-bottom:5px;">Institution / School Name</div>'
+    + '<input id="inst-name-inp" placeholder="e.g. Abuzayd Institute" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;box-sizing:border-box;"></div>'
+    + '<div style="margin-bottom:16px;"><div style="color:#94a894;font-size:11px;margin-bottom:5px;">Teacher Name (for certificates)</div>'
+    + '<input id="inst-teacher-inp" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.4);color:#f0f0f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;box-sizing:border-box;"></div>'
+    + '<button onclick="saveInstSettings()" style="width:100%;background:rgba(201,168,76,.2);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;">💾 Save Settings</button>'
+    + '<div id="inst-save-status" style="font-size:12px;min-height:16px;margin-top:8px;text-align:center;"></div>';
   document.body.appendChild(p);
-  // Pre-fill
-  try{
-    var n=localStorage.getItem('qq_institution_name')||'';
-    var t=localStorage.getItem('qq_teacher_name')||(typeof currentUser!=='undefined'&&currentUser?currentUser.name:'')||'';
-    document.getElementById('inst-name-inp').value=n;
-    document.getElementById('inst-teacher-inp').value=t;
-  }catch(e){}
-};
+  try {
+    var n = localStorage.getItem('qq_institution_name') || '';
+    var t = localStorage.getItem('qq_teacher_name') || (typeof currentUser !== 'undefined' && currentUser ? currentUser.name : '') || '';
+    document.getElementById('inst-name-inp').value = n;
+    document.getElementById('inst-teacher-inp').value = t;
+  } catch(e) {}
+}
 
-window.saveInstSettings = function(){
-  var n=(document.getElementById('inst-name-inp')||{}).value||'';
-  var t=(document.getElementById('inst-teacher-inp')||{}).value||'';
-  try{ localStorage.setItem('qq_institution_name',n.trim()); localStorage.setItem('qq_teacher_name',t.trim()); }catch(e){}
-  var st=document.getElementById('inst-save-status');
-  if(st){st.style.color='#2ecc71';st.textContent='✅ Saved! New certificates will use these details.';}
-  setTimeout(function(){var p=document.getElementById('inst-settings-panel');if(p)p.style.display='none';},2000);
-};
+function saveInstSettings() {
+  var n = (document.getElementById('inst-name-inp') || {}).value || '';
+  var t = (document.getElementById('inst-teacher-inp') || {}).value || '';
+  try { localStorage.setItem('qq_institution_name', n.trim()); localStorage.setItem('qq_teacher_name', t.trim()); } catch(e) {}
+  var st = document.getElementById('inst-save-status');
+  if (st) { st.style.color = '#2ecc71'; st.textContent = '✅ Saved!'; }
+  setTimeout(function() { var p = document.getElementById('inst-settings-panel'); if (p) p.style.display = 'none'; }, 1800);
+}
 
-// ── Add Institution Settings button to teacher toolbar ──
-(function addInstBtn(){
-  function tryAdd(){
-    // Try teacher toolbar first
-    var tb = document.getElementById('tm-toolbar');
-    if(tb && !document.getElementById('inst-settings-btn')){
-      var btn = document.createElement('button');
-      btn.id = 'inst-settings-btn';
-      btn.onclick = openInstSettings;
-      btn.style.cssText = 'background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c;'
-        +'border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;';
-      btn.innerHTML = '🏫 Institution';
-      tb.appendChild(btn);
-    }
-    // Also add to nav-actions for teachers
-    var navActions = document.querySelector('.nav-actions');
-    if(navActions && !document.getElementById('inst-nav-btn')
-       && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'teacher'){
-      var nbtn = document.createElement('button');
-      nbtn.id = 'inst-nav-btn';
-      nbtn.onclick = openInstSettings;
-      nbtn.style.cssText = 'background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;'
-        +'border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;';
-      nbtn.innerHTML = '🏫 Institution';
-      navActions.insertBefore(nbtn, navActions.firstChild);
-    }
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',tryAdd);
-  else tryAdd();
-  setTimeout(tryAdd, 1200);
-  setTimeout(tryAdd, 3000); // retry after login
-})();
+// ════════════════════════════════════════════
+// INSTITUTION BUTTON INJECTION
+// ════════════════════════════════════════════
+function _injectInstBtn() {
+  if (document.getElementById('inst-nav-btn')) return;
+  if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'teacher') return;
+  var navActions = document.querySelector('.nav-actions');
+  if (!navActions) return;
+  var btn = document.createElement('button');
+  btn.id = 'inst-nav-btn';
+  btn.onclick = openInstSettings;
+  btn.style.cssText = 'background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;'
+    + 'border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-right:4px;';
+  btn.innerHTML = '🏫 Institution';
+  navActions.insertBefore(btn, navActions.firstChild);
+}
+// Try on load + after login events
+document.addEventListener('DOMContentLoaded', function() { setTimeout(_injectInstBtn, 2000); });
+setTimeout(_injectInstBtn, 3000);
 
-// ══════════════════════════════════════════════════════════════
-// 3. STOP-POINT — show on assignment cards (student dashboard)
-// ══════════════════════════════════════════════════════════════
-
-// Patch getMyAssignments display to show stop-point badge
-// We hook into renderDashboard to patch assignment cards after render
-var _stopPatchDone = false;
-function _patchStopPointDisplay(){
-  // Find all assignment cards and inject stop-point badge if stopNote present
-  document.querySelectorAll('[data-assign-id]').forEach(function(card){
+// ════════════════════════════════════════════
+// STOP-POINT BADGE on student assignment cards
+// ════════════════════════════════════════════
+function _patchStopPointBadges() {
+  document.querySelectorAll('[data-assign-id]').forEach(function(card) {
+    if (card.querySelector('.stop-point-badge')) return;
     var id = card.getAttribute('data-assign-id');
-    if(!id || card.querySelector('.stop-point-badge')) return;
-    // Get assignment from live data
-    var cls = (typeof _liveClassData!=='undefined' && _liveClassData) || {};
-    var assigns = cls.assignments || {};
-    var a = assigns[id] || {};
-    if(a.stopNote){
+    var cls = (typeof _liveClassData !== 'undefined' && _liveClassData) || {};
+    var a = (cls.assignments || {})[id] || {};
+    if (a.stopNote) {
       var badge = document.createElement('div');
       badge.className = 'stop-point-badge';
-      badge.innerHTML = '📍 Stopped at: ' + a.stopNote;
+      badge.textContent = '📍 Stopped at: ' + a.stopNote;
       card.appendChild(badge);
     }
   });
 }
-
-// ── Add stopNote field to teacher assignment form ──
-(function patchAssignForm(){
-  var _origRTP = window.renderTeacherPortal;
-  if(typeof _origRTP === 'function'){
-    window.renderTeacherPortal = function(){
-      var result = _origRTP.apply(this, arguments);
-      setTimeout(function(){
-        var titleInp = document.getElementById('tp-a-title');
-        if(titleInp && !document.getElementById('tp-a-stopnote')){
-          var wrapper = document.createElement('div');
-          wrapper.style.cssText = 'margin-top:10px;';
-          wrapper.innerHTML =
-            '<div style="font-size:11px;color:#94a894;margin-bottom:4px;">📍 Where did student stop? <span style="color:#4a5e4a;">(optional)</span></div>'
-            +'<input id="tp-a-stopnote" placeholder="e.g. Stopped at letter ج · or Surah Al-Baqarah verse 5" '
-            +'style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#f0f0f0;'
-            +'border-radius:10px;padding:10px 14px;font-size:13px;outline:none;" autocomplete="off">';
-          titleInp.parentNode.insertBefore(wrapper, titleInp.nextSibling);
-        }
-      }, 100);
-      return result;
-    };
-  }
-})();
-
-// ══════════════════════════════════════════════════════════════
-// 4. CALL IMPROVEMENTS — WhatsApp-style
-//    - Cleaner connecting state
-//    - Auto-retry if peer not found
-//    - Better "not online" message
-// ══════════════════════════════════════════════════════════════
-
-// Patch callStart to show better "calling" states
-var _origCallStart = window.callStart;
-if(typeof _origCallStart === 'function'){
-  window.callStart = async function(targetName, classCode, type){
-    // Check if target is in online presence list
-    var isKnownOnline = typeof _presenceKnownOnline !== 'undefined' && _presenceKnownOnline[targetName];
-    if(!isKnownOnline){
-      // Show confirm toast — they might still be reachable
-      if(typeof showToast === 'function') showToast('📞 Calling '+targetName+' — they may take a moment to answer…');
-    }
-    return _origCallStart.apply(this, arguments);
-  };
-}
-
-// Patch _ensurePeer error to show a useful message instead of hanging
-var _origCallEnd = window.callEnd;
-if(typeof _origCallEnd === 'function'){
-  window.callEnd = function(){
-    // Stop any adhkaar speech that might be playing
-    if(_adhkaarSpeaking && window.speechSynthesis){ window.speechSynthesis.cancel(); _adhkaarSpeaking=false; }
-    return _origCallEnd.apply(this, arguments);
-  };
-}
-
-// ── Presence: boost online poll on dashboard ──
-var _origRenderDash = window.renderDashboard;
-if(typeof _origRenderDash === 'function'){
-  window.renderDashboard = function(){
-    var r = _origRenderDash.apply(this, arguments);
-    _patchStopPointDisplay();
+// Hook into renderDashboard
+var _origRD = window.renderDashboard;
+if (typeof _origRD === 'function') {
+  window.renderDashboard = function() {
+    var r = _origRD.apply(this, arguments);
+    setTimeout(_patchStopPointBadges, 100);
     return r;
   };
 }
 
-})(); // end IIFE
+// ════════════════════════════════════════════
+// STOP-NOTE FIELD IN TEACHER ASSIGNMENT FORM
+// ════════════════════════════════════════════
+var _origRTP = window.renderTeacherPortal;
+if (typeof _origRTP === 'function') {
+  window.renderTeacherPortal = function() {
+    var r = _origRTP.apply(this, arguments);
+    setTimeout(function() {
+      var titleInp = document.getElementById('tp-a-title');
+      if (titleInp && !document.getElementById('tp-a-stopnote')) {
+        var wrapper = document.createElement('div');
+        wrapper.style.cssText = 'margin-top:10px;';
+        wrapper.innerHTML = '<div style="font-size:11px;color:#94a894;margin-bottom:4px;">📍 Where did student stop? (optional)</div>'
+          + '<input id="tp-a-stopnote" placeholder="e.g. Stopped at letter ج · or Surah Al-Baqarah verse 5" '
+          + 'style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#f0f0f0;'
+          + 'border-radius:10px;padding:10px 14px;font-size:13px;outline:none;box-sizing:border-box;" autocomplete="off">';
+        titleInp.parentNode.insertBefore(wrapper, titleInp.nextSibling);
+      }
+    }, 150);
+    return r;
+  };
+}
+
+console.log('[QQ v38] Features loaded: Adhkaar · Institution · StopNote · PeerJS');
 </script>
 
 </body>
