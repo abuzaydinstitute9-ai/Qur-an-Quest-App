@@ -2811,106 +2811,200 @@ function renderTeacherStudentPortal(){
 // ═══════════════════════════════════════
 function renderHome(){
   const el=$('page-home');
-  el.innerHTML=`
-  <section class="geo" style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:110px 20px 70px;position:relative;overflow:hidden;">
-    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(26,122,60,.16) 0%,transparent 65%);pointer-events:none;"></div>
-    <div style="max-width:840px;position:relative;">
-      <div class="badge fadeUp" style="margin-bottom:20px;">☽ Interactive Qur'an Learning Platform ☽</div>
-      <h1 class="hero-title fadeUp" style="margin-bottom:20px;">QUR'ĀN QUEST</h1>
-      <p style="color:var(--grey);font-size:clamp(14px,2vw,18px);line-height:1.9;margin-bottom:36px;max-width:620px;margin-left:auto;margin-right:auto;">Memorise, Learn Tajweed, and Test Your Knowledge through 6 interactive games, all 114 Surahs for Hifdh, and a 50-question daily quiz — all in one place.</p>
-      <!-- Row 1: main nav actions -->
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;">
-        <button class="btn btn-g" onclick="showPage('games')">Start Learning →</button>
-        <button class="btn btn-o" onclick="showPage('hifdh')">Begin Hifdh</button>
-      </div>
-      <!-- Row 2: three featured pills side by side -->
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
-        <button onclick="showPage('listenrepeat')" style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(52,152,219,.22),rgba(52,152,219,.12));border:1px solid rgba(52,152,219,.5);color:#74b9ff;padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.4px;">🎧 Listen &amp; Repeat</button>
-        <button onclick="showPage('beginner')" style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(46,204,113,.18),rgba(46,204,113,.09));border:1px solid rgba(46,204,113,.45);color:var(--emb);padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.4px;">🌱 Beginners / Kids</button>
-        <button onclick="showPage('recitepractice')" style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(26,188,156,.18),rgba(26,188,156,.09));border:1px solid rgba(26,188,156,.45);color:#1abc9c;padding:11px 22px;border-radius:28px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.4px;">🎙 Recite &amp; Compare</button>
-      </div>
-      <!-- Row 3: Portal CTA — renderHomePortalCTA() fills this after render -->
-      <div id="home-portal-cta" style="display:flex;justify-content:center;gap:12px;margin-bottom:28px;flex-wrap:wrap;">
-        <button class="btn btn-g" onclick="openAuth('login')" style="padding:13px 28px;font-size:15px;font-weight:700;">🔑 Login</button>
-        <button class="btn btn-gold" onclick="openAuth('register','student')" id="hero-cta-btn" style="padding:13px 36px;font-size:15px;font-weight:700;letter-spacing:.5px;">✨ Create Free Account</button>
-      </div>
-      <!-- Row 4: Ko-fi — separated as a support/sadaqah appeal -->
-      <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:20px;display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <p style="color:var(--greyd);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;">This app is free — support its growth</p>
-        <a href="https://ko-fi.com/adamusuleiman" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#080c08;padding:10px 24px;border-radius:25px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 2px 14px rgba(201,168,76,.25);">☕ Support on Ko-fi — Sadaqah Jariyah</a>
-      </div>
-      <div style="margin-top:50px;display:flex;gap:36px;justify-content:center;flex-wrap:wrap;">
-        ${[["50,000+","Students"],["114","Surahs"],["6,236","Ayaat"],["85+","Tajweed Qs"]].map(([n,l])=>`<div style="text-align:center;"><div class="dp" style="color:var(--gold);font-size:22px;font-weight:700;">${n}</div><div style="color:var(--greyd);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;">${l}</div></div>`).join('')}
-      </div>
-    </div>
-  </section>
-  <section style="padding:70px 20px;max-width:1280px;margin:0 auto;">
-    <div class="section-head"><div class="badge">Platform Features</div><h2>Everything You Need</h2><p>Complete Qur'an education for students, teachers, and families worldwide.</p></div>
-    <div class="grid3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;">
-      ${[["🎮","Interactive Games","Six fully playable modes — Quiz, Ayah Completion, Word Match, Tajweed, Order, and Hifdh.","games"],["📿","Full Hifdh System","All 114 surahs with memorisation tracking, hide-reveal testing, and progress reports.","hifdh"],["⚡","Daily Challenges","A new verse daily with recitation, transliteration, meaning, and comprehension quiz.","daily"],["🎵","Tajweed Practice","85+ questions across all major rules. New questions each session — never the same.","tajweed"],["📊","Progress Dashboard","Streaks, quiz scores, Tajweed mastery bars, achievements, and downloadable reports.","dashboard"],["🏆","Leaderboards","Compete globally with dedicated learners from around the world.","leaderboard"]].map(([ic,t,d,pg])=>`<div class="card card-h" style="padding:26px;" onclick="showPage('${pg}')"><div style="font-size:28px;margin-bottom:12px;">${ic}</div><h3 class="dp" style="color:var(--goldl);font-size:14px;letter-spacing:1px;margin-bottom:9px;">${t}</h3><p style="color:var(--grey);font-size:13px;line-height:1.7;">${d}</p></div>`).join('')}
-    </div>
-  </section>
-  <section style="padding:60px 20px;background:linear-gradient(to bottom,transparent,rgba(26,122,60,.06),transparent);">
-    <div style="max-width:680px;margin:0 auto;text-align:center;">
-      <div class="badge" style="margin-bottom:20px;">Today's Verse</div>
-      <div class="card" style="padding:38px;border-color:rgba(201,168,76,.4);">
-        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;">
-          <p class="ar" style="font-size:26px;color:var(--goldl);line-height:2.2;">${DAILY_VERSES[new Date().getDay()%DAILY_VERSES.length].arabic}</p>
-          <button class="voice-btn" onclick="speakArabic('${DAILY_VERSES[new Date().getDay()%DAILY_VERSES.length].arabic}')">🔊</button>
+
+  // ── Prayer times via Aladhan API (free, no key) ──
+  const QQ_LAT  = parseFloat(localStorage.getItem('qq_lat')||'9.0765');
+  const QQ_LNG  = parseFloat(localStorage.getItem('qq_lng')||'7.3986');
+  const QQ_CITY = localStorage.getItem('qq_city')||'Nigeria';
+
+  function _hhMM(t){ if(!t) return '--:--'; var p=t.split(':'); return p[0]+':'+p[1]; }
+  function _hijriDate(){
+    try{
+      return new Intl.DateTimeFormat('en-TN-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+    }catch(e){ return ''; }
+  }
+  function _gregorian(){
+    return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
+  }
+  function _currentPrayer(times){
+    if(!times) return {name:'',next:'',nextTime:''};
+    const order=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+    const now = new Date();
+    const mins = now.getHours()*60+now.getMinutes();
+    const toMins = t=>{ if(!t) return 9999; const p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+    let cur='Isha', nxt='Fajr', nxtT=times.Fajr;
+    for(let i=0;i<order.length;i++){
+      const nm=order[i]; const tm=toMins(times[nm]);
+      if(mins<tm){ nxt=nm; nxtT=times[nm]; cur=order[i>0?i-1:order.length-1]; break; }
+    }
+    return {name:cur, next:nxt, nextTime:_hhMM(nxtT)};
+  }
+
+  // ── Grid tile definitions ──
+  const TILES = [
+    {icon:'📿', label:'Hifdh',       page:'hifdh',        color:'#1a7a3c'},
+    {icon:'🎮', label:'Games',       page:'games',        color:'#8e44ad'},
+    {icon:'🎧', label:'Listen',      page:'listenrepeat', color:'#2980b9'},
+    {icon:'🌱', label:'Beginners',   page:'beginner',     color:'#27ae60'},
+    {icon:'🎙', label:'Recite',      page:'recitepractice',color:'#16a085'},
+    {icon:'🎵', label:'Tajweed',     page:'tajweed',      color:'#d35400'},
+    {icon:'📿', label:'Adhkār',      page:'adhkaar',      color:'#c9a84c'},
+    {icon:'⚡', label:'Daily Ayah',  page:'daily',        color:'#2471a3'},
+    {icon:'📊', label:'Dashboard',   page:'dashboard',    color:'#1a5276'},
+    {icon:'🗺️', label:'Journey',    page:'journey',      color:'#117a65'},
+    {icon:'🏅', label:'Achievements',page:'achievements', color:'#9b59b6'},
+    {icon:'🏆', label:'Leaderboard', page:'leaderboard',  color:'#b7950b'},
+  ];
+
+  const tileHTML = TILES.map(t=>`
+    <button onclick="showPage('${t.page}')" style="
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:7px;padding:16px 8px;border-radius:16px;cursor:pointer;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+      transition:background .15s,transform .12s;min-height:80px;
+      " onmouseover="this.style.background='rgba(255,255,255,.09)'"
+        onmouseout="this.style.background='rgba(255,255,255,.04)'"
+        ontouchstart="this.style.transform='scale(.94)'"
+        ontouchend="this.style.transform='scale(1)'">
+      <span style="font-size:26px;line-height:1;">${t.icon}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:600;letter-spacing:.3px;text-align:center;line-height:1.3;">${t.label}</span>
+    </button>`).join('');
+
+  el.innerHTML = `
+  <div style="min-height:100vh;padding:80px 0 80px;background:var(--bg);">
+
+    <!-- ── TOP CARD: Prayer + Date ── -->
+    <div style="margin:0 14px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(26,122,60,.55),rgba(8,20,8,.9));border:1px solid rgba(26,122,60,.4);padding:18px 20px;position:relative;overflow:hidden;" id="home-prayer-card">
+      <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><text y=%2290%22 font-size=%2290%22 opacity=%22.04%22 fill=%22white%22 font-family=%22serif%22>☽</text></svg>') right -10px top -10px no-repeat;pointer-events:none;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div id="hp-current-prayer" style="font-size:26px;font-weight:700;color:#fff;letter-spacing:.5px;">—</div>
+          <div id="hp-next-prayer" style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;">Loading prayer times…</div>
         </div>
-        <div class="divG"></div>
-        <p style="color:var(--white);font-size:14px;line-height:1.8;">"${DAILY_VERSES[new Date().getDay()%DAILY_VERSES.length].eng}"</p>
-        <p style="color:var(--gold);font-size:12px;margin-top:8px;">— ${DAILY_VERSES[new Date().getDay()%DAILY_VERSES.length].ref}</p>
-        <button class="btn btn-g" style="margin-top:20px;" onclick="showPage('daily')">Study This Verse →</button>
+        <div style="text-align:right;">
+          <div id="hp-time" style="font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;">--:--</div>
+          <div id="hp-gregorian" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;">${_gregorian()}</div>
+          <div id="hp-hijri" style="font-size:10px;color:rgba(201,168,76,.8);margin-top:1px;">${_hijriDate()}</div>
+        </div>
+      </div>
+      <div id="hp-times-row" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <div style="font-size:11px;color:rgba(255,255,255,.35);">Fetching times…</div>
+      </div>
+      <button onclick="qqAskLocation()" style="position:absolute;bottom:12px;right:14px;background:none;border:none;color:rgba(255,255,255,.3);font-size:10px;cursor:pointer;padding:0;">📍 ${QQ_CITY}</button>
+    </div>
+
+    <!-- ── RAMADAN BANNER (shows during Ramadan only) ── -->
+    <div id="home-ramadan-banner" style="display:none;margin:0 14px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(201,168,76,.2),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.35);padding:12px 16px;text-align:center;">
+      <div style="font-size:13px;color:#c9a84c;font-weight:700;">🌙 Ramadan Mubarak — Fasting today</div>
+      <div id="home-ramadan-times" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;"></div>
+    </div>
+
+    <!-- ── QUICK ACTIONS ROW ── -->
+    <div style="display:flex;gap:10px;padding:0 14px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;">
+      <button onclick="showPage('beginner')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:#2ecc71;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🌱 Start Learning</button>
+      <button onclick="showPage('hifdh')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(26,122,60,.15);border:1px solid rgba(26,122,60,.4);color:#27ae60;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📿 Begin Hifdh</button>
+      <button onclick="showPage('games')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.4);color:#9b59b6;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🎮 Play &amp; Learn</button>
+      <button onclick="showPage('daily')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(41,128,185,.15);border:1px solid rgba(41,128,185,.4);color:#3498db;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">⚡ Daily Ayah</button>
+    </div>
+
+    <!-- ── MAIN GRID (Muslim Pocket style) ── -->
+    <div style="padding:0 14px;margin-bottom:18px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Islamic Learning</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        ${tileHTML}
       </div>
     </div>
-  </section>
-  <section style="padding:60px 20px;">
-    <div style="max-width:640px;margin:0 auto;text-align:center;">
-      <div class="divG"></div>
-      <div style="font-size:26px;margin:12px 0;">☽</div>
-      <h3 class="dp" style="color:var(--goldl);font-size:16px;letter-spacing:2px;margin-bottom:16px;">OUR MISSION</h3>
-      <p style="color:var(--grey);font-size:15px;line-height:2;font-style:italic;">"To help Muslims worldwide build a stronger connection with the Qur'an through knowledge, reflection, memorisation, and consistent daily learning."</p>
-      <div class="divG"></div>
+
+    <!-- ── PORTAL CTA (login / dashboard) ── -->
+    <div id="home-portal-cta" style="padding:0 14px;margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="btn btn-g" onclick="openAuth('login')" style="flex:1;min-width:140px;padding:13px;font-size:14px;font-weight:700;">🔑 Sign In</button>
+      <button class="btn btn-gold" onclick="openAuth('register','student')" style="flex:1;min-width:140px;padding:13px;font-size:14px;font-weight:700;">✨ Create Free Account</button>
     </div>
-  </section>
-  <footer style="background:var(--card);border-top:1px solid var(--border);padding:36px 20px 20px;">
-    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:28px;margin-bottom:28px;">
-      <div>
-        <div class="dp" style="color:var(--goldl);font-size:14px;letter-spacing:2px;margin-bottom:10px;">QUR'ĀN QUEST</div>
-        <p style="color:var(--greyd);font-size:12px;line-height:1.7;">A global digital Qur'an learning platform combining technology and spirituality.</p>
-        <a href="https://abu-zayd123.github.io/Qur-an-Quest-app/" target="_blank" style="display:inline-flex;align-items:center;gap:6px;color:var(--gold);font-size:11px;text-decoration:none;margin-top:8px;">⭐ Star on GitHub</a>
-      </div>
-      <div><div style="color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;">Learn</div>${["Games","Hifdh","Tajweed","Daily Ayah"].map(l=>`<div style="color:var(--greyd);font-size:12px;margin-bottom:8px;cursor:pointer;" onclick="showPage('${l.toLowerCase().replace(' ','')}')">${l}</div>`).join('')}</div>
-      <div><div style="color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;">Community</div>${["Leaderboard","Dashboard"].map(l=>`<div style="color:var(--greyd);font-size:12px;margin-bottom:8px;cursor:pointer;" onclick="showPage('${l.toLowerCase()}')">${l}</div>`).join('')}</div>
-      <div>
-        <div style="color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;">Support</div>
-        <p style="color:var(--greyd);font-size:11px;line-height:1.6;margin-bottom:12px;">This app is Sadaqah Jariyah — free forever. Support its growth:</p>
-        <a href="https://ko-fi.com/adamusuleiman" target="_blank" style="display:block;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#000;text-align:center;padding:9px 14px;border-radius:20px;font-weight:700;font-size:12px;text-decoration:none;margin-bottom:8px;">☕ Ko-fi — Buy Me a Coffee</a>
-        <a href="https://launchgood.com" target="_blank" style="display:block;background:rgba(26,122,60,.2);border:1px solid var(--em);color:var(--emb);text-align:center;padding:9px 14px;border-radius:20px;font-weight:700;font-size:12px;text-decoration:none;">🤲 LaunchGood — Sadaqah</a>
-      </div>
-      <div>
-        <div style="color:var(--gold);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;">📬 CONTACT US</div>
-        <a href="https://wa.me/2349073528916" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
-          <span style="font-size:16px;">💬</span><span>WhatsApp</span>
-        </a>
-        <a href="mailto:quranquest111@gmail.com" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
-          <span style="font-size:16px;">📧</span><span>quranquest111@gmail.com</span>
-        </a>
-        <a href="https://www.facebook.com/profile.php?id=61582699600555" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--greyd);font-size:12px;text-decoration:none;margin-bottom:10px;">
-          <span style="font-size:16px;">👥</span><span>Facebook</span>
-        </a>
-      </div>
+
+    <!-- ── TODAY'S AYAH PREVIEW ── -->
+    <div id="home-ayah-preview" style="margin:0 14px 14px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;cursor:pointer;" onclick="showPage('daily')">
+      <div style="font-size:11px;color:rgba(255,255,255,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Today's Ayah</div>
+      <div id="home-ayah-ar" style="font-family:Amiri,serif;font-size:20px;color:rgba(201,168,76,.85);direction:rtl;text-align:right;line-height:1.9;margin-bottom:10px;">…</div>
+      <div id="home-ayah-tr" style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.7;">Tap to read today's ayah →</div>
     </div>
-    <div style="text-align:center;border-top:1px solid var(--border);padding-top:16px;">
-      <p style="color:var(--greyd);font-size:11px;margin-bottom:8px;">© 2025 Qur'an Quest · Built with love for the Muslim Ummah 🤍</p>
-      <p style="color:var(--greyd);font-size:10px;">Share this app — sharing is also Sadaqah 🌙</p>
-      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="shareApp()" style="background:rgba(26,122,60,.15);border:1px solid rgba(26,122,60,.4);color:var(--emb);padding:7px 16px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;">📤 Share App</button>
-        <button onclick="copyAppLink()" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);padding:7px 16px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;">🔗 Copy Link</button>
-      </div>
+
+    <!-- ── SUPPORT / KO-FI ── -->
+    <div style="padding:0 14px;text-align:center;">
+      <p style="color:rgba(255,255,255,.2);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Free app — support its growth</p>
+      <a href="https://ko-fi.com/adamusuleiman" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);color:#c9a84c;padding:10px 22px;border-radius:25px;font-weight:700;font-size:12px;text-decoration:none;">☕ Support on Ko-fi — Sadaqah Jariyah</a>
     </div>
-  </footer>`;
+
+  </div>`;
+
+  // ── Live clock ──
+  (function tickClock(){
+    const el2=document.getElementById('hp-time');
+    if(!el2) return;
+    const now=new Date();
+    el2.textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setTimeout(tickClock,10000);
+  })();
+
+  // ── Fetch prayer times (Aladhan API — free, no key) ──
+  (function fetchPrayers(){
+    const today=new Date();
+    const url='https://api.aladhan.com/v1/timings/'+
+      Math.floor(today.getTime()/1000)+
+      '?latitude='+QQ_LAT+'&longitude='+QQ_LNG+'&method=4';
+    fetch(url).then(r=>r.json()).then(data=>{
+      if(!data||!data.data||!data.data.timings) return;
+      const T=data.data.timings;
+      const prayer=_currentPrayer(T);
+      const cur=document.getElementById('hp-current-prayer');
+      const nxt=document.getElementById('hp-next-prayer');
+      const row=document.getElementById('hp-times-row');
+      if(cur) cur.textContent=prayer.name||'—';
+      if(nxt) nxt.textContent=prayer.next?'Next: '+prayer.next+' · '+prayer.nextTime:'';
+      if(row) row.innerHTML=['Fajr','Dhuhr','Asr','Maghrib','Isha'].map(p=>`
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:5px 10px;text-align:center;flex:1;min-width:50px;">
+          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-bottom:2px;">${p}</div>
+          <div style="font-size:12px;color:#fff;font-weight:600;">${_hhMM(T[p])}</div>
+        </div>`).join('');
+      // Ramadan banner
+      const isRamadan=data.data.date&&data.data.date.hijri&&data.data.date.hijri.month&&
+        data.data.date.hijri.month.number==9;
+      const banner=document.getElementById('home-ramadan-banner');
+      const rtimes=document.getElementById('home-ramadan-times');
+      if(isRamadan&&banner){ banner.style.display='block'; }
+      if(isRamadan&&rtimes){ rtimes.textContent='Suhoor ends: '+_hhMM(T.Fajr)+' · Iftar: '+_hhMM(T.Maghrib); }
+    }).catch(()=>{
+      const row=document.getElementById('hp-times-row');
+      if(row) row.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.25);">Prayer times unavailable offline</div>';
+    });
+  })();
+
+  // ── Today's ayah preview ──
+  (function loadAyahPreview(){
+    if(typeof todayVerse!=='undefined'&&todayVerse){
+      const ar=document.getElementById('home-ayah-ar');
+      const tr=document.getElementById('home-ayah-tr');
+      if(ar) ar.textContent=todayVerse.arabic||'…';
+      if(tr) tr.textContent=(todayVerse.translation||'').slice(0,100)+(todayVerse.translation&&todayVerse.translation.length>100?'…':'');
+    }
+  })();
+}
+
+// ── Ask user for location for accurate prayer times ──
+function qqAskLocation(){
+  if(!navigator.geolocation){ showToast('Geolocation not supported on this browser'); return; }
+  showToast('📍 Getting your location…');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    localStorage.setItem('qq_lat',pos.coords.latitude.toFixed(4));
+    localStorage.setItem('qq_lng',pos.coords.longitude.toFixed(4));
+    // Try reverse geocode
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude)
+      .then(r=>r.json()).then(d=>{
+        var city=(d.address&&(d.address.city||d.address.town||d.address.state))||'Your Location';
+        localStorage.setItem('qq_city',city);
+        showToast('📍 Location set: '+city);
+        renderHome();
+      }).catch(()=>{ showToast('📍 Location updated'); renderHome(); });
+  },function(){ showToast('❌ Location permission denied'); });
 }
 
 // ═══════════════════════════════════════
@@ -19358,19 +19452,9 @@ console.log('[QQ v13] Teacher Mode system loaded. Toggle with 🏫 Teacher butto
 
 
 <script>
-/* ══════════════════════════════════════════════════════════════
-   QUR'AN QUEST — LIVE CALL ENGINE v2
-   PeerJS peer-to-peer audio/video/screen share
-   No Firebase needed for calls.
 
-   How it works:
-     PeerJS connects to the free PeerJS Cloud signaling server.
-     Each user's PeerID = classCode + '_' + sanitisedName
-     Teacher calls → peer.call(studentPeerId, stream)
-     Student's peer.on('call') fires → shows incoming UI
-
-   Requires PeerJS CDN (loaded below via script tag).
-══════════════════════════════════════════════════════════════ */
+/* QUR'AN QUEST — CALL ENGINE v3 (PeerJS, hardened)
+   Fixes: ID collision, peer re-init, presence display, student auto-connect */
 
 // ── Load PeerJS from CDN ──
 (function(){
@@ -19381,129 +19465,126 @@ console.log('[QQ v13] Teacher Mode system loaded. Toggle with 🏫 Teacher butto
 })();
 
 // ── State ──
-var _callState  = 'idle';   // idle | ringing | calling | connected
-var _callId     = null;
-var _callRole   = null;     // 'caller' | 'callee'
-var _callType   = 'voice';
-var _callPeer   = null;
-var _callCode   = null;
-var _pc         = null;     // RTCPeerConnection (kept for screen share compat)
-var _localStream= null;
-var _peerConn   = null;     // PeerJS MediaConnection
-var _peer       = null;     // PeerJS Peer instance
-var _callTimerInterval = null;
-var _callSeconds = 0;
-var _mutedAudio = false;
-var _mutedVideo = false;
-var _callPollerStarted = false;
-var _ringOscInterval = null;
-var _pendingOffer = null;   // kept for compat, unused with PeerJS
+var _callState='idle', _callId=null, _callRole=null, _callType='voice';
+var _callPeer=null, _callCode=null;
+var _pc=null, _localStream=null, _peerConn=null, _peer=null;
+var _callTimerInterval=null, _callSeconds=0;
+var _mutedAudio=false, _mutedVideo=false;
+var _callPollerStarted=false;
+var _ringOscInterval=null, _pendingOffer=null;
+var _screenShareStream=null, _screenShareSender=null;
+var _speakerOn=true, _facingMode='user';
 
-var ICE_SERVERS = {
-  iceServers:[
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'},
-    {urls:'stun:stun2.l.google.com:19302'},
-    {urls:'stun:stun3.l.google.com:19302'},
-    {urls:'stun:stun.cloudflare.com:3478'}
-  ]
-};
+var ICE_SERVERS={iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun.cloudflare.com:3478'}
+]};
 
-// ── PeerJS peer ID for a user ──
+// ── Peer ID: simple, consistent, no collision suffix ──
 function _peerId(classCode, userName){
-  return ('qq_' + (classCode||'') + '_' + (userName||''))
+  return ('qq_'+classCode+'_'+userName)
     .toLowerCase().replace(/[^a-z0-9_]/g,'_').slice(0,60);
 }
 
-// ── Ensure Peer is open ──
+// ── Ensure Peer instance is open — always rebuilds if ID changed ──
 function _ensurePeer(cb){
   if(!currentUser){ cb(null); return; }
-  // _callCode might have just been set by caller — use it
-  var code = _callCode || (typeof myClassCode!=='undefined'?myClassCode:null);
+  var code=_callCode||(typeof myClassCode!=='undefined'?myClassCode:null);
   if(!code){ cb(null); return; }
-  // Wait for PeerJS to load (loaded async from CDN)
-  if(typeof Peer === 'undefined'){
-    var waited = 0;
-    var waitForPeer = setInterval(function(){
-      waited += 200;
-      if(typeof Peer !== 'undefined'){
-        clearInterval(waitForPeer);
-        _ensurePeer(cb);
-      } else if(waited > 8000){
-        clearInterval(waitForPeer);
-        console.error('PeerJS failed to load from CDN');
-        cb(null);
-      }
-    }, 200);
+
+  // Wait for PeerJS CDN
+  if(typeof Peer==='undefined'){
+    var w=0;
+    var poll=setInterval(function(){
+      w+=200;
+      if(typeof Peer!=='undefined'){ clearInterval(poll); _ensurePeer(cb); }
+      else if(w>10000){ clearInterval(poll); showToast('❌ PeerJS library failed to load'); cb(null); }
+    },200);
     return;
   }
-  var pid = _peerId(code, currentUser.name);
-  if(_peer && !_peer.destroyed && _peer.id === pid){
-    if(_peer.open){ cb(_peer); return; }
-    // Already connecting — wait for open with timeout
-    var done = false;
-    _peer.once('open', function(){ if(!done){ done=true; cb(_peer); } });
-    setTimeout(function(){ if(!done){ done=true; cb(_peer.open?_peer:null); } }, 6000);
-    return;
-  }
+
+  var pid=_peerId(code, currentUser.name);
+
+  // Reuse if already open with correct ID
+  if(_peer && !_peer.destroyed && _peer.id===pid && _peer.open){ cb(_peer); return; }
+
+  // Destroy old peer
   if(_peer && !_peer.destroyed) try{ _peer.destroy(); }catch(e){}
-  _peer = new Peer(pid, { config: ICE_SERVERS, debug: 0 });
-  var cbDone = false;
-  // Timeout in case PeerJS cloud is slow
-  var peerTimeout = setTimeout(function(){
-    if(!cbDone){ cbDone=true; cb(_peer); } // try anyway
-  }, 8000);
-  _peer.on('open', function(){
-    clearTimeout(peerTimeout);
+  _peer=null;
+
+  console.log('[QQ Call v3] Creating peer:', pid);
+  _peer=new Peer(pid,{config:ICE_SERVERS,debug:1});
+
+  var done=false;
+  var t=setTimeout(function(){
+    if(!done){ done=true; console.warn('[QQ Call] Peer open timeout — trying anyway'); cb(_peer); }
+  },10000);
+
+  _peer.on('open',function(id){
+    clearTimeout(t);
+    console.log('[QQ Call v3] Peer open:', id);
     _setupIncomingCallHandler();
-    if(!cbDone){ cbDone=true; cb(_peer); }
+    if(!done){ done=true; cb(_peer); }
   });
-  _peer.on('error', function(err){
-    clearTimeout(peerTimeout);
+
+  _peer.on('error',function(err){
+    clearTimeout(t);
+    console.error('[QQ Call v3] Peer error:', err.type, err.message);
+    // unavailable-id = someone else has this peer ID open (e.g. another tab)
+    // Destroy and retry with a device suffix
     if(err.type==='unavailable-id'){
-      var pid2 = pid + '_' + Math.random().toString(36).substr(2,4);
-      _peer = new Peer(pid2, {config:ICE_SERVERS, debug:0});
-      _peer.on('open', function(){ _setupIncomingCallHandler(); if(!cbDone){ cbDone=true; cb(_peer); } });
-    } else if(!cbDone){
-      cbDone=true;
-      console.error('PeerJS error:', err.type, err.message);
-      cb(null);
+      var pid2=pid+'_'+Math.random().toString(36).substr(2,4);
+      console.log('[QQ Call v3] ID collision, retrying as:', pid2);
+      try{ _peer.destroy(); }catch(e){}
+      _peer=new Peer(pid2,{config:ICE_SERVERS,debug:1});
+      _peer.on('open',function(id2){
+        console.log('[QQ Call v3] Peer open (fallback):', id2);
+        _setupIncomingCallHandler();
+        if(!done){ done=true; cb(_peer); }
+      });
+      _peer.on('error',function(e2){
+        if(!done){ done=true; showToast('❌ Could not connect to call server ('+e2.type+')'); cb(null); }
+      });
+    } else {
+      if(!done){ done=true; showToast('❌ Call server error: '+err.type); cb(null); }
     }
+  });
+
+  _peer.on('disconnected',function(){
+    console.warn('[QQ Call v3] Peer disconnected — attempting reconnect');
+    if(_peer && !_peer.destroyed) try{ _peer.reconnect(); }catch(e){}
   });
 }
 
-// ── Handle incoming calls ──
-var _incomingHandlerSet = false;
+// ── Incoming call handler ──
 function _setupIncomingCallHandler(){
   if(!_peer) return;
-  // Always set up on the current peer instance (each Peer object needs its own handler)
-  _peer.on('call', function(conn){
-    if(_callState !== 'idle'){ conn.close(); return; }
-    // Parse metadata
-    var meta = conn.metadata || {};
-    _callState   = 'ringing';
-    _callId      = meta.callId || ('call-'+Math.random().toString(36).substr(2,8));
-    _callRole    = 'callee';
-    _callType    = meta.type || 'voice';
-    _callPeer    = meta.from || 'Unknown';
-    _callCode    = meta.classCode || _callCode;
-    _peerConn    = conn;
-
+  _peer.removeAllListeners('call');
+  _peer.on('call',function(conn){
+    console.log('[QQ Call v3] Incoming call from:', conn.peer, 'meta:', conn.metadata);
+    if(_callState!=='idle'){ console.log('[QQ Call v3] Busy — rejecting'); conn.close(); return; }
+    var meta=conn.metadata||{};
+    _callState='ringing';
+    _callId=meta.callId||('call-'+Math.random().toString(36).substr(2,8));
+    _callRole='callee';
+    _callType=meta.type||'voice';
+    _callPeer=meta.from||conn.peer;
+    _callCode=meta.classCode||_callCode;
+    _peerConn=conn;
     _showIncomingCall(_callId, meta, null);
   });
 }
 
-// ── Format timer ──
+// ── Timer helper ──
 function _fmtTime(s){ var m=Math.floor(s/60); return (m<10?'0':'')+m+':'+(s%60<10?'0':'')+(s%60); }
 
-// ══════════════════════════════
-// SHOW OVERLAY UI (unchanged)
+// ── Overlay helpers (unchanged) ──
 function callShowOverlay(){ var el=document.getElementById('call-overlay'); if(el) el.classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function callHideOverlay(){ var el=document.getElementById('call-overlay'); if(el) el.classList.add('hidden'); document.body.style.overflow=''; }
 function callShowRinging(title,subtitle,buttons){
   callShowOverlay();
-  var rs=document.getElementById('call-state-ringing');
-  var as=document.getElementById('call-state-active');
+  var rs=document.getElementById('call-state-ringing'), as=document.getElementById('call-state-active');
   if(rs) rs.style.display=''; if(as) as.style.display='none';
   var e;
   e=document.getElementById('call-title'); if(e) e.textContent=title;
@@ -19513,20 +19594,13 @@ function callShowRinging(title,subtitle,buttons){
   if(badge) badge.textContent=(_callType==='video'?'📹 Video Call':'📞 Voice Call');
 }
 function callShowActive(peerName,isVideo){
-  var rs=document.getElementById('call-state-ringing');
-  var as=document.getElementById('call-state-active');
+  var rs=document.getElementById('call-state-ringing'), as=document.getElementById('call-state-active');
   if(rs) rs.style.display='none'; if(as) as.style.display='';
   var an=document.getElementById('call-active-name'); if(an) an.textContent=peerName;
-  var rv=document.getElementById('remote-video');
-  var vbg=document.getElementById('call-voice-bg');
-  var pip=document.getElementById('local-video-pip');
-  var vnl=document.getElementById('call-voice-name-large');
-  if(isVideo){
-    if(rv) rv.style.display=''; if(vbg) vbg.style.display='none'; if(pip) pip.style.display='';
-  } else {
-    if(rv) rv.style.display='none'; if(vbg) vbg.style.display='flex'; if(pip) pip.style.display='none';
-    if(vnl) vnl.textContent=peerName;
-  }
+  var rv=document.getElementById('remote-video'), vbg=document.getElementById('call-voice-bg'),
+      pip=document.getElementById('local-video-pip'), vnl=document.getElementById('call-voice-name-large');
+  if(isVideo){ if(rv) rv.style.display=''; if(vbg) vbg.style.display='none'; if(pip) pip.style.display=''; }
+  else { if(rv) rv.style.display='none'; if(vbg) vbg.style.display='flex'; if(pip) pip.style.display='none'; if(vnl) vnl.textContent=peerName; }
   if(isVideo&&_localStream){ var lv=document.getElementById('local-video'); if(lv&&!lv.srcObject) lv.srcObject=_localStream; }
   _callSeconds=0;
   if(_callTimerInterval) clearInterval(_callTimerInterval);
@@ -19534,113 +19608,115 @@ function callShowActive(peerName,isVideo){
   _initPipDrag();
 }
 
-// ── Attach remote stream to UI ──
 function _attachRemoteStream(stream){
   if(_callType==='video'){
     var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=stream;
   } else {
     var au=document.getElementById('remote-audio');
-    if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; document.body.appendChild(au); }
+    if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; au.setAttribute('playsinline',''); document.body.appendChild(au); }
     au.srcObject=stream;
+    // iOS Safari needs explicit play()
+    au.play().catch(function(){});
   }
 }
 
-// ══════════════════════════════
-// OUTGOING CALL
+// ══ OUTGOING CALL ══
 async function callStart(targetName, classCode, type){
   if(!currentUser){ showToast('Please sign in first'); return; }
-  if(_callState !== 'idle'){ showToast('Already in a call'); return; }
-  if(!classCode) classCode = _resolveCallCode(targetName);
-  if(!classCode){ showToast('No class linked — cannot start call'); return; }
-  if(!targetName||typeof targetName!=='string'||targetName.length>80){ showToast('Invalid call target'); return; }
+  if(_callState!=='idle'){ showToast('Already in a call'); return; }
+  if(!classCode) classCode=_resolveCallCode(targetName);
+  if(!classCode){ showToast('⚠️ No class code — join a class first'); return; }
 
-  _callType  = type || 'voice';
-  _callPeer  = targetName;
-  _callCode  = classCode;  // SET BEFORE _ensurePeer so it finds the right peer ID
-  _callRole  = 'caller';
-  _callId    = 'call-'+Math.random().toString(36).substr(2,8);
-  _callState = 'calling';
+  _callType=type||'voice';
+  _callPeer=targetName;
+  _callCode=classCode;
+  _callRole='caller';
+  _callId='call-'+Math.random().toString(36).substr(2,8);
+  _callState='calling';
 
   callShowRinging(
-    (_callType==='video'?'📹 Video Calling…':'📞 Voice Calling…'), targetName,
+    (_callType==='video'?'📹 Video Calling…':'📞 Calling…'), targetName,
     '<button class="call-ring-btn" onclick="callEnd()"><div class="call-ring-btn-circle decline-circle">📵</div><span class="call-ring-btn-label">Cancel</span></button>'
   );
-  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Calling '+targetName+'…';
-  var cae=document.getElementById('call-avatar-emoji'); if(cae) cae.textContent=_callType==='video'?'📹':'📞';
 
-  // Check mic/cam permission FIRST before trying to connect peer
-  // This prevents hanging if permission is denied
+  // Get mic/cam FIRST before network ops
   try{
-    _localStream = await navigator.mediaDevices.getUserMedia({
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},
+    _localStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
       video:_callType==='video'
-    });
-    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
-
-    _ensurePeer(function(peer){
-      if(!peer){
-        // PeerJS not ready yet — show helpful error and clean up
-        showToast('❌ Connecting to call server failed. Check your internet connection.');
-        callEnd(); return;
-      }
-      var targetId = _peerId(classCode, targetName);
-      var meta = {callId:_callId, from:currentUser.name, fromRole:currentUser.role,
-                  to:targetName, type:_callType, classCode:classCode,
-                  started:new Date().toISOString()};
-      _peerConn = peer.call(targetId, _localStream, {metadata:meta});
-      if(!_peerConn){ showToast('❌ Peer not reachable — is the student online?'); callEnd(); return; }
-
-      _peerConn.on('stream', function(remoteStream){
-        _callState = 'connected';
-        callShowActive(_callPeer, _callType==='video');
-        _attachRemoteStream(remoteStream);
-      });
-      _peerConn.on('close', function(){ if(_callState!=='idle') callEnd(); });
-      _peerConn.on('error', function(e){ showToast('❌ Call error: '+e.message); callEnd(); });
-
-      // Also push a chat message so student sees notification
-      _fbPush('classes/'+classCode+'/messages',{
-        from:currentUser.name, role:currentUser.role, to:targetName,
-        msg:(_callType==='video'?'📹':'📞')+' '+currentUser.name+' is calling you — open your Dashboard to answer!',
-        callId:_callId, callType:_callType,
-        date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
-        read:false, isCall:true
-      });
     });
   }catch(err){
     callEnd();
-    showToast(err.name==='NotAllowedError'?'❌ Microphone/camera permission denied':'❌ Could not start call: '+err.message);
+    showToast(err.name==='NotAllowedError'
+      ?'❌ Microphone/camera permission denied — allow it in browser settings'
+      :'❌ Could not access microphone: '+err.message);
+    return;
   }
-}
+  if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
 
-// ══════════════════════════════
-// ACCEPT INCOMING
-async function callAccept(){
-  if(_callState!=='ringing'||!_peerConn) return;
-  clearInterval(_ringOscInterval);
-  var cst=document.getElementById('call-status-text'); if(cst) cst.textContent='Connecting…';
-  var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='';
-  try{
-    _localStream = await navigator.mediaDevices.getUserMedia({
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},
-      video:_callType==='video'
-    });
-    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
-    _peerConn.answer(_localStream);
-    _peerConn.on('stream', function(remoteStream){
+  // Now connect to PeerJS
+  _ensurePeer(function(peer){
+    if(!peer||_callState==='idle'){ callEnd(); return; }
+
+    var targetId=_peerId(classCode, targetName);
+    console.log('[QQ Call v3] Calling peer:', targetId);
+
+    var meta={callId:_callId, from:currentUser.name, fromRole:currentUser.role,
+              to:targetName, type:_callType, classCode:classCode};
+    _peerConn=peer.call(targetId, _localStream, {metadata:meta});
+    if(!_peerConn){ showToast('❌ Could not reach '+targetName+' — are they online?'); callEnd(); return; }
+
+    _peerConn.on('stream',function(remoteStream){
       _callState='connected';
       callShowActive(_callPeer, _callType==='video');
       _attachRemoteStream(remoteStream);
     });
-    _peerConn.on('close', function(){ if(_callState!=='idle') callEnd(); });
-    _peerConn.on('error', function(e){ showToast('❌ '+e.message); callEnd(); });
+    _peerConn.on('close',function(){ if(_callState!=='idle') callEnd(); });
+    _peerConn.on('error',function(e){ showToast('❌ Call error: '+e.message); callEnd(); });
+
+    // Notify via chat so student sees it even if not on call tab
+    _fbPush('classes/'+classCode+'/messages',{
+      from:currentUser.name, role:currentUser.role, to:targetName,
+      msg:(_callType==='video'?'📹':'📞')+' '+currentUser.name+' is calling — open your Dashboard to answer!',
+      callId:_callId, callType:_callType,
+      date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
+      read:false, isCall:true
+    });
+
+    // Auto-end if no answer in 45s
+    var ringTimeout=setTimeout(function(){
+      if(_callState==='calling'){ showToast('📵 No answer'); callEnd(); }
+    },45000);
+    if(_peerConn) _peerConn.on('stream',function(){ clearTimeout(ringTimeout); });
+  });
+}
+
+// ══ ACCEPT ══
+async function callAccept(){
+  if(_callState!=='ringing'||!_peerConn) return;
+  clearInterval(_ringOscInterval);
+  var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='<div style="color:#aaa;font-size:13px;">Connecting…</div>';
+  try{
+    _localStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+      video:_callType==='video'
+    });
+    if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
+    _peerConn.answer(_localStream);
+    _peerConn.on('stream',function(remoteStream){
+      _callState='connected';
+      callShowActive(_callPeer, _callType==='video');
+      _attachRemoteStream(remoteStream);
+    });
+    _peerConn.on('close',function(){ if(_callState!=='idle') callEnd(); });
+    _peerConn.on('error',function(e){ showToast('❌ '+e.message); callEnd(); });
   }catch(err){
     callDecline();
-    showToast('❌ Could not connect: '+(err.name==='NotAllowedError'?'Microphone permission denied':err.message));
+    showToast('❌ '+(err.name==='NotAllowedError'?'Microphone permission denied':err.message));
   }
 }
 
-// DECLINE
+// ══ DECLINE ══
 function callDecline(){
   clearInterval(_ringOscInterval);
   if(_peerConn) try{ _peerConn.close(); }catch(e){}
@@ -19648,47 +19724,45 @@ function callDecline(){
   callCleanupConnection();
 }
 
-// END CALL
+// ══ END ══
 function callEnd(){
   clearInterval(_ringOscInterval);
-  if(typeof _screenShareStream!=='undefined'&&_screenShareStream){
-    try{_screenShareStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
-    _screenShareStream=null;
-  }
+  if(_screenShareStream) try{ _screenShareStream.getTracks().forEach(function(t){t.stop();}); }catch(e){}
+  _screenShareStream=null;
   var dur=_fmtTime(_callSeconds);
   if(_peerConn) try{ _peerConn.close(); }catch(e){}
   _peerConn=null;
   callCleanupConnection();
-  showToast('📵 Call ended · '+dur);
+  if(dur!=='00:00') showToast('📵 Call ended · '+dur);
 }
 
-// CLEANUP
+// ══ CLEANUP ══
 function callCleanupConnection(){
   if(_callTimerInterval) clearInterval(_callTimerInterval);
-  if(_pc){try{_pc.close();}catch(e){} _pc=null;}
-  if(_localStream){_localStream.getTracks().forEach(function(t){t.stop();});_localStream=null;}
-  var ra=document.getElementById('remote-audio'); if(ra){ra.srcObject=null;ra.remove();}
+  if(_pc){ try{_pc.close();}catch(e){} _pc=null; }
+  if(_localStream){ _localStream.getTracks().forEach(function(t){t.stop();}); _localStream=null; }
+  var ra=document.getElementById('remote-audio'); if(ra){ ra.srcObject=null; ra.remove(); }
   var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=null;
   var lv=document.getElementById('local-video'); if(lv) lv.srcObject=null;
-  var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.style.display='none';ssv.srcObject=null;}
+  var ssv=document.getElementById('screenshare-view'); if(ssv){ ssv.style.display='none'; ssv.srcObject=null; }
   var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='none';
-  var ssc=document.getElementById('ss-circle'); if(ssc){ssc.classList.remove('ss-active');ssc.textContent='🖥️';}
+  var ssc=document.getElementById('ss-circle'); if(ssc){ ssc.classList.remove('ss-active'); ssc.textContent='🖥️'; }
   var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Share Screen';
-  _callState='idle';_mutedAudio=false;_mutedVideo=false;
-  _callId=null;_callRole=null;_callPeer=null;_callCode=null;
-  _pendingOffer=null;_callSeconds=0;
+  _callState='idle'; _mutedAudio=false; _mutedVideo=false;
+  _callId=null; _callRole=null; _callPeer=null; _callCode=null;
+  _callSeconds=0; _pendingOffer=null;
   var mc=document.getElementById('mute-circle'); if(mc) mc.textContent='🎤';
   var ml=document.getElementById('mute-lbl'); if(ml) ml.textContent='Mute';
   var cmb=document.getElementById('ctrl-mute-btn'); if(cmb) cmb.classList.remove('muted');
   var cc=document.getElementById('cam-circle'); if(cc) cc.textContent='📷';
-  var cl=document.getElementById('cam-lbl'); if(cl) cl.textContent='Camera';
+  var cl2=document.getElementById('cam-lbl'); if(cl2) cl2.textContent='Camera';
   var ccb=document.getElementById('ctrl-cam-btn'); if(ccb) ccb.classList.remove('camoff');
   var po=document.getElementById('pip-camoff'); if(po) po.style.display='none';
   callHideOverlay();
   if(typeof updateStudentCallBanner==='function') setTimeout(updateStudentCallBanner,50);
 }
 
-// MUTE / CAM / SPEAKER / FLIP
+// ══ CONTROLS ══
 function callToggleMute(){
   _mutedAudio=!_mutedAudio;
   if(_localStream) _localStream.getAudioTracks().forEach(function(t){t.enabled=!_mutedAudio;});
@@ -19708,7 +19782,6 @@ function callToggleCam(){
   if(po) po.style.display=_mutedVideo?'flex':'none';
   showToast(_mutedVideo?'🚫 Camera off':'📷 Camera on');
 }
-var _speakerOn=true;
 function callToggleSpeaker(){
   _speakerOn=!_speakerOn;
   var sc=document.getElementById('speaker-circle'); if(sc) sc.textContent=_speakerOn?'🔊':'🔇';
@@ -19717,71 +19790,57 @@ function callToggleSpeaker(){
   var el=ra||rv; if(el&&el.setSinkId) el.setSinkId(_speakerOn?'default':'').catch(function(){});
   showToast(_speakerOn?'🔊 Speaker on':'🔈 Earpiece');
 }
-var _facingMode='user';
 async function callFlipCamera(){
-  if(!_localStream){showToast('❌ No active camera');return;}
+  if(!_localStream){ showToast('❌ No active camera'); return; }
   _facingMode=_facingMode==='user'?'environment':'user';
   try{
-    var ns=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:_facingMode,width:{ideal:1280},height:{ideal:720}}});
+    var ns=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:_facingMode}});
     var nvt=ns.getVideoTracks()[0], ovt=_localStream.getVideoTracks()[0];
-    if(ovt){_localStream.removeTrack(ovt);ovt.stop();}
+    if(ovt){ _localStream.removeTrack(ovt); ovt.stop(); }
     _localStream.addTrack(nvt);
     var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream;
-    if(_peerConn && _peerConn.peerConnection){
+    if(_peerConn&&_peerConn.peerConnection){
       var vs=_peerConn.peerConnection.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
       if(vs) vs.replaceTrack(nvt);
     }
-    var lpv=document.getElementById('local-video'); if(lpv) lpv.style.transform=_facingMode==='user'?'scaleX(-1)':'scaleX(1)';
     showToast(_facingMode==='user'?'🥳 Front camera':'📸 Rear camera');
-  }catch(err){ _facingMode=_facingMode==='user'?'environment':'user'; showToast('❌ Camera flip not supported'); }
+  }catch(err){ _facingMode=_facingMode==='user'?'environment':'user'; showToast('❌ Camera flip failed'); }
 }
 
-// SCREEN SHARE
-var _screenShareStream=null, _screenShareSender=null;
+// ══ SCREEN SHARE ══
 async function callToggleScreenShare(){
-  if(_screenShareStream){_stopInCallScreenShare();return;}
-  // Screen share requires HTTPS and is not supported on mobile browsers
-  if(location.protocol==='file:'){
-    showToast('❌ Screen share needs HTTPS — upload to GitHub Pages first');return;
-  }
-  var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if(isMobile){
-    showToast('❌ Screen share is not supported on mobile browsers (iOS/Android limitation)');return;
-  }
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){
-    showToast('❌ Screen share not supported in this browser. Use Chrome or Firefox on desktop.');return;
-  }
+  if(_screenShareStream){ _stopInCallScreenShare(); return; }
+  if(location.protocol==='file:'){ showToast('❌ Screen share needs HTTPS — use GitHub Pages'); return; }
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){ showToast('❌ Screen share is not supported on mobile browsers'); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){ showToast('❌ Use Chrome or Firefox desktop for screen share'); return; }
   try{
-    _screenShareStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30,width:{ideal:1920},height:{ideal:1080}},audio:false});
-    if(_peerConn && _peerConn.peerConnection){
+    _screenShareStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:15},audio:false});
+    if(_peerConn&&_peerConn.peerConnection){
       var vt=_screenShareStream.getVideoTracks()[0];
       var vs=_peerConn.peerConnection.getSenders().find(function(s){return s.track&&s.track.kind==='video';});
       if(vs){ vs.replaceTrack(vt); _screenShareSender=vs; }
-      else { _screenShareSender=_peerConn.peerConnection.addTrack(vt,_screenShareStream); }
     }
-    var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.srcObject=_screenShareStream;ssv.style.display='block';}
-    var rv=document.getElementById('remote-video'); if(rv) rv.style.display='none';
-    var ssc=document.getElementById('ss-circle'); if(ssc){ssc.classList.add('ss-active');ssc.textContent='⏹️';}
+    var ssv=document.getElementById('screenshare-view'); if(ssv){ ssv.srcObject=_screenShareStream; ssv.style.display='block'; }
+    var ssc=document.getElementById('ss-circle'); if(ssc){ ssc.classList.add('ss-active'); ssc.textContent='⏹️'; }
     var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Stop';
     var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='flex';
-    _screenShareStream.getVideoTracks()[0].onended=function(){_stopInCallScreenShare();};
+    _screenShareStream.getVideoTracks()[0].onended=function(){ _stopInCallScreenShare(); };
     showToast('🖥️ Screen sharing started');
-  }catch(err){_screenShareStream=null; if(err.name!=='NotAllowedError') showToast('❌ Screen share failed: '+err.message);}
+  }catch(err){ _screenShareStream=null; if(err.name!=='NotAllowedError') showToast('❌ Screen share: '+err.message); }
 }
 function _stopInCallScreenShare(){
-  if(_screenShareStream){_screenShareStream.getTracks().forEach(function(t){t.stop();});_screenShareStream=null;}
+  if(_screenShareStream){ _screenShareStream.getTracks().forEach(function(t){t.stop();}); _screenShareStream=null; }
   if(_peerConn&&_peerConn.peerConnection&&_screenShareSender&&_localStream){
     var ct=_localStream.getVideoTracks()[0]; if(ct) _screenShareSender.replaceTrack(ct); _screenShareSender=null;
   }
-  var ssv=document.getElementById('screenshare-view'); if(ssv){ssv.style.display='none';ssv.srcObject=null;}
-  var rv=document.getElementById('remote-video'); if(rv) rv.style.display='';
-  var ssc=document.getElementById('ss-circle'); if(ssc){ssc.classList.remove('ss-active');ssc.textContent='🖥️';}
+  var ssv=document.getElementById('screenshare-view'); if(ssv){ ssv.style.display='none'; ssv.srcObject=null; }
+  var ssc=document.getElementById('ss-circle'); if(ssc){ ssc.classList.remove('ss-active'); ssc.textContent='🖥️'; }
   var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Share Screen';
   var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='none';
   showToast('🖥️ Screen sharing stopped');
 }
 
-// PiP DRAG
+// ══ PiP DRAG ══
 function _initPipDrag(){
   var pip=document.getElementById('local-video-pip');
   if(!pip||pip._dragInited) return; pip._dragInited=true;
@@ -19792,12 +19851,11 @@ function _initPipDrag(){
   pip.addEventListener('mousedown',onStart); pip.addEventListener('touchstart',onStart,{passive:false});
 }
 
-// INCOMING CALL UI
+// ══ INCOMING CALL UI ══
 function _showIncomingCall(callId, meta, offer){
   if(_callState!=='ringing') return;
-  var typeLabel=_callType==='video'?'📹 Video Call':'📞 Voice Call';
   callShowRinging(
-    typeLabel+' from '+_callPeer,
+    (_callType==='video'?'📹':'📞')+' Call from '+_callPeer,
     meta.fromRole==='teacher'?'🏫 Your Teacher':'👤 Classmate',
     '<button class="call-ring-btn" onclick="callAccept()"><div class="call-ring-btn-circle accept-circle">📞</div><span class="call-ring-btn-label">Accept</span></button>'+
     '<button class="call-ring-btn" onclick="callDecline()"><div class="call-ring-btn-circle decline-circle">📵</div><span class="call-ring-btn-label">Decline</span></button>'
@@ -19809,78 +19867,119 @@ function _showIncomingCall(callId, meta, offer){
 
 function _callRing(){
   try{
-    var ctx=new (window.AudioContext||window.webkitAudioContext)();
-    var osc=ctx.createOscillator(), gain=ctx.createGain();
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.frequency.value=440;gain.gain.setValueAtTime(0.3,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
-    osc.start();osc.stop(ctx.currentTime+0.8);
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    function beep(freq, when, dur){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=freq;
+      g.gain.setValueAtTime(0.25,when);
+      g.gain.exponentialRampToValueAtTime(0.001,when+dur);
+      o.start(when); o.stop(when+dur);
+    }
+    beep(440,ctx.currentTime,0.15);
+    beep(550,ctx.currentTime+0.18,0.15);
     _ringOscInterval=setInterval(function(){
-      if(_callState!=='ringing'){clearInterval(_ringOscInterval);return;}
+      if(_callState!=='ringing'){ clearInterval(_ringOscInterval); return; }
       try{
-        var c2=new (window.AudioContext||window.webkitAudioContext)(), o2=c2.createOscillator(), g2=c2.createGain();
-        o2.connect(g2);g2.connect(c2.destination);o2.frequency.value=480;
-        g2.gain.setValueAtTime(0.25,c2.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,c2.currentTime+0.6);
-        o2.start();o2.stop(c2.currentTime+0.6);
+        var c2=new(window.AudioContext||window.webkitAudioContext)();
+        function b2(f,w,d){ var o=c2.createOscillator(),g=c2.createGain(); o.connect(g);g.connect(c2.destination); o.frequency.value=f; g.gain.setValueAtTime(0.2,w); g.gain.exponentialRampToValueAtTime(0.001,w+d); o.start(w);o.stop(w+d); }
+        b2(440,c2.currentTime,0.15); b2(550,c2.currentTime+0.18,0.15);
       }catch(e){}
-    },1500);
+    },2000);
   }catch(e){}
 }
 
-// POLLER — with PeerJS the "poller" just opens the Peer connection
-// so incoming calls can arrive. No polling needed.
+// ══ POLLER / AUTO-CONNECT ══
+// With PeerJS, "polling" = keeping the Peer connection open
+// so incoming calls can arrive anytime.
+
 function startIncomingCallPoller(){
   if(!currentUser||!_callCode) return;
+  console.log('[QQ Call v3] Opening peer for incoming calls, code:', _callCode);
   _ensurePeer(function(peer){
-    if(peer) console.log('[QQ Call] PeerJS ready, ID:', peer.id);
+    if(peer) console.log('[QQ Call v3] Ready for calls as:', peer.id);
+    else console.warn('[QQ Call v3] Could not open peer for incoming calls');
   });
 }
+
 function stopIncomingCallPoller(){
-  if(_peer && !_peer.destroyed) try{ _peer.destroy(); }catch(e){}
-  _peer=null; _incomingHandlerSet=false;
+  if(_peer&&!_peer.destroyed) try{ _peer.destroy(); }catch(e){}
+  _peer=null; _callPollerStarted=false;
 }
+
 function maybeStartCallPoller(){
-  if(_callPollerStarted) return;
   if(!currentUser) return;
-  // Resolve class code from all possible sources
-  var code = _callCode
-    || (typeof myClassCode!=='undefined' && myClassCode ? myClassCode : null)
-    || (currentUser.classCode || null);
-  // For teachers: use first group code
-  if(!code && typeof teacherGroups!=='undefined' && teacherGroups.length){
-    var grp = teacherGroups.find(function(g){return g.code;});
-    if(grp) code = grp.code;
+
+  // Resolve class code
+  var code=_callCode
+    ||(typeof myClassCode!=='undefined'&&myClassCode?myClassCode:null)
+    ||(currentUser.classCode||null);
+
+  if(!code&&typeof teacherGroups!=='undefined'&&teacherGroups.length){
+    var grp=teacherGroups.find(function(g){return g.code;});
+    if(grp) code=grp.code;
   }
+
   if(!code){
-    // Not in a class yet — retry in 3s
-    setTimeout(maybeStartCallPoller, 3000); return;
+    setTimeout(maybeStartCallPoller,3000);
+    return;
   }
-  _callCode = code;
-  _callPollerStarted = true;
+
+  // ALWAYS reset and re-init if code changed
+  if(_callCode && _callCode!==code){
+    console.log('[QQ Call v3] Class code changed, resetting peer');
+    _callPollerStarted=false;
+    if(_peer&&!_peer.destroyed) try{ _peer.destroy(); }catch(e){}
+    _peer=null;
+  }
+
+  if(_callPollerStarted&&_peer&&!_peer.destroyed&&_peer.open) return;
+
+  _callCode=code;
+  _callPollerStarted=true;
   startIncomingCallPoller();
 }
 
-// Hook into renderDashboard / updateNavAuth
-var _origRenderDashboard=typeof renderDashboard==='function'?renderDashboard:null;
-if(_origRenderDashboard){ window.renderDashboard=function(){ maybeStartCallPoller(); return _origRenderDashboard.apply(this,arguments); }; }
-var _origUpdateNavAuth=typeof updateNavAuth==='function'?updateNavAuth:null;
-if(_origUpdateNavAuth){ window.updateNavAuth=function(){ _origUpdateNavAuth.apply(this,arguments); setTimeout(maybeStartCallPoller,300); }; }
-setTimeout(function(){ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.name) maybeStartCallPoller(); },1000);
+// ══ AUTO-START: hook into login, dashboard render, class join ══
+// No renderDashboard wrapping here — Script 8 handles it.
+// We use a simple interval probe instead to avoid double-wrapping.
+var _origUNA=typeof window.updateNavAuth==='function'?window.updateNavAuth:null;
+if(_origUNA){
+  window.updateNavAuth=function(){
+    _origUNA.apply(this,arguments);
+    setTimeout(maybeStartCallPoller,400);
+  };
+}
+// Startup probe
+setTimeout(function(){
+  if(typeof currentUser!=='undefined'&&currentUser&&currentUser.name) maybeStartCallPoller();
+},1500);
+// Keep-alive: re-check every 60s in case peer drops
+setInterval(function(){
+  if(typeof currentUser!=='undefined'&&currentUser&&_callState==='idle'){
+    if(_callPollerStarted&&(!_peer||_peer.destroyed||!_peer.open)){
+      console.log('[QQ Call v3] Peer lost — reconnecting');
+      _callPollerStarted=false;
+      maybeStartCallPoller();
+    }
+  }
+},60000);
 
-// ── Shims for old Firebase call paths (now unused) ──
+// ── Shims for old Firebase call paths ──
 function _callPath(id){ return 'calls/'+id; }
-function _callWrite(id,data){ return Promise.resolve(); }
+function _callWrite(id,d){ return Promise.resolve(); }
 function _callGet(id,cb){ if(cb) cb(null); }
-function _callListen(id,cb){ }
-function _callUnlisten(id){ }
-function _callCleanup(id){ }
-function _pushIceCandidate(id,role,candidate){ return Promise.resolve(); }
+function _callListen(id,cb){}
+function _callUnlisten(id){}
+function _callCleanup(id){}
+function _pushIceCandidate(i,r,c){ return Promise.resolve(); }
 function _genCallId(){ return 'call-'+Math.random().toString(36).substr(2,8); }
 var _appliedIceCandidates={};
 function _pollRemoteIce(){}
-var _incomingPollInterval=null;
-var _seenCallIds={};
+var _incomingPollInterval=null, _seenCallIds={};
 function _checkIncomingCalls(){}
+
+console.log('[QQ Call v3] Engine loaded');
 
 </script>
 
@@ -20698,13 +20797,16 @@ function _patchStopPointBadges() {
   });
 }
 // Hook into renderDashboard
-var _origRD = window.renderDashboard;
-if (typeof _origRD === 'function') {
-  window.renderDashboard = function() {
-    var r = _origRD.apply(this, arguments);
-    setTimeout(_patchStopPointBadges, 100);
-    return r;
-  };
+// Use MutationObserver instead of wrapping renderDashboard
+var _stopBadgeObserver = new MutationObserver(function(muts) {
+  var needsPatch = muts.some(function(m) {
+    return m.target && m.target.id === 'page-dashboard';
+  });
+  if (needsPatch) setTimeout(_patchStopPointBadges, 150);
+});
+var _dashPage = document.getElementById('page-dashboard');
+if (_dashPage) {
+  _stopBadgeObserver.observe(_dashPage, { childList: true, subtree: false });
 }
 
 // ════════════════════════════════════════════
