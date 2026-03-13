@@ -23,7 +23,7 @@ body{background:var(--bg);color:var(--white);font-family:'Lato',sans-serif;overf
 /* ── NAV — two-tier ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.5);min-height:50px;}
 /* Tier-1: identity row (logo + auth + hamburger) */
-.nav-inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.04);}
+.nav-inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 12px;border-bottom:1px solid rgba(255,255,255,.04);min-width:0;}
 /* Tier-2: scrollable pill-tab row */
 .nav-pill-row{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:3px;height:38px;padding:0 16px;overflow-x:auto;scrollbar-width:none;}
 .nav-pill-row::-webkit-scrollbar{display:none;}
@@ -79,7 +79,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 /* Section divider */
 .nav-divider{width:1px;height:22px;background:var(--border);margin:0 4px;flex-shrink:0;}
 /* Right side nav actions */
-.nav-actions{display:flex;align-items:center;gap:8px;}
+.nav-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:0;overflow:visible;}
 .nav-register-btn{white-space:nowrap;}
 
 /* ── TEACHER MODE SYSTEM ── */
@@ -514,9 +514,32 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .nav-pill-row{display:none!important;}
   .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
-  .nav-auth{display:none;}
+  .nav-auth{display:flex!important;gap:4px;}
   .nav-reciter-btn{display:none;}
   .nav-actions{gap:4px;}
+  /* Compact auth buttons on mobile */
+  .nav-auth .btn-o,.nav-auth .btn-g,.nav-auth .btn-r,.nav-auth .btn-gold{
+    font-size:10px!important;padding:5px 8px!important;white-space:nowrap;
+  }
+  /* Hide text labels in nav buttons on very small screens, keep icons */
+  .nav-auth .nav-btn-label{display:none;}
+  /* Compact Setup DB button */
+  #sb-nav-btn{font-size:10px!important;padding:5px 8px!important;white-space:nowrap;}
+  /* Compact teacher toggle */
+  #tm-toggle-nav{font-size:10px!important;padding:5px 8px!important;}
+  /* Compact institution btn */
+  #inst-settings-btn{font-size:10px!important;padding:5px 8px!important;}
+  /* Avatar smaller */
+  .avatar{width:28px!important;height:28px!important;font-size:11px!important;}
+  /* Hide register btn on mobile - keep login only */
+  .nav-register-btn{display:none!important;}
+  /* Logo smaller */
+  .nav-logo{font-size:14px!important;}
+}
+/* Extra small phones */
+@media(max-width:400px){
+  #tm-toggle-nav{display:none!important;}
+  #sb-nav-btn{font-size:9px!important;padding:4px 6px!important;}
 }
 /* Shrink pills on smaller desktop */
 @media(max-width:1100px) and (min-width:901px){
@@ -1273,7 +1296,10 @@ window._sbSaveAndTest = function(){
   </span>
 
   <!-- Auth CTA -->
-  <div id="mobile-auth" style="margin-top:14px;padding:14px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;">
+  <div <div style="margin-top:8px;padding:10px 14px;">
+    <button onclick="_sbShowSetup&&_sbShowSetup();closeMobileMenu&&closeMobileMenu()" style="width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;">🟡 Setup DB / Database</button>
+  </div>
+  <div id="mobile-auth" style="margin-top:8px;padding:14px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;">
     <p style="color:var(--greyd);font-size:11px;text-align:center;margin-bottom:10px;letter-spacing:.5px;">Join thousands of learners worldwide</p>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-o btn-sm" style="flex:1;" onclick="openAuth('login');closeMobileMenu()">Sign In</button>
@@ -2516,7 +2542,7 @@ function updateNavAuth(){
         <span style="color:var(--white);font-size:12px;font-weight:700;line-height:1;">${currentUser.name.split(' ')[0]}</span>
         ${badge}
       </div>
-      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;">Sign Out</button>
+      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;">⏏ Out</button>
     </div>`;
     html('nav-auth', navH);
     html('mobile-auth',`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
@@ -2943,19 +2969,9 @@ function renderHome(){
       <div id="hp-prayer-toggles" style="padding:0 16px 14px;display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
 
-    <!-- DAILY REMINDER CARD -->
-    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
-      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Daily Reminder</div>
-      <div style="font-family:Amiri,serif;font-size:17px;color:rgba(201,168,76,.8);direction:rtl;text-align:right;line-height:1.9;margin-bottom:8px;">اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.7;">O Allah, help me remember You, be grateful to You, and worship You in the best manner.</div>
-    </div>
-
-
-
-
     <!-- CONTACT CARD -->
     <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
-      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px;">📬 Contact Us</div>
+      
       <div style="display:flex;flex-direction:column;gap:8px;">
         <a href="tel:+2349073528916" style="display:flex;align-items:center;gap:12px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);border-radius:12px;padding:12px 14px;text-decoration:none;">
           <span style="font-size:22px;">📞</span>
@@ -2975,6 +2991,18 @@ function renderHome(){
         </a>
       </div>
     </div>
+
+    <!-- DAILY REMINDER CARD -->
+    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Daily Reminder</div>
+      <div style="font-family:Amiri,serif;font-size:17px;color:rgba(201,168,76,.8);direction:rtl;text-align:right;line-height:1.9;margin-bottom:8px;">اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.7;">O Allah, help me remember You, be grateful to You, and worship You in the best manner.</div>
+    </div>
+
+
+
+
+
 
     <div style="padding:0 14px;text-align:center;">
       <p style="color:rgba(255,255,255,.2);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Free app — support its growth</p>
@@ -7152,6 +7180,13 @@ function renderTeacherNavTabs(){
 }
 
 function renderTeacherOverview(){
+  // Resolve teacher class code
+  var _tCode = (teacherGroups.find(function(g){return g.code;})||{}).code
+    || (currentUser && currentUser.classCode)
+    || (function(){ try{ return localStorage.getItem('qq_teacher_class_code'); }catch(e){ return null; } })()
+    || null;
+  if(_tCode && currentUser && !currentUser.classCode) currentUser.classCode = _tCode;
+
   const totalStudents = [...new Set(teacherGroups.flatMap(g=>g.students))].length;
   const activeA = teacherAssignments.filter(a=>a.status==='active').length;
   const unread = teacherMessages.filter(m=>!m.read).length;
@@ -20974,70 +21009,77 @@ if (typeof _origRTP === 'function') {
 function renderContactPage() {
   var page = document.getElementById('page-contact');
   if (!page) return;
+
+  // Update nav pill active state
+  document.querySelectorAll('.nav-pill').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('[data-page="contact"]').forEach(function(b){ b.classList.add('active'); });
+
   page.innerHTML = `
-    <div style="margin-bottom:28px;">
-      <div style="font-family:Cinzel,serif;font-size:24px;color:#c9a84c;margin-bottom:6px;">📬 Contact Us</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.45);">Reach the Abuzayd Institute team</div>
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a7a3c,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">☽</div>
+      <div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;letter-spacing:1px;margin-bottom:6px;">Contact Us</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);line-height:1.6;">We'd love to hear from you.<br>Reach the Abuzayd Institute team.</div>
     </div>
 
-    <!-- Institute card -->
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px 22px;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-        <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1a7a3c,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">☽</div>
-        <div>
-          <div style="font-family:Cinzel,serif;font-size:15px;color:#c9a84c;font-weight:700;">Abuzayd Institute</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;">Islamic Education · Qur'ān · Tajweed</div>
+    <!-- Contact cards -->
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+
+      <!-- Phone -->
+      <a href="tel:+2349073528916" style="display:flex;align-items:center;gap:16px;background:rgba(39,174,96,.07);border:1px solid rgba(39,174,96,.25);border-radius:16px;padding:16px 18px;text-decoration:none;transition:background .2s;"
+        onmouseover="this.style.background='rgba(39,174,96,.15)'" onmouseout="this.style.background='rgba(39,174,96,.07)'">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(39,174,96,.15);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">📞</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Phone</div>
+          <div style="font-size:16px;color:#2ecc71;font-weight:700;">+234 907 352 8916</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Tap to call</div>
         </div>
-      </div>
+        <div style="color:rgba(39,174,96,.5);font-size:20px;">›</div>
+      </a>
 
-      <!-- Contact rows -->
-      <div style="display:flex;flex-direction:column;gap:10px;">
+      <!-- WhatsApp -->
+      <a href="https://wa.me/2349073528916" target="_blank" style="display:flex;align-items:center;gap:16px;background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.25);border-radius:16px;padding:16px 18px;text-decoration:none;transition:background .2s;"
+        onmouseover="this.style.background='rgba(37,211,102,.15)'" onmouseout="this.style.background='rgba(37,211,102,.07)'">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(37,211,102,.15);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💬</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">WhatsApp</div>
+          <div style="font-size:16px;color:#25d366;font-weight:700;">Chat with us</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Usually replies within the hour</div>
+        </div>
+        <div style="color:rgba(37,211,102,.5);font-size:20px;">›</div>
+      </a>
 
-        <a href="tel:+2348012345678" style="display:flex;align-items:center;gap:14px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
-          onmouseover="this.style.background='rgba(39,174,96,.16)'" onmouseout="this.style.background='rgba(39,174,96,.08)'">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(39,174,96,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📞</div>
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Phone / WhatsApp</div>
-            <div style="font-size:14px;color:#2ecc71;font-weight:600;">+234 801 234 5678</div>
-          </div>
-        </a>
+      <!-- Email -->
+      <a href="mailto:quranquest111@gmail.com" style="display:flex;align-items:center;gap:16px;background:rgba(52,152,219,.07);border:1px solid rgba(52,152,219,.25);border-radius:16px;padding:16px 18px;text-decoration:none;transition:background .2s;"
+        onmouseover="this.style.background='rgba(52,152,219,.15)'" onmouseout="this.style.background='rgba(52,152,219,.07)'">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(52,152,219,.15);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">✉️</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Email</div>
+          <div style="font-size:15px;color:#74b9ff;font-weight:700;">quranquest111@gmail.com</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">We reply within 24 hours</div>
+        </div>
+        <div style="color:rgba(52,152,219,.5);font-size:20px;">›</div>
+      </a>
 
-        <a href="mailto:abuzaydinstitute@gmail.com" style="display:flex;align-items:center;gap:14px;background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
-          onmouseover="this.style.background='rgba(52,152,219,.16)'" onmouseout="this.style.background='rgba(52,152,219,.08)'">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(52,152,219,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">✉️</div>
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Email</div>
-            <div style="font-size:14px;color:#74b9ff;font-weight:600;">abuzaydinstitute@gmail.com</div>
-          </div>
-        </a>
+      <!-- Facebook -->
+      <a href="https://www.facebook.com/abuzaydinstitute" target="_blank" style="display:flex;align-items:center;gap:16px;background:rgba(59,89,152,.08);border:1px solid rgba(59,89,152,.3);border-radius:16px;padding:16px 18px;text-decoration:none;transition:background .2s;"
+        onmouseover="this.style.background='rgba(59,89,152,.18)'" onmouseout="this.style.background='rgba(59,89,152,.08)'">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(59,89,152,.2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">📘</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Facebook</div>
+          <div style="font-size:16px;color:#6f9fff;font-weight:700;">Abuzayd Institute</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Follow us for updates</div>
+        </div>
+        <div style="color:rgba(59,89,152,.6);font-size:20px;">›</div>
+      </a>
 
-        <a href="https://www.facebook.com/abuzaydinstitute" target="_blank" style="display:flex;align-items:center;gap:14px;background:rgba(59,89,152,.12);border:1px solid rgba(59,89,152,.35);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
-          onmouseover="this.style.background='rgba(59,89,152,.22)'" onmouseout="this.style.background='rgba(59,89,152,.12)'">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(59,89,152,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📘</div>
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Facebook</div>
-            <div style="font-size:14px;color:#6f9fff;font-weight:600;">Abuzayd Institute</div>
-          </div>
-        </a>
-
-        <a href="https://wa.me/2348012345678" target="_blank" style="display:flex;align-items:center;gap:14px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
-          onmouseover="this.style.background='rgba(37,211,102,.16)'" onmouseout="this.style.background='rgba(37,211,102,.08)'">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(37,211,102,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">💬</div>
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">WhatsApp</div>
-            <div style="font-size:14px;color:#25d366;font-weight:600;">Chat on WhatsApp</div>
-          </div>
-        </a>
-
-      </div>
     </div>
 
-    <!-- Edit hint for teacher -->
-    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:14px;padding:14px 16px;text-align:center;">
-      <div style="font-size:12px;color:rgba(255,255,255,.3);line-height:1.7;">
-        ☽ &nbsp; Qur'ān Quest — Built with love for the Ummah &nbsp; ☽<br>
-        <span style="font-size:11px;color:rgba(255,255,255,.2);">Powered by Abuzayd Institute · Free Islamic Education</span>
-      </div>
+    <!-- Footer note -->
+    <div style="text-align:center;padding:20px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.12);border-radius:16px;">
+      <div style="font-size:20px;margin-bottom:8px;">🕌</div>
+      <div style="font-family:Cinzel,serif;font-size:13px;color:#c9a84c;letter-spacing:1px;margin-bottom:6px;">Abuzayd Institute</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.3);line-height:1.8;">Islamic Education · Qur'ān · Tajweed · Hifdh<br>Building the next generation of Muslims</div>
     </div>
   `;
 }
