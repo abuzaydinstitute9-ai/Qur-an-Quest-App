@@ -522,12 +522,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
 
-  /* Logo fixed left */
+  /* Logo stays left */
   .logo{flex-shrink:0;}
+  .logo-text{font-size:12px!important;}
+  .logo-icon{font-size:16px!important;}
 
-  /* nav-actions scrolls horizontally, hamburger stays right */
+  /* nav-actions scrolls horizontally */
   .nav-actions{
     flex:1;
+    display:flex;
     overflow-x:auto;
     overflow-y:hidden;
     scrollbar-width:none;
@@ -535,10 +538,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
     align-items:center;
     justify-content:flex-end;
     padding-right:4px;
+    flex-wrap:nowrap;
   }
   .nav-actions::-webkit-scrollbar{display:none;}
 
-  /* Hamburger always sticks to the far right — don't let it scroll away */
+  /* Hamburger sticks right */
   .hamburger{
     position:sticky!important;
     right:0;
@@ -548,38 +552,34 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
     margin-left:4px;
   }
 
-  /* All buttons: 9px font, tight padding */
-  .nav-auth{display:flex!important;gap:4px;align-items:center;flex-shrink:0;}
+  /* All nav buttons compact */
+  .nav-auth{display:flex!important;gap:3px;align-items:center;flex-shrink:0;}
   .nav-auth .btn,
   .nav-reciter-btn,
   #sb-nav-btn,
   #tm-toggle-nav,
   #inst-settings-btn{
     font-size:9px!important;
-    padding:4px 8px!important;
+    padding:4px 7px!important;
     white-space:nowrap;
     flex-shrink:0;
     border-radius:7px!important;
   }
 
-  /* Teacher Mode stays visible */
-  #tm-toggle-nav{display:inline-flex!important;}
-
-  /* Reciter stays visible */
+  /* Reciter VISIBLE */
   .nav-reciter-btn{display:inline-flex!important;}
 
-  /* Hide register — login only in navbar */
-  .nav-register-btn{display:none!important;}
+  /* Teacher mode VISIBLE */
+  #tm-toggle-nav{display:inline-flex!important;}
+
+  /* Register icon visible */
+  .nav-register-btn,.nav-auth .btn-gold{display:inline-flex!important;}
 
   /* Avatar compact */
   .avatar{width:26px!important;height:26px!important;font-size:10px!important;flex-shrink:0;}
-
-  /* Logo text compact */
-  .logo-text{font-size:12px!important;}
   .nav-inner{padding:0 8px!important;}
 }
 
-/* Very small phones */
 @media(max-width:400px){
   .nav-auth .btn,
   .nav-reciter-btn,
@@ -587,7 +587,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   #tm-toggle-nav,
   #inst-settings-btn{
     font-size:8px!important;
-    padding:3px 6px!important;
+    padding:3px 5px!important;
   }
   .logo-text{font-size:11px!important;}
   .avatar{width:22px!important;height:22px!important;}
@@ -1233,10 +1233,10 @@ window.addEventListener('load',function(){
       <button class="btn btn-o btn-sm nav-reciter-btn" onclick="openReciterModal()" title="Choose Reciter" style="display:flex;align-items:center;gap:5px;padding:5px 11px;">🎙 <span class="nav-reciter-label" style="font-size:10px;letter-spacing:.5px;">Reciter</span></button>
       <!-- Auth -->
       <div class="nav-auth" id="nav-auth">
-        <button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-weight:700;">🔑 Login</button>
-        <button class="btn btn-gold btn-sm nav-register-btn" onclick="openAuth('register','student')">✨ Create Account</button>
+        <button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-weight:700;font-size:11px;padding:5px 10px;">🔑 Login</button>
+        <button class="btn btn-gold btn-sm nav-register-btn" onclick="openAuth('register','student')" title="Create Account" style="font-size:11px;padding:5px 8px;" >📝</button>
       </div>
-      <button id="tm-toggle-nav" class="tm-toggle-btn" onclick="if(typeof tmToggle==='function')tmToggle();else{document.addEventListener('DOMContentLoaded',function(){tmToggle();});}" title="Teacher Mode">🏫 Teacher</button>
+      <button id="tm-toggle-nav" class="tm-toggle-btn" onclick="if(typeof tmToggle==='function')tmToggle();else{document.addEventListener('DOMContentLoaded',function(){tmToggle();});}" title="Teacher Mode" style="font-size:11px;padding:5px 8px;min-width:0;">🏫</button>
       <!-- Hamburger (mobile only) -->
       <div class="hamburger" id="hamburger-btn" onclick="if(typeof toggleMobileMenu==='function')toggleMobileMenu()">
         <span></span><span></span><span></span>
@@ -2631,7 +2631,7 @@ function updateNavAuth(){
         <span style="color:var(--white);font-size:12px;font-weight:700;line-height:1;">${currentUser.name.split(' ')[0]}</span>
         ${badge}
       </div>
-      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;">Sign Out</button>
+      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;" style="font-size:10px;padding:4px 8px;">⏏ Out</button>
     </div>`;
     html('nav-auth', navH);
     html('mobile-auth',`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
@@ -2643,7 +2643,7 @@ function updateNavAuth(){
       <button class="btn btn-r btn-sm" onclick="logoutUser();closeMobileMenu()">Sign Out</button>
     </div>`);
   } else {
-    html('nav-auth',`<button class="btn btn-o btn-sm" onclick="openAuth('login')">Sign In</button><button class="btn btn-g btn-sm" onclick="openAuth('register')">Register</button>`);
+    html('nav-auth',`<button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-size:11px;padding:5px 10px;font-weight:700;">🔑 Login</button><button class="btn btn-gold btn-sm" onclick="openAuth('register','student')" title="Create Account" style="font-size:13px;padding:5px 8px;">📝</button>`);
     html('mobile-auth',`<div style="display:flex;gap:8px;margin-top:4px;"><button class="btn btn-o btn-sm" style="flex:1;" onclick="openAuth('login');closeMobileMenu()">Sign In</button><button class="btn btn-g btn-sm" style="flex:1;" onclick="openAuth('register');closeMobileMenu()">Register</button></div>`);
   }
 }
@@ -6115,7 +6115,22 @@ function generateClassCode(){
     saveTData();
     try{ localStorage.setItem('qq_teacher_class_code', code); }catch(e){}
     if(currentUser) currentUser.classCode = code;
-    showToast('✅ Class code: '+code+' — Share with students!');
+    showToast('\u2705 Class created! Code: '+code);
+    var _cm=document.createElement('div');
+    _cm.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    _cm.innerHTML='<div style="background:#0d1a0d;border:1px solid rgba(201,168,76,.4);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;">'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:10px;">Your class code is</div>'
+      +'<div id="gen-code-display" style="font-family:Cinzel,serif;font-size:36px;color:#c9a84c;font-weight:700;letter-spacing:6px;margin-bottom:14px;">'+code+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:20px;">Share this with your students.<br>They go to Dashboard \u2192 Class tab \u2192 enter this code.</div>'
+      +'<div style="display:flex;gap:8px;justify-content:center;">'
+      +'<button id="copy-code-btn" style="background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c;border-radius:10px;padding:10px 20px;font-size:13px;cursor:pointer;font-weight:700;">\ud83d\udccb Copy</button>'
+      +'<button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:10px;padding:10px 20px;font-size:13px;cursor:pointer;">Done</button>'
+      +'</div></div>';
+    document.body.appendChild(_cm);
+    document.getElementById('copy-code-btn').onclick=function(){
+      if(navigator.clipboard){ navigator.clipboard.writeText(code).then(function(){ showToast('Copied: '+code); }); }
+      else{ prompt('Copy this code:',code); }
+    };
     renderDashboard();
   }).catch(function(){ showToast('❌ Could not create class. Check internet.'); });
 }
@@ -20980,30 +20995,7 @@ function renderAdhkaarPage(catId) {
 // ════════════════════════════════════════════
 // SHOWPAGE EXTENSION FOR ADHKAAR
 // ════════════════════════════════════════════
-(function patchShowPage() {
-  var _orig = window.showPage;
-  window.showPage = function(page) {
-    if (page === 'contact') {
-      document.querySelectorAll('[id^="page-"]').forEach(function(el) { el.classList.add('hidden'); });
-      var cp = document.getElementById('page-contact');
-      if (cp) cp.classList.remove('hidden');
-      document.querySelectorAll('.nav-pill').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelectorAll('[data-page="contact"]').forEach(function(b) { b.classList.add('active'); });
-      renderContactPage();
-      return;
-    }
-    if (page === 'adhkaar') {
-      document.querySelectorAll('[id^="page-"]').forEach(function(el) { el.classList.add('hidden'); });
-      var p = document.getElementById('page-adhkaar');
-      if (p) p.classList.remove('hidden');
-      document.querySelectorAll('.nav-pill').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelectorAll('[data-page="adhkaar"]').forEach(function(b) { b.classList.add('active'); });
-      renderAdhkaarPage();
-      return;
-    }
-    if (_orig) _orig.apply(this, arguments);
-  };
-})();
+
 
 // ════════════════════════════════════════════
 // INSTITUTION SETTINGS
@@ -21271,28 +21263,7 @@ function qqFireAdhan(name){
 // ══════════════════════════════════════════════════════
 // SHOW PAGE ROUTER — new pages
 // ══════════════════════════════════════════════════════
-(function patchShowPage(){
-  var _orig = window.showPage || function(){};
-  var newPages = ['qibla','names99','bookmarks','privacy','hijri','tafsir','aiasst','mosque'];
-  var renderers = {
-    qibla: renderQiblaPage,
-    names99: renderNames99Page,
-    bookmarks: renderBookmarksPage,
-    privacy: renderPrivacyPage
-  };
-  window.showPage = function(page){
-    if(newPages.indexOf(page) > -1){
-      document.querySelectorAll('[id^="page-"]').forEach(function(el){el.classList.add('hidden');});
-      var pg = document.getElementById('page-'+page);
-      if(pg) pg.classList.remove('hidden');
-      document.querySelectorAll('.nav-pill').forEach(function(b){b.classList.remove('active');});
-      document.querySelectorAll('[data-page="'+page+'"]').forEach(function(b){b.classList.add('active');});
-      if(renderers[page]) renderers[page]();
-      return;
-    }
-    _orig(page);
-  };
-})();
+
 
 // ══════════════════════════════════════════════════════
 // BOOKMARKS SYSTEM
@@ -22054,4 +22025,36 @@ console.log('[QQ v38] Features loaded: Adhkaar · Institution · StopNote · Pee
 </script>
 
 </body>
-</html>
+</html
+// ══════════════════════════════════════════════════════
+// UNIFIED showPage ROUTER — all extended pages
+// ══════════════════════════════════════════════════════
+(function(){
+  var EXT_PAGES = {
+    contact:   function(){ if(typeof renderContactPage==='function') renderContactPage(); },
+    qibla:     function(){ if(typeof renderQiblaPage==='function')   renderQiblaPage(); },
+    names99:   function(){ if(typeof renderNames99Page==='function') renderNames99Page(); },
+    bookmarks: function(){ if(typeof renderBookmarksPage==='function') renderBookmarksPage(); },
+    privacy:   function(){ if(typeof renderPrivacyPage==='function') renderPrivacyPage(); },
+    hijri:     function(){ if(typeof renderHijriPage==='function')   renderHijriPage(); },
+    tafsir:    function(){ if(typeof renderTafsirPage==='function')  renderTafsirPage(); },
+    aiasst:    function(){ if(typeof renderAIAssistantPage==='function') renderAIAssistantPage(); },
+    mosque:    function(){ if(typeof renderMosquePage==='function')  renderMosquePage(); }
+  };
+  var _orig = window.showPage;
+  window.showPage = function(page){
+    if(EXT_PAGES[page]){
+      document.querySelectorAll('[id^="page-"]').forEach(function(el){ el.classList.add('hidden'); });
+      var pg = document.getElementById('page-'+page);
+      if(pg) pg.classList.remove('hidden');
+      document.querySelectorAll('.nav-pill').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('[data-page="'+page+'"]').forEach(function(b){ b.classList.add('active'); });
+      window.scrollTo(0,0);
+      EXT_PAGES[page]();
+      return;
+    }
+    if(typeof _orig==='function') _orig(page);
+  };
+})();
+
+>
