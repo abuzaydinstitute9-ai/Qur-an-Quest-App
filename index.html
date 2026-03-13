@@ -30,8 +30,39 @@ body{background:var(--bg);color:var(--white);font-family:'Lato',sans-serif;overf
 /* ── NAV — two-tier ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);box-shadow:0 2px 20px rgba(0,0,0,.5);min-height:50px;}
 /* Tier-1: identity row (logo + auth + hamburger) */
-.nav-inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 12px;border-bottom:1px solid rgba(255,255,255,.04);min-width:0;}
-/* Tier-2: scrollable pill-tab row */
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1200px;margin:0 auto;padding:0 16px;height:56px;
+}
+.nav-actions{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+/* Icon buttons — the standard nav pill */
+.nav-icon-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.75);
+  border-radius:8px;padding:5px 10px;
+  font-size:11px;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:background .15s;
+  font-family:inherit;
+}
+.nav-icon-btn:hover{background:rgba(255,255,255,.1);}
+/* Auth buttons */
+.nav-auth-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  border-radius:8px;padding:5px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;font-family:inherit;
+}
+/* Logo */
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{font-size:20px;}
+.logo-text{font-family:Cinzel,serif;font-size:16px;color:var(--goldl);letter-spacing:2px;font-weight:700;}
+/* Avatar */
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+
 .nav-pill-row{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:3px;height:38px;padding:0 16px;overflow-x:auto;scrollbar-width:none;}
 .nav-pill-row::-webkit-scrollbar{display:none;}
 /* ── NAV PILL TABS (Tier-2 row) ── */
@@ -522,76 +553,41 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
 
-  /* Logo stays left */
-  .logo{flex-shrink:0;}
-  .logo-text{font-size:12px!important;}
-  .logo-icon{font-size:16px!important;}
+  .nav-inner{padding:0 10px!important;height:50px!important;}
+  .logo-text{font-size:13px!important;}
+  .logo-icon{font-size:17px!important;}
 
-  /* nav-actions scrolls horizontally */
+  /* Scrollable actions row */
   .nav-actions{
-    flex:1;
-    display:flex;
-    overflow-x:auto;
-    overflow-y:hidden;
-    scrollbar-width:none;
-    gap:4px!important;
-    align-items:center;
-    justify-content:flex-end;
-    padding-right:4px;
-    flex-wrap:nowrap;
+    overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;flex-wrap:nowrap;gap:4px!important;
   }
   .nav-actions::-webkit-scrollbar{display:none;}
 
-  /* Hamburger sticks right */
+  /* Hamburger fixed right */
   .hamburger{
-    position:sticky!important;
-    right:0;
-    flex-shrink:0!important;
-    background:var(--bg,#080c08);
-    z-index:2;
-    margin-left:4px;
+    position:sticky!important;right:0;flex-shrink:0!important;
+    background:var(--bg,#080c08);z-index:2;margin-left:2px;
   }
 
-  /* All nav buttons compact */
-  .nav-auth{display:flex!important;gap:3px;align-items:center;flex-shrink:0;}
-  .nav-auth .btn,
-  .nav-reciter-btn,
-  #sb-nav-btn,
-  #tm-toggle-nav,
-  #inst-settings-btn{
-    font-size:9px!important;
-    padding:4px 7px!important;
-    white-space:nowrap;
-    flex-shrink:0;
-    border-radius:7px!important;
+  /* Compact all icon buttons */
+  .nav-icon-btn,.nav-auth-btn{
+    font-size:9px!important;padding:4px 7px!important;
+    border-radius:6px!important;
   }
 
-  /* Reciter VISIBLE */
-  .nav-reciter-btn{display:inline-flex!important;}
-
-  /* Teacher mode VISIBLE */
-  #tm-toggle-nav{display:inline-flex!important;}
-
-  /* Register icon visible */
-  .nav-register-btn,.nav-auth .btn-gold{display:inline-flex!important;}
+  /* Hide text labels on mobile — show icons only */
+  .nav-label-text{display:none!important;}
 
   /* Avatar compact */
-  .avatar{width:26px!important;height:26px!important;font-size:10px!important;flex-shrink:0;}
-  .nav-inner{padding:0 8px!important;}
+  .avatar{width:26px!important;height:26px!important;font-size:10px!important;}
 }
-
 @media(max-width:400px){
-  .nav-auth .btn,
-  .nav-reciter-btn,
-  #sb-nav-btn,
-  #tm-toggle-nav,
-  #inst-settings-btn{
-    font-size:8px!important;
-    padding:3px 5px!important;
-  }
+  .nav-icon-btn,.nav-auth-btn{font-size:8px!important;padding:3px 5px!important;}
   .logo-text{font-size:11px!important;}
   .avatar{width:22px!important;height:22px!important;}
 }
+
 
 
 
@@ -1032,11 +1028,32 @@ function fbSetClass(code, data){
   return _fbSet('classes/'+code, data);
 }
 function fbGetClass(code, cb){
-  if(_fbClassCache[code]){ cb(_fbClassCache[code]); }
-  _fbGet('classes/'+code, function(data){
-    if(data) _fbClassCache[code] = data;
-    cb(data);
-  });
+  // Try cache first
+  if(_fbClassCache[code]){ cb(_fbClassCache[code]); return; }
+  // Try to init Supabase if not ready yet
+  if(!_sbReady){
+    try{
+      var su=localStorage.getItem('qq_sb_url'), sk=localStorage.getItem('qq_sb_key');
+      if(su&&sk){ _SB_URL=su; _SB_KEY=sk; _sbReady=true; }
+    }catch(e){}
+  }
+  // No Supabase — check local storage and give helpful message
+  if(!_sbReady){
+    var local=_lsGet('classes/'+code);
+    if(local){ _fbClassCache[code]=local; cb(local); return; }
+    showToast('⚠️ Database not set up. Tap 🟡 Setup DB to connect.');
+    cb(null); return;
+  }
+  // Fetch from Supabase
+  _sbFetchPrefix('classes/'+code).then(function(rows){
+    var data=_rowsToTree(rows,'classes/'+code);
+    if(data){ _fbClassCache[code]=data; _lsSet('classes/'+code,data); cb(data); }
+    else{
+      var local2=_lsGet('classes/'+code);
+      if(local2){ _fbClassCache[code]=local2; cb(local2); }
+      else cb(null);
+    }
+  }).catch(function(){ cb(_lsGet('classes/'+code)); });
 }
 function fbAddStudent(code, studentName){
   var key = studentName.replace(/[.#$\/\[\]\s]/g,'_');
@@ -1224,23 +1241,64 @@ window.addEventListener('load',function(){
 <nav>
   <!-- ── Tier 1: Identity bar (logo · auth · hamburger) ── -->
   <div class="nav-inner">
-    <div class="logo" onclick="showPage('home')">
+
+    <!-- ── Logo ── -->
+    <div class="logo" onclick="showPage('home')" style="flex-shrink:0;cursor:pointer;">
       <div class="logo-icon">☽</div>
       <span class="logo-text">QUR'ĀN QUEST</span>
     </div>
-    <div class="nav-actions">
-      <!-- Reciter picker -->
-      <button class="btn btn-o btn-sm nav-reciter-btn" onclick="openReciterModal()" title="Choose Reciter" style="display:flex;align-items:center;gap:5px;padding:5px 11px;">🎙 <span class="nav-reciter-label" style="font-size:10px;letter-spacing:.5px;">Reciter</span></button>
-      <!-- Auth -->
-      <div class="nav-auth" id="nav-auth">
-        <button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-weight:700;font-size:11px;padding:5px 10px;">🔑 Login</button>
-        <button class="btn btn-gold btn-sm nav-register-btn" onclick="openAuth('register','student')" title="Create Account" style="font-size:11px;padding:5px 8px;" >📝</button>
+
+    <!-- ── Right-side actions ── -->
+    <div class="nav-actions" id="nav-actions-bar">
+
+      <!-- Reciter pill -->
+      <button class="nav-icon-btn" id="nav-reciter-btn"
+        onclick="openReciterModal()"
+        title="Choose Reciter"
+        style="display:flex;align-items:center;gap:5px;">
+        <span style="font-size:15px;">🎙</span>
+        <span class="nav-reciter-label nav-label-text">Reciter</span>
+      </button>
+
+      <!-- Setup DB -->
+      <button id="sb-nav-btn" class="nav-icon-btn nav-db-btn"
+        onclick="if(typeof openSbPanel==='function')openSbPanel()"
+        title="Setup Database"
+        style="background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:#c9a84c;">
+        <span style="font-size:13px;">🟡</span>
+        <span class="nav-label-text">DB</span>
+      </button>
+
+      <!-- Teacher Mode toggle -->
+      <button id="tm-toggle-nav" class="nav-icon-btn"
+        onclick="if(typeof tmToggle==='function')tmToggle()"
+        title="Teacher Mode">
+        <span style="font-size:15px;">🏫</span>
+        <span class="nav-label-text">Teacher</span>
+      </button>
+
+      <!-- Auth area (replaced by JS when logged in) -->
+      <div id="nav-auth" style="display:flex;align-items:center;gap:6px;">
+        <button class="nav-auth-btn nav-login-btn"
+          onclick="openAuth('login')"
+          style="background:rgba(26,122,60,.2);border:1px solid rgba(46,204,113,.4);color:#2ecc71;">
+          🔑 <span class="nav-label-text">Login</span>
+        </button>
+        <button class="nav-auth-btn nav-register-btn"
+          onclick="openAuth('register','student')"
+          title="Create Account"
+          style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;">
+          📝
+        </button>
       </div>
-      <button id="tm-toggle-nav" class="tm-toggle-btn" onclick="if(typeof tmToggle==='function')tmToggle();else{document.addEventListener('DOMContentLoaded',function(){tmToggle();});}" title="Teacher Mode" style="font-size:11px;padding:5px 8px;min-width:0;">🏫</button>
+
       <!-- Hamburger (mobile only) -->
-      <div class="hamburger" id="hamburger-btn" onclick="if(typeof toggleMobileMenu==='function')toggleMobileMenu()">
+      <div class="hamburger" id="hamburger-btn"
+        onclick="if(typeof toggleMobileMenu==='function')toggleMobileMenu()"
+        style="flex-shrink:0;">
         <span></span><span></span><span></span>
       </div>
+
     </div>
   </div>
 
@@ -2625,13 +2683,16 @@ function updateNavAuth(){
   if(currentUser){
     const isStu = currentUser.role==='student';
     const badge = `<span style="font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:10px;background:${isStu?'rgba(46,204,113,.2)':'rgba(201,168,76,.2)'};color:${isStu?'var(--emb)':'var(--goldl)'};">${isStu?'STUDENT':'TEACHER'}</span>`;
-    const navH = `<div style="display:flex;align-items:center;gap:8px;">
+    const navH = `<div style="display:flex;align-items:center;gap:6px;">
       <div class="avatar" style="background:${isStu?'linear-gradient(135deg,var(--em),var(--eml))':'linear-gradient(135deg,var(--gold),var(--goldl))'};color:${isStu?'#fff':'#0a0e0a'};">${currentUser.name[0].toUpperCase()}</div>
-      <div class="hide-mob" style="display:flex;flex-direction:column;gap:1px;">
-        <span style="color:var(--white);font-size:12px;font-weight:700;line-height:1;">${currentUser.name.split(' ')[0]}</span>
+      <div class="hide-mob" style="display:flex;flex-direction:column;gap:1px;line-height:1.2;">
+        <span style="color:var(--white);font-size:11px;font-weight:700;">${currentUser.name.split(' ')[0]}</span>
         ${badge}
       </div>
-      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;" style="font-size:10px;padding:4px 8px;">⏏ Out</button>
+      <button class="nav-auth-btn" onclick="logoutUser()"
+        style="background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);color:#e74c3c;">
+        ⏏ <span class="nav-label-text">Out</span>
+      </button>
     </div>`;
     html('nav-auth', navH);
     html('mobile-auth',`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
@@ -2643,7 +2704,15 @@ function updateNavAuth(){
       <button class="btn btn-r btn-sm" onclick="logoutUser();closeMobileMenu()">Sign Out</button>
     </div>`);
   } else {
-    html('nav-auth',`<button class="btn btn-g btn-sm" onclick="openAuth('login')" style="font-size:11px;padding:5px 10px;font-weight:700;">🔑 Login</button><button class="btn btn-gold btn-sm" onclick="openAuth('register','student')" title="Create Account" style="font-size:13px;padding:5px 8px;">📝</button>`);
+    html('nav-auth',`
+  <button class="nav-auth-btn" onclick="openAuth('login')"
+    style="background:rgba(26,122,60,.2);border:1px solid rgba(46,204,113,.4);color:#2ecc71;font-weight:700;">
+    🔑 <span class="nav-label-text">Login</span>
+  </button>
+  <button class="nav-auth-btn" onclick="openAuth('register','student')" title="Create Account"
+    style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;">
+    📝
+  </button>`);
     html('mobile-auth',`<div style="display:flex;gap:8px;margin-top:4px;"><button class="btn btn-o btn-sm" style="flex:1;" onclick="openAuth('login');closeMobileMenu()">Sign In</button><button class="btn btn-g btn-sm" style="flex:1;" onclick="openAuth('register');closeMobileMenu()">Register</button></div>`);
   }
 }
@@ -3911,7 +3980,10 @@ function getReciterEdition(){ return selectedReciter; }
 function setReciter(id){
   selectedReciter=id; safeStore('qq_reciter',id); stopHifdhAudio(); closeReciterModal();
   const r=RECITERS.find(x=>x.id===id);
-  showToast('Reciter: '+(r?r.name:id));
+  // Update nav label
+  const lbl=document.querySelector('.nav-reciter-label');
+  if(lbl && r) lbl.textContent=r.name.split(' ').slice(-1)[0]; // show surname
+  showToast('🎙 Reciter: '+(r?r.name:id));
 }
 
 // Audio state
@@ -6140,7 +6212,7 @@ function joinClassByCode(){
   if(!code){ showToast('Enter a class code'); return; }
   showToast('🔄 Connecting...');
   fbGetClass(code, function(cls){
-    if(!cls){ showToast('❌ Class code not found'); return; }
+    if(!cls){ showToast('❌ Code not found. Check the code with your teacher, and make sure database is set up (🟡 Setup DB).'); return; }
     myClassCode = code;
     const studentName = currentUser?.name || 'Student';
     fbAddStudent(code, studentName).then(function(){
@@ -8067,7 +8139,7 @@ function renderTeacherCallTab(){
     ${renderTeacherNavTabs()}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
       <div>
-        <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:3px;">📞 Direct Calls</h3>
+        <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:3px;">📞 Call a Student</h3>
         <p style="color:var(--greyd);font-size:12px;">Call any student directly. Green = online now.</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:20px;padding:6px 14px;">
@@ -19894,12 +19966,41 @@ function callShowActive(peerName,isVideo){
 
 function _attachRemoteStream(stream){
   if(_callType==='video'){
-    var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=stream;
+    // Wait for DOM to be ready after callShowActive renders it
+    function _tryAttachVideo(retries){
+      var rv=document.getElementById('remote-video');
+      if(rv){
+        rv.srcObject=stream;
+        rv.style.display='';
+        rv.setAttribute('playsinline','');
+        rv.setAttribute('autoplay','');
+        rv.muted=false;
+        rv.play().catch(function(e){ console.warn('[QQ] remote video play failed:',e); });
+        // Also show local PiP
+        var lv=document.getElementById('local-video');
+        if(lv && _localStream){
+          lv.srcObject=_localStream;
+          lv.style.display='';
+          lv.muted=true;
+          lv.setAttribute('playsinline','');
+          lv.play().catch(function(){});
+        }
+      } else if(retries>0){
+        setTimeout(function(){ _tryAttachVideo(retries-1); }, 200);
+      }
+    }
+    _tryAttachVideo(10);
   } else {
     var au=document.getElementById('remote-audio');
-    if(!au){ au=document.createElement('audio'); au.id='remote-audio'; au.autoplay=true; au.setAttribute('playsinline',''); document.body.appendChild(au); }
+    if(!au){
+      au=document.createElement('audio');
+      au.id='remote-audio';
+      au.autoplay=true;
+      au.setAttribute('playsinline','');
+      document.body.appendChild(au);
+    }
     au.srcObject=stream;
-    // iOS Safari needs explicit play()
+    au.muted=false;
     au.play().catch(function(){});
   }
 }
@@ -19907,7 +20008,11 @@ function _attachRemoteStream(stream){
 // ══ OUTGOING CALL ══
 async function callStart(targetName, classCode, type){
   if(!currentUser){ showToast('Please sign in first'); return; }
-  if(_callState!=='idle'){ showToast('Already in a call'); return; }
+  if(_callState!=='idle'){
+    // Force-reset stuck call state
+    try{ callEnd(); }catch(e){}
+    if(_callState!=='idle'){ showToast('Clearing previous call, try again in a moment'); _callState='idle'; callHideOverlay(); return; }
+  }
   if(!classCode) classCode=_resolveCallCode(targetName);
   if(!classCode){ showToast('⚠️ No class code — join a class first'); return; }
 
@@ -20005,30 +20110,68 @@ function callDecline(){
   clearInterval(_ringOscInterval);
   if(_peerConn) try{ _peerConn.close(); }catch(e){}
   _peerConn=null;
+  if(_localStream){ try{_localStream.getTracks().forEach(function(t){t.stop()});}catch(e){} _localStream=null; }
   callCleanupConnection();
+  // Reset state and hide overlay
+  _callState='idle'; _callPeer=null; _callCode=null; _callRole=null; _callId=null; _callSeconds=0;
+  callHideOverlay();
+  showToast('📵 Call declined');
 }
 
 // ══ END ══
 function callEnd(){
   clearInterval(_ringOscInterval);
+  clearInterval(_callTimerInterval);
+  _callTimerInterval = null;
+
+  // Stop screen share
   if(_screenShareStream) try{ _screenShareStream.getTracks().forEach(function(t){t.stop();}); }catch(e){}
-  _screenShareStream=null;
-  var dur=_fmtTime(_callSeconds);
+  _screenShareStream = null;
+
+  // Record duration before cleanup
+  var dur = _fmtTime(_callSeconds||0);
+
+  // Close peer connection
   if(_peerConn) try{ _peerConn.close(); }catch(e){}
-  _peerConn=null;
+  _peerConn = null;
+
+  // Stop all local media tracks immediately
+  if(_localStream){ try{ _localStream.getTracks().forEach(function(t){t.stop();}); }catch(e){} _localStream=null; }
+
+  // Clean up connection resources
   callCleanupConnection();
+
+  // *** CRITICAL: Reset state so new calls can be made ***
+  _callState = 'idle';
+  _callPeer  = null;
+  _callCode  = null;
+  _callRole  = null;
+  _callId    = null;
+  _callSeconds = 0;
+  _mutedAudio = false;
+  _mutedVideo = false;
+
+  // *** CRITICAL: Hide the overlay so UI is usable again ***
+  callHideOverlay();
+
+  // Clear remote video/audio
+  try{
+    var rv=document.getElementById('remote-video'); if(rv){ rv.srcObject=null; rv.style.display='none'; }
+    var lv=document.getElementById('local-video'); if(lv){ lv.srcObject=null; lv.style.display='none'; }
+    var ra=document.getElementById('remote-audio'); if(ra){ ra.srcObject=null; }
+  }catch(e){}
+
   if(dur!=='00:00') showToast('📵 Call ended · '+dur);
 }
 
 // ══ CLEANUP ══
 function callCleanupConnection(){
-  if(_callTimerInterval) clearInterval(_callTimerInterval);
+  if(_callTimerInterval){ clearInterval(_callTimerInterval); _callTimerInterval=null; }
   if(_pc){ try{_pc.close();}catch(e){} _pc=null; }
-  if(_localStream){ _localStream.getTracks().forEach(function(t){t.stop();}); _localStream=null; }
-  var ra=document.getElementById('remote-audio'); if(ra){ ra.srcObject=null; ra.remove(); }
-  var rv=document.getElementById('remote-video'); if(rv) rv.srcObject=null;
-  var lv=document.getElementById('local-video'); if(lv) lv.srcObject=null;
-  var ssv=document.getElementById('screenshare-view'); if(ssv){ ssv.style.display='none'; ssv.srcObject=null; }
+  // localStream tracks already stopped in callEnd — just null the ref
+  _localStream=null;
+  var ra=document.getElementById('remote-audio'); if(ra){ try{ra.srcObject=null;}catch(e){} ra.remove(); }
+  var ssv=document.getElementById('screenshare-view'); if(ssv){ ssv.style.display='none'; try{ssv.srcObject=null;}catch(e){} }
   var ssi=document.getElementById('ss-indicator'); if(ssi) ssi.style.display='none';
   var ssc=document.getElementById('ss-circle'); if(ssc){ ssc.classList.remove('ss-active'); ssc.textContent='🖥️'; }
   var ssl=document.getElementById('ss-lbl'); if(ssl) ssl.textContent='Share Screen';
