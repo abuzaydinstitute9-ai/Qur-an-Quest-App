@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="theme-color" content="#080c08">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Qur'an Quest">
+<meta name="description" content="Learn Qur'an, Tajweed, Hifdh and Islamic knowledge — free Islamic education app by Abuzayd Institute.">
+<link rel="manifest" href="manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>Qur\'an Quest — Interactive Learning Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lato:wght@300;400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
@@ -514,38 +521,78 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .nav-pill-row{display:none!important;}
   .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
-  .nav-auth{display:flex!important;gap:4px;}
-  .nav-reciter-btn{display:none;}
-  .nav-actions{gap:4px;}
-  /* Compact auth buttons on mobile */
-  .nav-auth .btn-o,.nav-auth .btn-g,.nav-auth .btn-r,.nav-auth .btn-gold{
-    font-size:10px!important;padding:5px 8px!important;white-space:nowrap;
+
+  /* Logo fixed left */
+  .logo{flex-shrink:0;}
+
+  /* nav-actions scrolls horizontally, hamburger stays right */
+  .nav-actions{
+    flex:1;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    gap:4px!important;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:4px;
   }
-  /* Hide text labels in nav buttons on very small screens, keep icons */
-  .nav-auth .nav-btn-label{display:none;}
-  /* Compact Setup DB button */
-  #sb-nav-btn{font-size:10px!important;padding:5px 8px!important;white-space:nowrap;}
-  /* Compact teacher toggle */
-  #tm-toggle-nav{font-size:10px!important;padding:5px 8px!important;}
-  /* Compact institution btn */
-  #inst-settings-btn{font-size:10px!important;padding:5px 8px!important;}
-  /* Avatar smaller */
-  .avatar{width:28px!important;height:28px!important;font-size:11px!important;}
-  /* Hide register btn on mobile - keep login only */
+  .nav-actions::-webkit-scrollbar{display:none;}
+
+  /* Hamburger always sticks to the far right — don't let it scroll away */
+  .hamburger{
+    position:sticky!important;
+    right:0;
+    flex-shrink:0!important;
+    background:var(--bg,#080c08);
+    z-index:2;
+    margin-left:4px;
+  }
+
+  /* All buttons: 9px font, tight padding */
+  .nav-auth{display:flex!important;gap:4px;align-items:center;flex-shrink:0;}
+  .nav-auth .btn,
+  .nav-reciter-btn,
+  #sb-nav-btn,
+  #tm-toggle-nav,
+  #inst-settings-btn{
+    font-size:9px!important;
+    padding:4px 8px!important;
+    white-space:nowrap;
+    flex-shrink:0;
+    border-radius:7px!important;
+  }
+
+  /* Teacher Mode stays visible */
+  #tm-toggle-nav{display:inline-flex!important;}
+
+  /* Reciter stays visible */
+  .nav-reciter-btn{display:inline-flex!important;}
+
+  /* Hide register — login only in navbar */
   .nav-register-btn{display:none!important;}
-  /* Logo smaller */
-  .nav-logo{font-size:14px!important;}
+
+  /* Avatar compact */
+  .avatar{width:26px!important;height:26px!important;font-size:10px!important;flex-shrink:0;}
+
+  /* Logo text compact */
+  .logo-text{font-size:12px!important;}
+  .nav-inner{padding:0 8px!important;}
 }
-/* Extra small phones */
+
+/* Very small phones */
 @media(max-width:400px){
-  #tm-toggle-nav{display:none!important;}
-  #sb-nav-btn{font-size:9px!important;padding:4px 6px!important;}
+  .nav-auth .btn,
+  .nav-reciter-btn,
+  #sb-nav-btn,
+  #tm-toggle-nav,
+  #inst-settings-btn{
+    font-size:8px!important;
+    padding:3px 6px!important;
+  }
+  .logo-text{font-size:11px!important;}
+  .avatar{width:22px!important;height:22px!important;}
 }
-/* Shrink pills on smaller desktop */
-@media(max-width:1100px) and (min-width:901px){
-  .nav-register-btn{font-size:10px;padding:5px 10px;}
-  .nav-pill{font-size:10px;padding:4px 10px;}
-}
+
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -1110,6 +1157,32 @@ window._sbSaveAndTest = function(){
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div id="qq-splash" style="position:fixed;inset:0;background:#080c08;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease;">
+  <div style="text-align:center;">
+    <div style="font-size:64px;margin-bottom:16px;animation:splashPulse 1.2s ease-in-out infinite;">☽</div>
+    <div style="font-family:Cinzel,serif;font-size:24px;color:#c9a84c;letter-spacing:3px;margin-bottom:8px;">QUR'ĀN QUEST</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:2px;">ABUZAYD INSTITUTE</div>
+    <div style="margin-top:32px;display:flex;gap:8px;justify-content:center;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#1a7a3c;animation:splashDot 1.2s .0s infinite;display:inline-block;"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:#c9a84c;animation:splashDot 1.2s .2s infinite;display:inline-block;"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:#1a7a3c;animation:splashDot 1.2s .4s infinite;display:inline-block;"></span>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes splashPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.1);opacity:1;}}
+@keyframes splashDot{0%,100%{transform:translateY(0);opacity:.4;}50%{transform:translateY(-6px);opacity:1;}}
+</style>
+<script>
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var s=document.getElementById('qq-splash');
+    if(s){s.style.opacity='0';setTimeout(function(){s.style.display='none';},600);}
+  }, 1800);
+});
+</script>
+
 <!-- ═══ FLOATING BACK BUTTON ═══ -->
 <button id="floating-back-btn" onclick="navBack()" style="display:none;position:fixed;bottom:84px;left:14px;z-index:500;align-items:center;gap:6px;background:rgba(10,20,10,.92);border:1px solid rgba(201,168,76,.35);color:var(--goldl);font-size:12px;font-weight:700;padding:8px 14px;border-radius:20px;cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 4px 16px rgba(0,0,0,.5);transition:all .2s;letter-spacing:.4px;" onmouseover="this.style.background='rgba(201,168,76,.15)'" onmouseout="this.style.background='rgba(10,20,10,.92)'">
   <span id="fbb-label">← Back</span>
@@ -1184,6 +1257,14 @@ window._sbSaveAndTest = function(){
     <span class="nav-pill nav-pill-green" data-page="beginner" onclick="showPage('beginner')">🌱 Beginners / Kids</span>
     <span class="nav-pill" data-page="adhkaar" onclick="showPage('adhkaar');renderAdhkaarPage();">📿 Adhkār</span>
 <span class="nav-pill" data-page="contact" onclick="showPage('contact')">📬 Contact</span>
+<span class="nav-pill" data-page="qibla" onclick="showPage('qibla')">🧭 Qibla</span>
+<span class="nav-pill" data-page="names99" onclick="showPage('names99')">✨ 99 Names</span>
+<span class="nav-pill" data-page="bookmarks" onclick="showPage('bookmarks')">🔖 Saved</span>
+<span class="nav-pill" data-page="privacy" onclick="showPage('privacy')">📜 About</span>
+<span class="nav-pill" data-page="hijri" onclick="showPage('hijri')">📅 Hijri</span>
+<span class="nav-pill" data-page="tafsir" onclick="showPage('tafsir')">📗 Tafsir</span>
+<span class="nav-pill" data-page="aiasst" onclick="showPage('aiasst')">🤖 AI Guide</span>
+<span class="nav-pill" data-page="mosque" onclick="showPage('mosque')">🕌 Mosques</span>
     <span class="nav-pill nav-pill-teal" data-page="recitepractice" onclick="showPage('recitepractice')">🎙 Recite &amp; Compare</span>
 
     <div class="nav-divider" style="height:18px;margin:0 4px;"></div>
@@ -1314,7 +1395,15 @@ window._sbSaveAndTest = function(){
 <div id="page-hifdh" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
 <div id="page-tajweed" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
 <div id="page-adhkaar" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
-<div id="page-contact" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div></div>
+<div id="page-contact" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
+<div id="page-qibla" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-names99" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-bookmarks" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-privacy" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
+<div id="page-hijri" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-tafsir" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-aiasst" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-mosque" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div></div></div></div>
 <div id="page-daily" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
 <div id="page-leaderboard" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
 <div id="page-dashboard" class="hidden" style="padding:88px 16px 60px;max-width:1160px;margin:0 auto;"></div>
@@ -2542,7 +2631,7 @@ function updateNavAuth(){
         <span style="color:var(--white);font-size:12px;font-weight:700;line-height:1;">${currentUser.name.split(' ')[0]}</span>
         ${badge}
       </div>
-      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;">⏏ Out</button>
+      <button class="btn btn-r btn-sm" onclick="logoutUser()" style="margin-left:4px;">Sign Out</button>
     </div>`;
     html('nav-auth', navH);
     html('mobile-auth',`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
@@ -2560,16 +2649,22 @@ function updateNavAuth(){
 }
 
 function logoutUser(){
-  _presenceGoOffline();
-  // Clean up any active call
-  if(typeof callEnd==='function' && typeof _callState!=='undefined' && _callState!=='idle') callEnd();
-  if(typeof stopIncomingCallPoller==='function') stopIncomingCallPoller();
-  if(typeof _callPollerStarted!=='undefined') _callPollerStarted=false;
+  // Always clear session first — nothing can block this
+  try{ clearSession(); }catch(e){}
   currentUser = null;
-  clearSession();
+  // Then clean up gracefully
+  try{ _presenceGoOffline(); }catch(e){}
+  try{ if(typeof callEnd==='function' && typeof _callState!=='undefined' && _callState!=='idle') callEnd(); }catch(e){}
+  try{ if(typeof stopIncomingCallPoller==='function') stopIncomingCallPoller(); }catch(e){}
+  try{ if(typeof _callPollerStarted!=='undefined') _callPollerStarted=false; }catch(e){}
+  try{ if(typeof _qqAdhanLoop!=='undefined' && _qqAdhanLoop) clearInterval(_qqAdhanLoop); }catch(e){}
+  // Reset teacher/student state
+  try{ myClassCode=''; }catch(e){}
+  try{ _liveClassData=null; }catch(e){}
+  // Update UI
   updateNavAuth();
   showPage('home');
-  showToast('You have been signed out.');
+  showToast('✅ You have been signed out.');
 }
 
 // Edit Name
@@ -2950,11 +3045,6 @@ function renderHome(){
     </div>
 
     <!-- ── TODAY'S AYAH PREVIEW ── -->
-    <div id="home-ayah-preview" style="margin:0 14px 14px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;cursor:pointer;" onclick="showPage('daily')">
-      <div style="font-size:11px;color:rgba(255,255,255,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Today's Ayah</div>
-      <div id="home-ayah-ar" style="font-family:Amiri,serif;font-size:20px;color:rgba(201,168,76,.85);direction:rtl;text-align:right;line-height:1.9;margin-bottom:10px;">…</div>
-      <div id="home-ayah-tr" style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.7;">Tap to read today's ayah →</div>
-    </div>
 
     <!-- ── SUPPORT / KO-FI ── -->
     <!-- PRAYER ALARM CARD -->
@@ -2992,9 +3082,16 @@ function renderHome(){
       </div>
     </div>
 
+    <!-- HADITH OF THE DAY CARD -->
+    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">📖 Hadith of the Day</div>
+      <div id="hp-daily-hadith"><div style="color:rgba(255,255,255,.3);font-size:12px;">Loading...</div></div>
+    </div>
+
     <!-- DAILY REMINDER CARD -->
     <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
       <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Daily Reminder</div>
+          <span id="theme-toggle-btn" onclick="qqApplyTheme(_qqTheme==='dark'?'light':'dark')" style="font-size:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:8px;padding:4px 10px;cursor:pointer;float:right;margin-top:-24px;">🌙 Theme</span>
       <div style="font-family:Amiri,serif;font-size:17px;color:rgba(201,168,76,.8);direction:rtl;text-align:right;line-height:1.9;margin-bottom:8px;">اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ</div>
       <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.7;">O Allah, help me remember You, be grateful to You, and worship You in the best manner.</div>
     </div>
@@ -3064,6 +3161,10 @@ function renderHome(){
     }
   })();
 
+  // Daily hadith
+  if(typeof renderDailyHadithCard==='function') renderDailyHadithCard();
+  // Onboarding check
+  if(typeof qqCheckOnboarding==='function') qqCheckOnboarding();
   // Prayer alarm pills
   (function(){
     var pp=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
@@ -3147,31 +3248,34 @@ const Q_PER_CHALLENGE = 100;
 
 // Build a shuffled pool of 100 unique questions per round.
 // Round 0 uses seed=day, round 1 uses day+1, etc. — guarantees no repeat within a round.
+// Track which questions have been used in this session
+var _usedQuizIds = new Set();
+
 function buildQuizRound(round){
-  const seed = Math.floor(Date.now()/86400000) + round * 997;
-  const shuffled = seededShuffle(QUIZ_BANK, seed);
-  // If bank has < 100, cycle through it without repeating until we hit 100
-  const pool = [];
-  let i = 0;
-  while(pool.length < Q_PER_CHALLENGE){
-    pool.push(shuffled[i % shuffled.length]);
-    i++;
-    // If we\'ve used all unique ones once and bank < 100, re-shuffle with new seed for second pass
-    if(i === shuffled.length && pool.length < Q_PER_CHALLENGE){
-      const extra = seededShuffle(QUIZ_BANK, seed + i);
-      // Only add ones not already in pool (deduplicate by question text)
-      for(const q of extra){
-        if(pool.length >= Q_PER_CHALLENGE) break;
-        if(!pool.some(p=>p.q===q.q)) pool.push(q);
-      }
-      break;
-    }
+  // Use time + round + random so every play is different
+  var seed = Math.floor(Date.now()/1000) + round * 997 + Math.floor(Math.random()*9999);
+  var shuffled = seededShuffle(QUIZ_BANK, seed);
+
+  // Filter out already-used questions first
+  var fresh = shuffled.filter(function(q){ return !_usedQuizIds.has(q.q); });
+
+  // If we've used most questions, reset the used set
+  if(fresh.length < Q_PER_CHALLENGE){
+    _usedQuizIds.clear();
+    fresh = seededShuffle(QUIZ_BANK, seed + 1);
   }
-  return pool.slice(0, Q_PER_CHALLENGE);
+
+  var pool = fresh.slice(0, Q_PER_CHALLENGE);
+
+  // Mark these as used
+  pool.forEach(function(q){ _usedQuizIds.add(q.q); });
+
+  return pool;
 }
 
 function initQuiz(){
   qRound=0;
+  if(typeof _usedQuizIds !== 'undefined') _usedQuizIds.clear();
   qQs=buildQuizRound(qRound);
   qIdx=0;qScore=0;qCorrect=0;qStreak=0;qBest=0;qSel=null;qHist=[];
   renderQ();
@@ -7127,12 +7231,7 @@ function downloadReport(){
 // ═══════════════════════════════════════
 
 // ── Data stores ──
-let teacherGroups = [
-  {id:1, name:"Advanced Hifdh", level:"advanced", students:["Ahmad Yusuf","Fatima Noor","Bilal Hassan","Khadija Omar","Zaid Ibrahim","Sara Malik","Umar Farooq","Aisha Rashid"], color:"var(--em)", performance:{Ahmad_Yusuf:92,Fatima_Noor:96,Bilal_Hassan:78,Khadija_Omar:84,Zaid_Ibrahim:70,Sara_Malik:88,Umar_Farooq:65,Aisha_Rashid:91}},
-  {id:2, name:"Tajweed Beginners", level:"beginner", students:["Musa Okonkwo","Layla Hussain","Ibrahim Ali","Maryam Diallo","Khalid Brown"], color:"#3498db", performance:{Musa_Okonkwo:62,Layla_Hussain:74,Ibrahim_Ali:55,Maryam_Diallo:68,Khalid_Brown:48}},
-  {id:3, name:"Junior Students", level:"intermediate", students:["Yusuf Junior","Zahra Khan","Adam Siddiqui","Nour Hassan","Rabia Ahmed","Tariq Malik","Hana Ibrahim","Sana Patel","Jamil Osei"], color:"#8e44ad", performance:{Yusuf_Junior:80,Zahra_Khan:72,Adam_Siddiqui:85,Nour_Hassan:77,Rabia_Ahmed:61,Tariq_Malik:69,Hana_Ibrahim:83,Sana_Patel:74,Jamil_Osei:58}},
-];
-let teacherAssignments = [
+let teacherGroups = [];let teacherAssignments = [
   {id:1, title:"Al-Mulk Memorisation", type:"hifdh", group:1, dueDate:"2025-04-10", desc:"Memorise Surah Al-Mulk (30 verses). Students should be able to recite from memory.", status:"active", submissions:5, total:8, maxScore:100, _subs:[{name:"Ahmad Yusuf",date:"2025-04-05",score:88,marked:true},{name:"Fatima Noor",date:"2025-04-06",score:95,marked:true},{name:"Sara Malik",date:"2025-04-07",score:82,marked:true},{name:"Aisha Rashid",date:"2025-04-07",score:90,marked:true},{name:"Bilal Hassan",date:"2025-04-08",score:null,marked:false}]},
   {id:2, title:"Tajweed — Ikhfa Rules", type:"tajweed", group:2, dueDate:"2025-04-08", desc:"Study all 15 Ikhfa letters and complete the practice quiz with minimum 80% score.", status:"active", submissions:3, total:5, maxScore:100, _subs:[{name:"Layla Hussain",date:"2025-04-06",score:76,marked:true},{name:"Musa Okonkwo",date:"2025-04-07",score:60,marked:true},{name:"Maryam Diallo",date:"2025-04-07",score:null,marked:false}]},
   {id:3, title:"Juz Amma Quiz", type:"quiz", group:0, dueDate:"2025-04-15", desc:"Complete the Knowledge Quiz focusing on Juz 30 surahs. Target: 70% or above.", status:"active", submissions:19, total:24, maxScore:100, _subs:[]},
@@ -7837,6 +7936,19 @@ function _resolveCallCode(targetName){
 
 // ── Direct call by name — no code required ──
 function callDirect(targetName, type){
+  // Student calling teacher: if targetName is fallback 'Teacher', get real name
+  if(currentUser && currentUser.role === 'student'){
+    var realTeacher = ((_liveClassData && _liveClassData.teacher) ? _liveClassData.teacher : null)
+      || (currentUser.teacherName || null);
+    if(realTeacher && (targetName === 'Teacher' || !targetName)) targetName = realTeacher;
+    // Store teacher name for future use
+    if(realTeacher) currentUser.teacherName = realTeacher;
+    var code = myClassCode || (currentUser && currentUser.classCode) || null;
+    if(!code){ showToast('⚠️ Join a class first before calling your teacher'); return; }
+    if(!realTeacher){ showToast('⚠️ Teacher name not found — ask your teacher to open the app'); return; }
+    callStart(realTeacher, code, type||'voice');
+    return;
+  }
   var code = _resolveCallCode(targetName);
   if(!code){ showToast('⚠️ No class linked to '+targetName); return; }
   callStart(targetName, code, type||'voice');
@@ -21154,6 +21266,789 @@ function qqFireAdhan(name){
     next();
   }
 }
+
+
+// ══════════════════════════════════════════════════════
+// SHOW PAGE ROUTER — new pages
+// ══════════════════════════════════════════════════════
+(function patchShowPage(){
+  var _orig = window.showPage || function(){};
+  var newPages = ['qibla','names99','bookmarks','privacy','hijri','tafsir','aiasst','mosque'];
+  var renderers = {
+    qibla: renderQiblaPage,
+    names99: renderNames99Page,
+    bookmarks: renderBookmarksPage,
+    privacy: renderPrivacyPage
+  };
+  window.showPage = function(page){
+    if(newPages.indexOf(page) > -1){
+      document.querySelectorAll('[id^="page-"]').forEach(function(el){el.classList.add('hidden');});
+      var pg = document.getElementById('page-'+page);
+      if(pg) pg.classList.remove('hidden');
+      document.querySelectorAll('.nav-pill').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('[data-page="'+page+'"]').forEach(function(b){b.classList.add('active');});
+      if(renderers[page]) renderers[page]();
+      return;
+    }
+    _orig(page);
+  };
+})();
+
+// ══════════════════════════════════════════════════════
+// BOOKMARKS SYSTEM
+// ══════════════════════════════════════════════════════
+function qqGetBookmarks(){ try{ return JSON.parse(localStorage.getItem('qq_bookmarks')||'[]'); }catch(e){ return []; } }
+function qqSaveBookmarks(bm){ try{ localStorage.setItem('qq_bookmarks', JSON.stringify(bm)); }catch(e){} }
+function qqAddBookmark(item){
+  var bm = qqGetBookmarks();
+  if(bm.find(function(b){ return b.id===item.id; })) return showToast('Already saved');
+  item.saved = new Date().toISOString();
+  bm.unshift(item);
+  qqSaveBookmarks(bm);
+  showToast('🔖 Saved!');
+}
+function qqRemoveBookmark(id){
+  qqSaveBookmarks(qqGetBookmarks().filter(function(b){ return b.id!==id; }));
+  renderBookmarksPage();
+  showToast('Removed');
+}
+
+function renderBookmarksPage(){
+  var pg = document.getElementById('page-bookmarks');
+  if(!pg) return;
+  var bm = qqGetBookmarks();
+  pg.innerHTML = '<div style="margin-bottom:24px;"><div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:6px;">🔖 Saved Items</div><div style="font-size:13px;color:rgba(255,255,255,.4);">Your bookmarked verses, hadiths & lessons</div></div>'
+  + (bm.length===0
+    ? '<div style="text-align:center;padding:60px 20px;"><div style="font-size:52px;margin-bottom:16px;">🔖</div><div style="color:rgba(255,255,255,.4);font-size:14px;">Nothing saved yet.<br>Tap 🔖 on any verse or lesson to save it here.</div></div>'
+    : '<div style="display:flex;flex-direction:column;gap:10px;">'
+      + bm.map(function(b){
+        return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;position:relative;">'
+          + '<div style="font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">'+b.type+'</div>'
+          + (b.arabic ? '<div style="font-family:Amiri,serif;font-size:18px;color:#c9a84c;direction:rtl;text-align:right;margin-bottom:8px;line-height:1.9;">'+b.arabic+'</div>' : '')
+          + '<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;">'+b.text+'</div>'
+          + (b.ref ? '<div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:6px;">'+b.ref+'</div>' : '')
+          + '<button onclick="qqRemoveBookmark(\''+b.id+'\')" style="position:absolute;top:10px;right:10px;background:rgba(231,76,60,.15);border:none;color:#e74c3c;border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer;">✕</button>'
+          + '</div>';
+      }).join('')
+      + '</div>');
+}
+
+// ══════════════════════════════════════════════════════
+// QIBLA COMPASS PAGE
+// ══════════════════════════════════════════════════════
+function renderQiblaPage(){
+  var pg = document.getElementById('page-qibla');
+  if(!pg) return;
+  var lat = parseFloat(localStorage.getItem('qq_lat')||'0');
+  var lng = parseFloat(localStorage.getItem('qq_lng')||'0');
+  var city = localStorage.getItem('qq_city')||'';
+
+  pg.innerHTML = '<div style="text-align:center;margin-bottom:24px;">'
+    + '<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:6px;">🧭 Qibla Direction</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.4);">'+(city||'Compass to Al-Masjid Al-Haram')+'</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;align-items:center;gap:24px;">'
+    + '<div id="qibla-compass-wrap" style="position:relative;width:260px;height:260px;">'
+    + '<canvas id="qibla-canvas" width="260" height="260" style="border-radius:50%;"></canvas>'
+    + '<div id="qibla-needle" style="position:absolute;top:50%;left:50%;width:4px;height:110px;background:linear-gradient(#e74c3c,#c0392b);border-radius:4px;transform-origin:bottom center;transform:translate(-50%,-100%) rotate(0deg);transition:transform .4s ease;pointer-events:none;"></div>'
+    + '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#c9a84c;"></div>'
+    + '</div>'
+    + '<div id="qibla-info" style="text-align:center;">'
+    + (lat ? '<div style="font-size:28px;font-weight:700;color:#2ecc71;" id="qibla-deg">—°</div><div style="font-size:13px;color:rgba(255,255,255,.4);">from North</div>'
+           : '<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;">Allow location for accurate Qibla</div>')
+    + '</div>'
+    + (!lat ? '<button onclick="qqAskLocation().then(renderQiblaPage)" class="btn btn-g" style="padding:10px 24px;">📍 Use My Location</button>' : '')
+    + '</div>';
+
+  _drawQiblaCompass(lat, lng);
+}
+
+function _drawQiblaCompass(lat, lng){
+  var canvas = document.getElementById('qibla-canvas');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var cx=130, cy=130, r=125;
+
+  // Background
+  ctx.clearRect(0,0,260,260);
+  var grad = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+  grad.addColorStop(0,'#0d1a0d'); grad.addColorStop(1,'#080c08');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+
+  // Ring
+  ctx.strokeStyle='rgba(201,168,76,.3)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r-2,0,Math.PI*2); ctx.stroke();
+
+  // Compass points
+  var dirs=['N','NE','E','SE','S','SW','W','NW'];
+  dirs.forEach(function(d,i){
+    var angle = (i*45 - 90) * Math.PI/180;
+    var isCard = i%2===0;
+    var tr = r-18;
+    ctx.fillStyle = isCard ? '#c9a84c' : 'rgba(255,255,255,.3)';
+    ctx.font = isCard ? 'bold 13px sans-serif' : '10px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(d, cx + Math.cos(angle)*tr, cy + Math.sin(angle)*tr);
+  });
+
+  // Tick marks
+  for(var i=0;i<72;i++){
+    var a = (i*5-90)*Math.PI/180;
+    var isMaj = i%9===0;
+    ctx.strokeStyle = isMaj?'rgba(201,168,76,.6)':'rgba(255,255,255,.15)';
+    ctx.lineWidth = isMaj?2:1;
+    var r1=r-28, r2=r-34-(isMaj?4:0);
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r1, cy+Math.sin(a)*r1);
+    ctx.lineTo(cx+Math.cos(a)*r2, cy+Math.sin(a)*r2);
+    ctx.stroke();
+  }
+
+  // Makkah dot + Kaaba symbol
+  if(lat && lng){
+    var qAngle = _calcQibla(lat, lng);
+    var qRad = (qAngle - 90)*Math.PI/180;
+    var qx = cx + Math.cos(qRad)*(r-42);
+    var qy = cy + Math.sin(qRad)*(r-42);
+    ctx.fillStyle='#2ecc71';
+    ctx.beginPath(); ctx.arc(qx, qy, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2ecc71'; ctx.font='10px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🕋', cx+Math.cos(qRad)*80, cy+Math.sin(qRad)*80);
+
+    // Rotate needle
+    var needle = document.getElementById('qibla-needle');
+    if(needle) needle.style.transform='translate(-50%,-100%) rotate('+qAngle+'deg)';
+    var degEl = document.getElementById('qibla-deg');
+    if(degEl) degEl.textContent = Math.round(qAngle)+'°';
+  }
+}
+
+function _calcQibla(lat, lng){
+  var kLat=21.4225*Math.PI/180, kLng=39.8262*Math.PI/180;
+  var pLat=lat*Math.PI/180, pLng=lng*Math.PI/180;
+  var dLng=kLng-pLng;
+  var y=Math.sin(dLng)*Math.cos(kLat);
+  var x=Math.cos(pLat)*Math.sin(kLat)-Math.sin(pLat)*Math.cos(kLat)*Math.cos(dLng);
+  var bearing=Math.atan2(y,x)*180/Math.PI;
+  return (bearing+360)%360;
+}
+
+// ══════════════════════════════════════════════════════
+// 99 NAMES OF ALLAH
+// ══════════════════════════════════════════════════════
+var NAMES_99 = [
+  {n:1,ar:'ٱللَّهُ',trans:'Allah',eng:'The Greatest Name'},
+  {n:2,ar:'ٱلرَّحْمَٰنُ',trans:'Ar-Rahman',eng:'The Most Gracious'},
+  {n:3,ar:'ٱلرَّحِيمُ',trans:'Ar-Raheem',eng:'The Most Merciful'},
+  {n:4,ar:'ٱلْمَلِكُ',trans:'Al-Malik',eng:'The King, The Sovereign'},
+  {n:5,ar:'ٱلْقُدُّوسُ',trans:'Al-Quddus',eng:'The Most Holy'},
+  {n:6,ar:'ٱلسَّلَامُ',trans:'As-Salaam',eng:'The Source of Peace'},
+  {n:7,ar:'ٱلْمُؤْمِنُ',trans:'Al-Mu\'min',eng:'The Guardian of Faith'},
+  {n:8,ar:'ٱلْمُهَيْمِنُ',trans:'Al-Muhaymin',eng:'The Protector'},
+  {n:9,ar:'ٱلْعَزِيزُ',trans:'Al-Azeez',eng:'The Almighty'},
+  {n:10,ar:'ٱلْجَبَّارُ',trans:'Al-Jabbar',eng:'The Compeller'},
+  {n:11,ar:'ٱلْمُتَكَبِّرُ',trans:'Al-Mutakabbir',eng:'The Supreme'},
+  {n:12,ar:'ٱلْخَالِقُ',trans:'Al-Khaliq',eng:'The Creator'},
+  {n:13,ar:'ٱلْبَارِئُ',trans:'Al-Bari\'',eng:'The Evolver'},
+  {n:14,ar:'ٱلْمُصَوِّرُ',trans:'Al-Musawwir',eng:'The Fashioner'},
+  {n:15,ar:'ٱلْغَفَّارُ',trans:'Al-Ghaffar',eng:'The Forgiving'},
+  {n:16,ar:'ٱلْقَهَّارُ',trans:'Al-Qahhar',eng:'The Subduer'},
+  {n:17,ar:'ٱلْوَهَّابُ',trans:'Al-Wahhab',eng:'The Bestower'},
+  {n:18,ar:'ٱلرَّزَّاقُ',trans:'Ar-Razzaq',eng:'The Provider'},
+  {n:19,ar:'ٱلْفَتَّاحُ',trans:'Al-Fattah',eng:'The Opener'},
+  {n:20,ar:'ٱلْعَلِيمُ',trans:'Al-\'Aleem',eng:'The All-Knowing'},
+  {n:21,ar:'ٱلْقَابِضُ',trans:'Al-Qabid',eng:'The Withholder'},
+  {n:22,ar:'ٱلْبَاسِطُ',trans:'Al-Basit',eng:'The Extender'},
+  {n:23,ar:'ٱلْخَافِضُ',trans:'Al-Khafid',eng:'The Reducer'},
+  {n:24,ar:'ٱلرَّافِعُ',trans:'Ar-Rafi\'',eng:'The Exalter'},
+  {n:25,ar:'ٱلْمُعِزُّ',trans:'Al-Mu\'izz',eng:'The Honourer'},
+  {n:26,ar:'ٱلْمُذِلُّ',trans:'Al-Mudhill',eng:'The Dishonourer'},
+  {n:27,ar:'ٱلسَّمِيعُ',trans:'As-Sami\'',eng:'The All-Hearing'},
+  {n:28,ar:'ٱلْبَصِيرُ',trans:'Al-Baseer',eng:'The All-Seeing'},
+  {n:29,ar:'ٱلْحَكَمُ',trans:'Al-Hakam',eng:'The Judge'},
+  {n:30,ar:'ٱلْعَدْلُ',trans:'Al-\'Adl',eng:'The Just'},
+  {n:31,ar:'ٱللَّطِيفُ',trans:'Al-Lateef',eng:'The Subtle One'},
+  {n:32,ar:'ٱلْخَبِيرُ',trans:'Al-Khabeer',eng:'The Aware'},
+  {n:33,ar:'ٱلْحَلِيمُ',trans:'Al-Haleem',eng:'The Forbearing'},
+  {n:34,ar:'ٱلْعَظِيمُ',trans:'Al-\'Azeem',eng:'The Magnificent'},
+  {n:35,ar:'ٱلْغَفُورُ',trans:'Al-Ghafoor',eng:'The Forgiving'},
+  {n:36,ar:'ٱلشَّكُورُ',trans:'Ash-Shakoor',eng:'The Appreciative'},
+  {n:37,ar:'ٱلْعَلِيُّ',trans:'Al-\'Ali',eng:'The Most High'},
+  {n:38,ar:'ٱلْكَبِيرُ',trans:'Al-Kabeer',eng:'The Greatest'},
+  {n:39,ar:'ٱلْحَفِيظُ',trans:'Al-Hafeez',eng:'The Preserver'},
+  {n:40,ar:'ٱلْمُقِيتُ',trans:'Al-Muqeet',eng:'The Sustainer'},
+  {n:41,ar:'ٱلْحَسِيبُ',trans:'Al-Haseeb',eng:'The Reckoner'},
+  {n:42,ar:'ٱلْجَلِيلُ',trans:'Al-Jaleel',eng:'The Majestic'},
+  {n:43,ar:'ٱلْكَرِيمُ',trans:'Al-Kareem',eng:'The Generous'},
+  {n:44,ar:'ٱلرَّقِيبُ',trans:'Ar-Raqeeb',eng:'The Watchful'},
+  {n:45,ar:'ٱلْمُجِيبُ',trans:'Al-Mujeeb',eng:'The Responsive'},
+  {n:46,ar:'ٱلْوَاسِعُ',trans:'Al-Wasi\'',eng:'The Vast'},
+  {n:47,ar:'ٱلْحَكِيمُ',trans:'Al-Hakeem',eng:'The Wise'},
+  {n:48,ar:'ٱلْوَدُودُ',trans:'Al-Wadood',eng:'The Loving'},
+  {n:49,ar:'ٱلْمَجِيدُ',trans:'Al-Majeed',eng:'The Glorious'},
+  {n:50,ar:'ٱلْبَاعِثُ',trans:'Al-Ba\'ith',eng:'The Resurrector'},
+  {n:51,ar:'ٱلشَّهِيدُ',trans:'Ash-Shaheed',eng:'The Witness'},
+  {n:52,ar:'ٱلْحَقُّ',trans:'Al-Haqq',eng:'The Truth'},
+  {n:53,ar:'ٱلْوَكِيلُ',trans:'Al-Wakeel',eng:'The Trustee'},
+  {n:54,ar:'ٱلْقَوِيُّ',trans:'Al-Qawi',eng:'The Strong'},
+  {n:55,ar:'ٱلْمَتِينُ',trans:'Al-Mateen',eng:'The Firm'},
+  {n:56,ar:'ٱلْوَلِيُّ',trans:'Al-Wali',eng:'The Protecting Friend'},
+  {n:57,ar:'ٱلْحَمِيدُ',trans:'Al-Hameed',eng:'The Praiseworthy'},
+  {n:58,ar:'ٱلْمُحْصِي',trans:'Al-Muhsi',eng:'The Accounter'},
+  {n:59,ar:'ٱلْمُبْدِئُ',trans:'Al-Mubdi\'',eng:'The Originator'},
+  {n:60,ar:'ٱلْمُعِيدُ',trans:'Al-Mu\'eed',eng:'The Restorer'},
+  {n:61,ar:'ٱلْمُحْيِي',trans:'Al-Muhyi',eng:'The Giver of Life'},
+  {n:62,ar:'ٱلْمُمِيتُ',trans:'Al-Mumeet',eng:'The Taker of Life'},
+  {n:63,ar:'ٱلْحَيُّ',trans:'Al-Hayy',eng:'The Ever-Living'},
+  {n:64,ar:'ٱلْقَيُّومُ',trans:'Al-Qayyoom',eng:'The Self-Existing'},
+  {n:65,ar:'ٱلْوَاجِدُ',trans:'Al-Wajid',eng:'The Finder'},
+  {n:66,ar:'ٱلْمَاجِدُ',trans:'Al-Majid',eng:'The Noble'},
+  {n:67,ar:'ٱلْوَاحِدُ',trans:'Al-Wahid',eng:'The One'},
+  {n:68,ar:'ٱلْأَحَدُ',trans:'Al-Ahad',eng:'The Unique'},
+  {n:69,ar:'ٱلصَّمَدُ',trans:'As-Samad',eng:'The Eternal'},
+  {n:70,ar:'ٱلْقَادِرُ',trans:'Al-Qadir',eng:'The Capable'},
+  {n:71,ar:'ٱلْمُقْتَدِرُ',trans:'Al-Muqtadir',eng:'The Powerful'},
+  {n:72,ar:'ٱلْمُقَدِّمُ',trans:'Al-Muqaddim',eng:'The Expediter'},
+  {n:73,ar:'ٱلْمُؤَخِّرُ',trans:'Al-Mu\'akhkhir',eng:'The Delayer'},
+  {n:74,ar:'ٱلْأَوَّلُ',trans:'Al-Awwal',eng:'The First'},
+  {n:75,ar:'ٱلْآخِرُ',trans:'Al-Akhir',eng:'The Last'},
+  {n:76,ar:'ٱلظَّاهِرُ',trans:'Az-Zahir',eng:'The Manifest'},
+  {n:77,ar:'ٱلْبَاطِنُ',trans:'Al-Batin',eng:'The Hidden'},
+  {n:78,ar:'ٱلْوَالِي',trans:'Al-Wali',eng:'The Governor'},
+  {n:79,ar:'ٱلْمُتَعَالِي',trans:'Al-Muta\'ali',eng:'The Supreme One'},
+  {n:80,ar:'ٱلْبَرُّ',trans:'Al-Barr',eng:'The Source of Goodness'},
+  {n:81,ar:'ٱلتَّوَّابُ',trans:'At-Tawwab',eng:'The Ever-Returning'},
+  {n:82,ar:'ٱلْمُنْتَقِمُ',trans:'Al-Muntaqim',eng:'The Avenger'},
+  {n:83,ar:'ٱلْعَفُوُّ',trans:'Al-\'Afuw',eng:'The Pardoner'},
+  {n:84,ar:'ٱلرَّؤُوفُ',trans:'Ar-Ra\'oof',eng:'The Compassionate'},
+  {n:85,ar:'مَالِكُ ٱلْمُلْكِ',trans:'Malik-ul-Mulk',eng:'Owner of All Sovereignty'},
+  {n:86,ar:'ذُو ٱلْجَلَالِ',trans:'Dhul-Jalali',eng:'Lord of Majesty'},
+  {n:87,ar:'ٱلْمُقْسِطُ',trans:'Al-Muqsit',eng:'The Equitable'},
+  {n:88,ar:'ٱلْجَامِعُ',trans:'Al-Jami\'',eng:'The Gatherer'},
+  {n:89,ar:'ٱلْغَنِيُّ',trans:'Al-Ghani',eng:'The Self-Sufficient'},
+  {n:90,ar:'ٱلْمُغْنِي',trans:'Al-Mughni',eng:'The Enricher'},
+  {n:91,ar:'ٱلْمَانِعُ',trans:'Al-Mani\'',eng:'The Withholder'},
+  {n:92,ar:'ٱلضَّارُّ',trans:'Ad-Darr',eng:'The Distresser'},
+  {n:93,ar:'ٱلنَّافِعُ',trans:'An-Nafi\'',eng:'The Propitious'},
+  {n:94,ar:'ٱلنُّورُ',trans:'An-Noor',eng:'The Light'},
+  {n:95,ar:'ٱلْهَادِي',trans:'Al-Hadi',eng:'The Guide'},
+  {n:96,ar:'ٱلْبَدِيعُ',trans:'Al-Badi\'',eng:'The Incomparable'},
+  {n:97,ar:'ٱلْبَاقِي',trans:'Al-Baqi',eng:'The Everlasting'},
+  {n:98,ar:'ٱلْوَارِثُ',trans:'Al-Warith',eng:'The Inheritor'},
+  {n:99,ar:'ٱلرَّشِيدُ',trans:'Ar-Rasheed',eng:'The Guide to Right Path'}
+];
+
+var _names99Search = '';
+function renderNames99Page(){
+  var pg = document.getElementById('page-names99');
+  if(!pg) return;
+  var q = _names99Search.toLowerCase();
+  var list = q ? NAMES_99.filter(function(n){
+    return n.trans.toLowerCase().includes(q)||n.eng.toLowerCase().includes(q)||n.ar.includes(q);
+  }) : NAMES_99;
+
+  pg.innerHTML = '<div style="margin-bottom:20px;">'
+    + '<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:6px;">✨ 99 Names of Allah</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:14px;">Asma ul-Husna — The Most Beautiful Names</div>'
+    + '<input id="names99-search" type="text" placeholder="Search names..." value="'+q+'"'
+    + ' oninput="_names99Search=this.value;renderNames99Page()"'
+    + ' style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;outline:none;">'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">'
+    + list.map(function(n){
+      return '<div onclick="qqAddBookmark({id:\'name-'+n.n+'\',type:\'Name of Allah\',arabic:n.ar,text:n.trans+\' — \'+n.eng,ref:\'Name #'+n.n+'\'})" '
+        + 'style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer;transition:background .2s;"'
+        + ' onmouseover="this.style.background=\'rgba(201,168,76,.08)\'" onmouseout="this.style.background=\'rgba(255,255,255,.04)\'">'
+        + '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:6px;">#'+n.n+'</div>'
+        + '<div style="font-family:Amiri,serif;font-size:22px;color:#c9a84c;margin-bottom:6px;line-height:1.6;">'+n.ar+'</div>'
+        + '<div style="font-size:11px;color:#2ecc71;font-weight:700;margin-bottom:3px;">'+n.trans+'</div>'
+        + '<div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.4;">'+n.eng+'</div>'
+        + '<div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:4px;">Tap 🔖 to save</div>'
+        + '</div>';
+    }).join('')
+    + '</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// HADITH OF THE DAY
+// ══════════════════════════════════════════════════════
+var DAILY_HADITHS = [
+  {text:"The best of you are those who learn the Quran and teach it.",ref:"Sahih Al-Bukhari 5027"},
+  {text:"Actions are judged by intentions, and every person will get what they intended.",ref:"Sahih Al-Bukhari 1"},
+  {text:"None of you truly believes until he loves for his brother what he loves for himself.",ref:"Sahih Al-Bukhari 13"},
+  {text:"The strongest among you is the one who controls himself when angry.",ref:"Sahih Al-Bukhari 6114"},
+  {text:"Smiling at your brother is charity.",ref:"Sunan At-Tirmidhi 1956"},
+  {text:"Whoever believes in Allah and the Last Day, let him speak good or remain silent.",ref:"Sahih Al-Bukhari 6018"},
+  {text:"The world is a prison for the believer and a paradise for the disbeliever.",ref:"Sahih Muslim 2956"},
+  {text:"Make things easy, do not make them difficult. Give good tidings and do not drive people away.",ref:"Sahih Al-Bukhari 69"},
+  {text:"Allah does not look at your appearance or wealth, but He looks at your hearts and deeds.",ref:"Sahih Muslim 2564"},
+  {text:"A kind word is charity.",ref:"Sahih Al-Bukhari 2989"},
+  {text:"The most beloved of deeds to Allah are those that are most consistent, even if small.",ref:"Sahih Al-Bukhari 6464"},
+  {text:"Do not belittle any good deed, even meeting your brother with a cheerful face.",ref:"Sahih Muslim 2626"},
+  {text:"Whoever removes a worldly hardship from a believer, Allah will remove from him a hardship on the Day of Judgement.",ref:"Sahih Muslim 2699"},
+  {text:"Feed the hungry, visit the sick, and free the captive.",ref:"Sahih Al-Bukhari 5373"},
+  {text:"The pen has been lifted and the ink has dried.",ref:"Sunan At-Tirmidhi 2516"}
+];
+function getDailyHadith(){
+  var day=Math.floor(Date.now()/86400000);
+  return DAILY_HADITHS[day % DAILY_HADITHS.length];
+}
+
+// Inject hadith on home page
+function renderDailyHadithCard(){
+  var el = document.getElementById('hp-daily-hadith');
+  if(!el) return;
+  var h = getDailyHadith();
+  el.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.8;font-style:italic;margin-bottom:10px;">"'+h.text+'"</div>'
+    + '<div style="font-size:11px;color:rgba(201,168,76,.7);">— '+h.ref+'</div>'
+    + '<button onclick="qqAddBookmark({id:\'hadith-\'+Math.floor(Date.now()/86400000),type:\'Hadith\',text:\''+h.text.replace(/'/g,"\\'")+'...\',ref:\''+h.ref+'\'})" style="margin-top:10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:#c9a84c;border-radius:8px;padding:5px 12px;font-size:10px;cursor:pointer;">🔖 Save</button>';
+}
+
+// ══════════════════════════════════════════════════════
+// PRIVACY / ABOUT PAGE
+// ══════════════════════════════════════════════════════
+function renderPrivacyPage(){
+  var pg = document.getElementById('page-privacy');
+  if(!pg) return;
+  pg.innerHTML = '<div style="max-width:680px;margin:0 auto;">'
+    + '<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;margin-bottom:6px;">📜 About & Privacy</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:28px;">Qur\'an Quest by Abuzayd Institute</div>'
+
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:16px;">'
+    + '<div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:10px;">About the App</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Qur\'an Quest is a free Islamic education platform developed by Abuzayd Institute to help Muslims learn the Qur\'an, Tajweed, and Islamic knowledge. Available on all devices, no installation required.</div>'
+    + '</div>'
+
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:16px;">'
+    + '<div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:10px;">Privacy Policy</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">'
+    + '<strong style="color:rgba(255,255,255,.8);">Data we collect:</strong> Name, role (student/teacher), and class progress — stored locally on your device and in our secure database.<br><br>'
+    + '<strong style="color:rgba(255,255,255,.8);">We do NOT:</strong> Sell your data, show ads, or share personal information with third parties.<br><br>'
+    + '<strong style="color:rgba(255,255,255,.8);">Location:</strong> Only used for prayer times and Qibla direction. Never stored on our servers.<br><br>'
+    + '<strong style="color:rgba(255,255,255,.8);">Children:</strong> This app is designed for Islamic education including children. No personal data from minors is shared externally.'
+    + '</div>'
+    + '</div>'
+
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:16px;">'
+    + '<div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:10px;">Terms of Use</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">'
+    + 'This app is provided free of charge for the benefit of the Muslim Ummah. You may use it for personal and educational purposes. Redistribution or commercial use without permission is not permitted.<br><br>'
+    + 'By using this app you agree to use it respectfully in accordance with Islamic values.'
+    + '</div>'
+    + '</div>'
+
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:16px;">'
+    + '<div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:10px;">Version & Credits</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">'
+    + 'Version 1.0 · Built with love for the Ummah<br>'
+    + 'Developer: Abuzayd Institute<br>'
+    + 'Contact: <a href="mailto:quranquest111@gmail.com" style="color:#74b9ff;">quranquest111@gmail.com</a><br>'
+    + 'Phone: <a href="tel:+2349073528916" style="color:#2ecc71;">+234 907 352 8916</a>'
+    + '</div>'
+    + '</div>'
+
+    + '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.2);font-size:11px;line-height:1.8;">'
+    + '☽ Qur\'an Quest · Abuzayd Institute ☽<br>جَزَاكُمُ اللَّهُ خَيْرًا'
+    + '</div>'
+    + '</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// ONBOARDING FLOW (first-time users)
+// ══════════════════════════════════════════════════════
+function qqCheckOnboarding(){
+  if(localStorage.getItem('qq_onboarded')==='1') return;
+  if(currentUser) return; // already logged in
+  setTimeout(function(){
+    if(currentUser) return;
+    var modal = document.createElement('div');
+    modal.id='qq-onboard-modal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML='<div style="background:#0d1a0d;border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:28px 24px;max-width:380px;width:100%;text-align:center;">'
+      +'<div style="font-size:48px;margin-bottom:12px;">☽</div>'
+      +'<div style="font-family:Cinzel,serif;font-size:20px;color:#c9a84c;margin-bottom:8px;">Welcome to Qur\'an Quest</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:24px;">Free Islamic education by Abuzayd Institute.<br>Learn Qur\'an · Tajweed · Hifdh · Daily Adhkār</div>'
+      +'<div style="display:flex;flex-direction:column;gap:10px;">'
+      +'<button onclick="openAuth(\'register\',\'student\');document.getElementById(\'qq-onboard-modal\').remove();localStorage.setItem(\'qq_onboarded\',\'1\')" class="btn btn-g" style="padding:12px;font-size:14px;font-weight:700;">📖 I\'m a Student / Learner</button>'
+      +'<button onclick="openAuth(\'register\',\'teacher\');document.getElementById(\'qq-onboard-modal\').remove();localStorage.setItem(\'qq_onboarded\',\'1\')" class="btn" style="padding:12px;font-size:14px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c;border-radius:10px;cursor:pointer;">🏫 I\'m a Teacher</button>'
+      +'<button onclick="document.getElementById(\'qq-onboard-modal\').remove();localStorage.setItem(\'qq_onboarded\',\'1\')" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;padding:8px;">Browse as Guest →</button>'
+      +'</div>'
+      +'</div>';
+    document.body.appendChild(modal);
+  }, 2500); // show after splash screen
+}
+
+// ══════════════════════════════════════════════════════
+// FONT SIZE SETTING (Arabic text)
+// ══════════════════════════════════════════════════════
+var _qqFontSize = parseInt(localStorage.getItem('qq_arabic_font')||'18');
+function qqSetFontSize(size){
+  _qqFontSize = size;
+  localStorage.setItem('qq_arabic_font', size);
+  document.documentElement.style.setProperty('--arabic-font-size', size+'px');
+  showToast('Arabic text: '+size+'px');
+}
+// Apply on load
+document.documentElement.style.setProperty('--arabic-font-size', _qqFontSize+'px');
+
+// ══════════════════════════════════════════════════════════════
+// HIJRI CALENDAR PAGE
+// ══════════════════════════════════════════════════════════════
+var HIJRI_MONTHS = ['Muharram','Safar','Rabi\' al-Awwal','Rabi\' al-Thani',
+  'Jumada al-Awwal','Jumada al-Thani','Rajab','Sha\'ban','Ramadan','Shawwal',
+  'Dhul Qi\'dah','Dhul Hijjah'];
+var ISLAMIC_EVENTS = {
+  '1-1':'Islamic New Year 🌙','10-1':'Day of Ashura ✨',
+  '12-3':'Mawlid an-Nabi ﷺ','27-7':'Isra\' & Mi\'raj ✨',
+  '15-8':'Laylat al-Bara\'ah 🌟','1-9':'Ramadan Begins 🌙',
+  '27-9':'Laylat al-Qadr 🌟','1-10':'Eid al-Fitr 🎉',
+  '10-12':'Eid al-Adha 🐑','8-12':'Day of Arafah 🕌'
+};
+
+function getHijriDate(date){
+  try{
+    var d = date || new Date();
+    var fmt = new Intl.DateTimeFormat('en-TN-u-ca-islamic-umalqura',{
+      day:'numeric', month:'long', year:'numeric', weekday:'long'
+    });
+    var parts = {};
+    fmt.formatToParts(d).forEach(function(p){ parts[p.type]=p.value; });
+    // Also get numeric month/day for event lookup
+    var numFmt = new Intl.DateTimeFormat('en-TN-u-ca-islamic-umalqura',{
+      day:'numeric', month:'numeric', year:'numeric'
+    });
+    var numParts = {};
+    numFmt.formatToParts(d).forEach(function(p){ numParts[p.type]=p.value; });
+    return { full: fmt.format(d), day: parseInt(numParts.day), month: parseInt(numParts.month), year: parseInt(numParts.year), weekday: parts.weekday, monthName: HIJRI_MONTHS[parseInt(numParts.month)-1]||parts.month };
+  }catch(e){ return null; }
+}
+
+function renderHijriPage(){
+  var pg = document.getElementById('page-hijri');
+  if(!pg) return;
+  var today = new Date();
+  var h = getHijriDate(today);
+  var eventKey = h ? h.day+'-'+h.month : '';
+  var todayEvent = ISLAMIC_EVENTS[eventKey] || '';
+
+  // Build 30-day calendar strip
+  var calDays = [];
+  for(var i=-3; i<=26; i++){
+    var d = new Date(today); d.setDate(d.getDate()+i);
+    var hd = getHijriDate(d);
+    var ek = hd ? hd.day+'-'+hd.month : '';
+    calDays.push({ greg: d, hijri: hd, isToday: i===0, event: ISLAMIC_EVENTS[ek]||'' });
+  }
+
+  // Upcoming events (next 60 days)
+  var upcoming = [];
+  for(var j=1; j<=60; j++){
+    var dd = new Date(today); dd.setDate(dd.getDate()+j);
+    var hh = getHijriDate(dd);
+    if(!hh) continue;
+    var ek2 = hh.day+'-'+hh.month;
+    if(ISLAMIC_EVENTS[ek2]) upcoming.push({ days: j, greg: dd, name: ISLAMIC_EVENTS[ek2], hijri: hh });
+  }
+
+  pg.innerHTML =
+    '<div style="text-align:center;margin-bottom:24px;">'
+    +'<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:4px;">📅 Hijri Calendar</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.35);">Islamic lunar calendar</div>'
+    +'</div>'
+
+    // TODAY card
+    +(h ? '<div style="background:linear-gradient(135deg,rgba(26,122,60,.2),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:24px;text-align:center;margin-bottom:20px;">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Today</div>'
+    +'<div style="font-family:Cinzel,serif;font-size:36px;color:#c9a84c;font-weight:700;line-height:1;">'+h.day+'</div>'
+    +'<div style="font-size:18px;color:rgba(255,255,255,.8);margin:4px 0;">'+h.monthName+' '+h.year+' AH</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.4);">'+h.weekday+' · '
+    +today.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>'
+    +(todayEvent ? '<div style="margin-top:12px;background:rgba(201,168,76,.15);border-radius:10px;padding:8px 14px;font-size:13px;color:#c9a84c;">'+todayEvent+'</div>' : '')
+    +'</div>' : '')
+
+    // Calendar strip
+    +'<div style="margin-bottom:20px;overflow-x:auto;padding-bottom:6px;">'
+    +'<div style="display:flex;gap:8px;min-width:max-content;">'
+    + calDays.map(function(cd){
+      var isToday = cd.isToday;
+      var hasEvent = cd.event;
+      return '<div style="background:'+(isToday?'rgba(201,168,76,.2)':'rgba(255,255,255,.03)')
+        +';border:1px solid '+(isToday?'rgba(201,168,76,.5)':'rgba(255,255,255,.07)')
+        +';border-radius:12px;padding:10px 8px;text-align:center;min-width:54px;cursor:pointer;'
+        +(hasEvent?'border-color:rgba(46,204,113,.4);':'')
+        +'">'
+        +'<div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:2px;">'
+        +cd.greg.toLocaleDateString('en',{weekday:'short'})+'</div>'
+        +'<div style="font-size:15px;font-weight:700;color:'+(isToday?'#c9a84c':'rgba(255,255,255,.8)')+';">'
+        +(cd.hijri?cd.hijri.day:'')+'</div>'
+        +'<div style="font-size:8px;color:rgba(255,255,255,.3);margin-top:2px;">'
+        +cd.greg.getDate()+'</div>'
+        +(hasEvent?'<div style="width:5px;height:5px;background:#2ecc71;border-radius:50%;margin:3px auto 0;"></div>':'')
+        +'</div>';
+    }).join('')
+    +'</div></div>'
+
+    // Upcoming events
+    +(upcoming.length ? '<div><div style="font-size:11px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;">Upcoming Islamic Events</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;">'
+    +upcoming.slice(0,6).map(function(ev){
+      return '<div style="background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.2);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">'
+        +'<div><div style="font-size:13px;color:#2ecc71;font-weight:600;">'+ev.name+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">'
+        +ev.greg.toLocaleDateString('en-GB',{day:'numeric',month:'long'})
+        +' · '+(ev.hijri?ev.hijri.day+' '+ev.hijri.monthName:'')+'</div>'
+        +'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.4);white-space:nowrap;">in '+ev.days+'d</div>'
+        +'</div>';
+    }).join('')
+    +'</div></div>' : '');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAFSIR PAGE — with Quran.com API
+// ══════════════════════════════════════════════════════════════
+var POPULAR_SURAHS = [
+  {n:1,name:'Al-Fatiha',verses:7},{n:2,name:'Al-Baqarah',verses:286},
+  {n:3,name:'Al-Imran',verses:200},{n:4,name:'An-Nisa',verses:176},
+  {n:18,name:'Al-Kahf',verses:110},{n:36,name:'Ya-Sin',verses:83},
+  {n:55,name:'Ar-Rahman',verses:78},{n:56,name:'Al-Waqi\'ah',verses:96},
+  {n:67,name:'Al-Mulk',verses:30},{n:78,name:'An-Naba',verses:40},
+  {n:112,name:'Al-Ikhlas',verses:4},{n:113,name:'Al-Falaq',verses:5},
+  {n:114,name:'An-Nas',verses:6}
+];
+var _tafsirSurah=1, _tafsirVerse=1, _tafsirData=null;
+
+function renderTafsirPage(){
+  var pg=document.getElementById('page-tafsir'); if(!pg) return;
+  pg.innerHTML='<div style="margin-bottom:20px;">'
+    +'<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:6px;">📗 Tafsir</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:16px;">Verse explanation & meaning</div>'
+    +'</div>'
+
+    // Surah selector
+    +'<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">'
+    +POPULAR_SURAHS.map(function(s){
+      return '<button onclick="_tafsirSurah='+s.n+';_tafsirVerse=1;_tafsirData=null;renderTafsirPage()" '
+        +'style="background:'+(s.n===_tafsirSurah?'rgba(26,122,60,.3)':'rgba(255,255,255,.04)')
+        +';border:1px solid '+(s.n===_tafsirSurah?'rgba(46,204,113,.5)':'rgba(255,255,255,.1)')
+        +';color:'+(s.n===_tafsirSurah?'#2ecc71':'rgba(255,255,255,.6)')
+        +';border-radius:20px;padding:5px 12px;font-size:11px;cursor:pointer;white-space:nowrap;">'
+        +s.n+'. '+s.name+'</button>';
+    }).join('')
+    +'</div>'
+
+    // Verse navigator
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+    +'<button onclick="if(_tafsirVerse>1){_tafsirVerse--;_tafsirData=null;renderTafsirPage();}" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;">‹ Prev</button>'
+    +'<div style="flex:1;text-align:center;font-size:13px;color:rgba(255,255,255,.5);">Verse '+_tafsirVerse+' of '+(POPULAR_SURAHS.find(function(s){return s.n===_tafsirSurah;})||{verses:'?'}).verses+'</div>'
+    +'<button onclick="var mx=(POPULAR_SURAHS.find(function(s){return s.n===_tafsirSurah;})||{verses:99}).verses;if(_tafsirVerse<mx){_tafsirVerse++;_tafsirData=null;renderTafsirPage();}" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;">Next ›</button>'
+    +'</div>'
+
+    // Content area
+    +'<div id="tafsir-content" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;min-height:160px;">'
+    +'<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;">Loading verse...</div>'
+    +'</div>';
+
+  _loadTafsirVerse(_tafsirSurah, _tafsirVerse);
+}
+
+function _loadTafsirVerse(surah, verse){
+  var url='https://api.alquran.cloud/v1/ayah/'+surah+':'+verse+'/editions/quran-uthmani,en.asad';
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    var el=document.getElementById('tafsir-content');
+    if(!el) return;
+    if(d.code!==200||!d.data){ el.innerHTML='<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px;">Could not load verse. Check connection.</div>'; return; }
+    var arabic=d.data[0], english=d.data[1];
+    el.innerHTML='<div style="font-family:Amiri,serif;font-size:26px;color:#c9a84c;direction:rtl;text-align:right;line-height:1.9;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07);">'
+      +arabic.text+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.9;margin-bottom:16px;">'
+      +(english?english.text:'')+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.3);">'+arabic.surah.englishName+' '+surah+':'+verse+' · Juz\' '+arabic.juz+'</div>'
+      +'<button onclick="qqAddBookmark({id:\'tafsir-'+surah+'-'+verse+'\',type:\'Verse\',arabic:\''+arabic.text.replace(/'/g,"'").substring(0,50)+'...\',text:\''+(english?english.text.substring(0,80):'')+'\',ref:\''+arabic.surah.englishName+' '+surah+':'+verse+'\'})" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:#c9a84c;border-radius:8px;padding:5px 12px;font-size:10px;cursor:pointer;">🔖 Save</button>'
+      +'</div>';
+  }).catch(function(){
+    var el=document.getElementById('tafsir-content');
+    if(el) el.innerHTML='<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px;">No internet connection. Tafsir requires an online connection.</div>';
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// AI QURAN ASSISTANT PAGE
+// ══════════════════════════════════════════════════════════════
+var _aiHistory = [];
+var _aiTyping = false;
+
+function renderAIAssistantPage(){
+  var pg=document.getElementById('page-aiasst'); if(!pg) return;
+  pg.innerHTML='<div style="display:flex;flex-direction:column;height:calc(100vh - 170px);min-height:400px;">'
+    +'<div style="margin-bottom:16px;">'
+    +'<div style="font-family:Cinzel,serif;font-size:20px;color:#c9a84c;font-weight:700;margin-bottom:4px;">🤖 AI Islamic Guide</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.35);">Ask about Quran, Hadith, Fiqh, Islamic history</div>'
+    +'</div>'
+    +'<div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:12px;scrollbar-width:thin;">'
+    +(_aiHistory.length===0
+      ?'<div style="text-align:center;padding:40px 20px;">'
+      +'<div style="font-size:40px;margin-bottom:12px;">🕌</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.4);line-height:1.8;">As-salamu alaykum!<br>Ask me anything about Islam.<br><br>'
+      +'<span style="color:rgba(255,255,255,.25);font-size:11px;">Try: "What is the meaning of Surah Al-Fatiha?"<br>"How many times is prayer mentioned in the Quran?"<br>"What are the pillars of Islam?"</span></div>'
+      +'</div>'
+      :_aiHistory.map(function(m){
+        var isUser=m.role==='user';
+        return '<div style="display:flex;'+(isUser?'justify-content:flex-end':'justify-content:flex-start')+'">'
+          +'<div style="max-width:80%;background:'+(isUser?'rgba(26,122,60,.25)':'rgba(255,255,255,.05)')
+          +';border:1px solid '+(isUser?'rgba(46,204,113,.3)':'rgba(255,255,255,.1)')
+          +';border-radius:'+(isUser?'16px 16px 4px 16px':'16px 16px 16px 4px')
+          +';padding:12px 14px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;">'
+          +m.content+'</div></div>';
+      }).join(''))
+    +'</div>'
+    +(_aiTyping?'<div style="font-size:12px;color:rgba(255,255,255,.3);padding:4px 0;">AI is thinking...</div>':'')
+    +'<div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);">'
+    +'<input id="ai-input" type="text" placeholder="Ask about Islam..." '
+    +'onkeydown="if(event.key===\'Enter\')qqAISend()"'
+    +'style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 14px;color:#fff;font-size:13px;outline:none;">'
+    +'<button onclick="qqAISend()" style="background:#1a7a3c;border:none;color:#fff;border-radius:12px;padding:10px 16px;font-size:16px;cursor:pointer;">➤</button>'
+    +'</div>'
+    +'</div>';
+}
+
+function qqAISend(){
+  if(_aiTyping) return;
+  var inp=document.getElementById('ai-input');
+  if(!inp) return;
+  var q=inp.value.trim(); if(!q) return;
+  inp.value='';
+  _aiHistory.push({role:'user',content:q});
+  _aiTyping=true;
+  renderAIAssistantPage();
+
+  var msgs=[{role:'system',content:'You are a knowledgeable and respectful Islamic scholar assistant for Qur\'an Quest, an app by Abuzayd Institute. Answer questions about the Quran, Hadith, Fiqh, Islamic history, prayer, and Islamic education. Be concise, accurate, and always cite your sources (Surah/Ayah or Hadith collection). Use respectful Islamic language (e.g. ﷺ for the Prophet). Keep answers under 200 words unless a longer explanation is genuinely needed.'}]
+    .concat(_aiHistory.slice(-8));
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:msgs})
+  }).then(function(r){return r.json();}).then(function(d){
+    var reply=(d.content&&d.content[0])?d.content[0].text:'Sorry, I could not get a response. Please try again.';
+    _aiHistory.push({role:'assistant',content:reply});
+    _aiTyping=false;
+    renderAIAssistantPage();
+    setTimeout(function(){var el=document.getElementById('ai-msgs');if(el)el.scrollTop=el.scrollHeight;},50);
+  }).catch(function(){
+    _aiHistory.push({role:'assistant',content:'Could not connect. Please check your internet and try again.'});
+    _aiTyping=false;
+    renderAIAssistantPage();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// MOSQUE LOCATOR PAGE
+// ══════════════════════════════════════════════════════════════
+var _mosqueResults=[], _mosqueLoading=false, _mosqueError='';
+
+function renderMosquePage(){
+  var pg=document.getElementById('page-mosque'); if(!pg) return;
+  pg.innerHTML='<div style="margin-bottom:20px;">'
+    +'<div style="font-family:Cinzel,serif;font-size:22px;color:#c9a84c;font-weight:700;margin-bottom:6px;">🕌 Nearby Mosques</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:16px;">Find mosques close to your location</div>'
+    +'</div>'
+    +(_mosqueLoading?'<div style="text-align:center;padding:60px;"><div style="font-size:40px;margin-bottom:12px;">🕌</div><div style="color:rgba(255,255,255,.4);">Finding nearby mosques...</div></div>'
+      :_mosqueError?'<div style="text-align:center;padding:40px;color:rgba(255,76,60,.7);">'+_mosqueError+'</div>'
+        +'<button onclick="_mosqueError=\'\';renderMosquePage();_qqFindMosques()" class="btn btn-g" style="display:block;margin:0 auto;padding:10px 24px;">Try Again</button>'
+      :_mosqueResults.length===0?'<div style="text-align:center;padding:40px 20px;">'
+        +'<div style="font-size:52px;margin-bottom:16px;">🕌</div>'
+        +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:20px;">Allow location access to find mosques near you</div>'
+        +'<button onclick="_qqFindMosques()" class="btn btn-g" style="padding:12px 28px;font-size:14px;">📍 Find Mosques Near Me</button>'
+        +'</div>'
+      :'<div style="display:flex;flex-direction:column;gap:10px;">'
+        +_mosqueResults.map(function(m,idx){
+          return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;">'
+            +'<div style="display:flex;align-items:flex-start;gap:12px;">'
+            +'<div style="font-size:28px;flex-shrink:0;">🕌</div>'
+            +'<div style="flex:1;">'
+            +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:3px;">'+m.name+'</div>'
+            +'<div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:8px;">'+m.address+'</div>'
+            +(m.distance?'<div style="font-size:11px;color:#2ecc71;">📍 ~'+m.distance+'km away</div>':'')
+            +'</div>'
+            +'<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(m.name+' '+m.address)+'" target="_blank"'
+            +' style="background:rgba(52,152,219,.15);border:1px solid rgba(52,152,219,.3);color:#74b9ff;border-radius:8px;padding:6px 10px;font-size:10px;text-decoration:none;white-space:nowrap;flex-shrink:0;">🗺 Map</a>'
+            +'</div></div>';
+        }).join('')
+        +'<button onclick="_mosqueResults=[];renderMosquePage();_qqFindMosques()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:10px;font-size:12px;cursor:pointer;margin-top:4px;">🔄 Refresh</button>'
+        +'</div>');
+}
+
+function _qqFindMosques(){
+  _mosqueLoading=true; _mosqueError=''; _mosqueResults=[];
+  renderMosquePage();
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude, lng=pos.coords.longitude;
+    localStorage.setItem('qq_lat',lat); localStorage.setItem('qq_lng',lng);
+    // Use Overpass API (OpenStreetMap) — completely free, no key needed
+    var query='[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:5000,'+lat+','+lng+');way["amenity"="place_of_worship"]["religion"="muslim"](around:5000,'+lat+','+lng+'););out body 10;';
+    fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      _mosqueLoading=false;
+      if(!d.elements||d.elements.length===0){
+        _mosqueError='No mosques found within 5km. Try in a different area.';
+        renderMosquePage(); return;
+      }
+      _mosqueResults=d.elements.slice(0,10).map(function(el){
+        var elLat=el.lat||(el.center&&el.center.lat)||lat;
+        var elLng=el.lon||(el.center&&el.center.lon)||lng;
+        var dist=Math.round(_haversine(lat,lng,elLat,elLng)*10)/10;
+        return {
+          name:el.tags.name||el.tags['name:en']||'Mosque',
+          address:(el.tags['addr:street']||'')+(el.tags['addr:city']?' , '+el.tags['addr:city']:''),
+          distance:dist
+        };
+      });
+      _mosqueResults.sort(function(a,b){return a.distance-b.distance;});
+      renderMosquePage();
+    }).catch(function(){
+      _mosqueLoading=false;
+      _mosqueError='Could not load mosque data. Check your internet connection.';
+      renderMosquePage();
+    });
+  }, function(err){
+    _mosqueLoading=false;
+    _mosqueError='Location access denied. Please enable location in your browser settings.';
+    renderMosquePage();
+  },{timeout:10000});
+}
+
+function _haversine(lat1,lng1,lat2,lng2){
+  var R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ══════════════════════════════════════════════════════════════
+// NIGHT / DAY THEME TOGGLE  (added to home page settings)
+// ══════════════════════════════════════════════════════════════
+var _qqTheme = localStorage.getItem('qq_theme')||'dark';
+function qqApplyTheme(t){
+  _qqTheme=t; localStorage.setItem('qq_theme',t);
+  if(t==='light'){
+    document.documentElement.style.setProperty('--bg','#f5f5f0');
+    document.documentElement.style.setProperty('--bg2','#eaeae5');
+    document.documentElement.style.setProperty('--white','#1a1a1a');
+    document.documentElement.style.setProperty('--grey','#555');
+    document.documentElement.style.setProperty('--greyd','#444');
+  } else {
+    document.documentElement.style.setProperty('--bg','#080c08');
+    document.documentElement.style.setProperty('--bg2','#0d120d');
+    document.documentElement.style.setProperty('--white','#f0f0f0');
+    document.documentElement.style.setProperty('--grey','#a0a8a0');
+    document.documentElement.style.setProperty('--greyd','#8a9288');
+  }
+}
+qqApplyTheme(_qqTheme);
+
 
 console.log('[QQ v38] Features loaded: Adhkaar · Institution · StopNote · PeerJS');
 </script>
