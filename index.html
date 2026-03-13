@@ -1160,6 +1160,7 @@ window._sbSaveAndTest = function(){
     <span class="nav-pill nav-pill-blue" data-page="listenrepeat" onclick="showPage('listenrepeat')">🎧 Listen &amp; Repeat</span>
     <span class="nav-pill nav-pill-green" data-page="beginner" onclick="showPage('beginner')">🌱 Beginners / Kids</span>
     <span class="nav-pill" data-page="adhkaar" onclick="showPage('adhkaar');renderAdhkaarPage();">📿 Adhkār</span>
+<span class="nav-pill" data-page="contact" onclick="showPage('contact')">📬 Contact</span>
     <span class="nav-pill nav-pill-teal" data-page="recitepractice" onclick="showPage('recitepractice')">🎙 Recite &amp; Compare</span>
 
     <div class="nav-divider" style="height:18px;margin:0 4px;"></div>
@@ -1286,7 +1287,8 @@ window._sbSaveAndTest = function(){
 <div id="page-games" class="hidden" style="padding:88px 16px 60px;"></div>
 <div id="page-hifdh" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
 <div id="page-tajweed" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
-<div id="page-adhkaar" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
+<div id="page-adhkaar" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
+<div id="page-contact" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div></div>
 <div id="page-daily" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
 <div id="page-leaderboard" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
 <div id="page-dashboard" class="hidden" style="padding:88px 16px 60px;max-width:1160px;margin:0 auto;"></div>
@@ -2929,6 +2931,51 @@ function renderHome(){
     </div>
 
     <!-- ── SUPPORT / KO-FI ── -->
+    <!-- PRAYER ALARM CARD -->
+    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);overflow:hidden;">
+      <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">🔔 Prayer Alarms</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;">Auto-call at each prayer time</div>
+        </div>
+        <button id="hp-adhan-toggle" onclick="qqToggleAdhan()" style="background:none;border:none;cursor:pointer;font-size:26px;line-height:1;">🔔</button>
+      </div>
+      <div id="hp-prayer-toggles" style="padding:0 16px 14px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- DAILY REMINDER CARD -->
+    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;">Daily Reminder</div>
+      <div style="font-family:Amiri,serif;font-size:17px;color:rgba(201,168,76,.8);direction:rtl;text-align:right;line-height:1.9;margin-bottom:8px;">اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.7;">O Allah, help me remember You, be grateful to You, and worship You in the best manner.</div>
+    </div>
+
+
+
+
+    <!-- CONTACT CARD -->
+    <div style="margin:0 14px 14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px;">📬 Contact Us</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="tel:+2349073528916" style="display:flex;align-items:center;gap:12px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);border-radius:12px;padding:12px 14px;text-decoration:none;">
+          <span style="font-size:22px;">📞</span>
+          <div><div style="font-size:10px;color:rgba(255,255,255,.35);">Phone / WhatsApp</div><div style="font-size:13px;color:#2ecc71;font-weight:600;">+234 907 352 8916</div></div>
+        </a>
+        <a href="mailto:quranquest111@gmail.com" style="display:flex;align-items:center;gap:12px;background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.2);border-radius:12px;padding:12px 14px;text-decoration:none;">
+          <span style="font-size:22px;">✉️</span>
+          <div><div style="font-size:10px;color:rgba(255,255,255,.35);">Email</div><div style="font-size:13px;color:#74b9ff;font-weight:600;">quranquest111@gmail.com</div></div>
+        </a>
+        <a href="https://wa.me/2349073528916" target="_blank" style="display:flex;align-items:center;gap:12px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);border-radius:12px;padding:12px 14px;text-decoration:none;">
+          <span style="font-size:22px;">💬</span>
+          <div><div style="font-size:10px;color:rgba(255,255,255,.35);">WhatsApp</div><div style="font-size:13px;color:#25d366;font-weight:600;">Chat on WhatsApp</div></div>
+        </a>
+        <a href="https://www.facebook.com/abuzaydinstitute" target="_blank" style="display:flex;align-items:center;gap:12px;background:rgba(59,89,152,.1);border:1px solid rgba(59,89,152,.3);border-radius:12px;padding:12px 14px;text-decoration:none;">
+          <span style="font-size:22px;">📘</span>
+          <div><div style="font-size:10px;color:rgba(255,255,255,.35);">Facebook</div><div style="font-size:13px;color:#6f9fff;font-weight:600;">Abuzayd Institute</div></div>
+        </a>
+      </div>
+    </div>
+
     <div style="padding:0 14px;text-align:center;">
       <p style="color:rgba(255,255,255,.2);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Free app — support its growth</p>
       <a href="https://ko-fi.com/adamusuleiman" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);color:#c9a84c;padding:10px 22px;border-radius:25px;font-weight:700;font-size:12px;text-decoration:none;">☕ Support on Ko-fi — Sadaqah Jariyah</a>
@@ -2972,6 +3019,7 @@ function renderHome(){
       const rtimes=document.getElementById('home-ramadan-times');
       if(isRamadan&&banner){ banner.style.display='block'; }
       if(isRamadan&&rtimes){ rtimes.textContent='Suhoor ends: '+_hhMM(T.Fajr)+' · Iftar: '+_hhMM(T.Maghrib); }
+      if(typeof qqStartAdhanLoop==='function') qqStartAdhanLoop(T);
     }).catch(()=>{
       const row=document.getElementById('hp-times-row');
       if(row) row.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.25);">Prayer times unavailable offline</div>';
@@ -2986,6 +3034,21 @@ function renderHome(){
       if(ar) ar.textContent=todayVerse.arabic||'…';
       if(tr) tr.textContent=(todayVerse.translation||'').slice(0,100)+(todayVerse.translation&&todayVerse.translation.length>100?'…':'');
     }
+  })();
+
+  // Prayer alarm pills
+  (function(){
+    var pp=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+    var master=localStorage.getItem('qq_adhan_master')!=='off';
+    var tog=document.getElementById('hp-adhan-toggle');
+    if(tog) tog.textContent=master?'🔔':'🔕';
+    var row=document.getElementById('hp-prayer-toggles');
+    if(!row) return;
+    row.innerHTML=pp.map(function(p){
+      var on=localStorage.getItem('qq_adhan_'+p.toLowerCase())!=='off';
+      var a=on&&master;
+      return '<button data-p="'+p+'" onclick="qqTogglePrayer(this.dataset.p)" style="padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:'+(a?'rgba(26,122,60,.4)':'rgba(255,255,255,.06)')+';color:'+(a?'#2ecc71':'rgba(255,255,255,.3)')+';">'+(a?'🔔 ':'🔕 ')+p+'</button>';
+    }).join('');
   })();
 }
 
@@ -5918,6 +5981,8 @@ function generateClassCode(){
     const newId = Math.max(0,...teacherGroups.map(g=>g.id))+1;
     teacherGroups.push({id:newId, name:'Class '+code, students:[], color:'var(--em)', code});
     saveTData();
+    try{ localStorage.setItem('qq_teacher_class_code', code); }catch(e){}
+    if(currentUser) currentUser.classCode = code;
     showToast('✅ Class code: '+code+' — Share with students!');
     renderDashboard();
   }).catch(function(){ showToast('❌ Could not create class. Check internet.'); });
@@ -5951,6 +6016,24 @@ function _startClassListener(code){
   fbListenClass(code, function(cls){
     var prev = JSON.stringify(_liveClassData);
     _liveClassData = cls;
+
+    // ── Sync Supabase students into teacherGroups local list ──
+    if(cls && cls.students && currentUser && currentUser.role === 'teacher'){
+      var remoteNames = Object.values(cls.students).map(function(s){ return s.name || s; }).filter(Boolean);
+      var grp = teacherGroups.find(function(g){ return g.code === code; });
+      if(!grp){
+        // Create group entry for this class code if missing
+        var newId = Math.max(0, ...teacherGroups.map(function(g){ return g.id||0; })) + 1;
+        grp = {id: newId, name: 'Class '+code, students: [], color: 'var(--em)', code: code};
+        teacherGroups.push(grp);
+      }
+      // Merge remote students in (don't remove manually-added ones)
+      remoteNames.forEach(function(n){
+        if(!grp.students.includes(n)) grp.students.push(n);
+      });
+      saveTData();
+    }
+
     var changed = JSON.stringify(cls) !== prev;
     if(!changed) return; // nothing changed, skip re-render
     // Check for screen share notifications
@@ -6073,6 +6156,15 @@ function saveTData(){
 function loadTData(){
   try{ const g=localStorage.getItem('qq_tgroups'); if(g) teacherGroups=JSON.parse(g); }catch(e){}
   try{ const a=localStorage.getItem('qq_tassign'); if(a) teacherAssignments=JSON.parse(a); }catch(e){}
+  // Restore teacher's class code into currentUser if available
+  try{
+    var savedCode=localStorage.getItem('qq_teacher_class_code');
+    if(savedCode && currentUser && !currentUser.classCode) currentUser.classCode=savedCode;
+    // Also ensure the saved groups have the code populated
+    if(savedCode && teacherGroups.length && !teacherGroups.find(function(g){return g.code;})){
+      teacherGroups[0].code = savedCode;
+    }
+  }catch(e){}
 }
 
 
@@ -7072,6 +7164,21 @@ function renderTeacherOverview(){
   const allStudentNames = [...new Set(teacherGroups.flatMap(g=>g.students))];
   return `
     ${renderTeacherNavTabs()}
+    <!-- Class code banner -->
+    ${_tCode ? `
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(26,122,60,.12);border:1px solid rgba(26,122,60,.35);border-radius:14px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap;">
+      <span style="font-size:13px;color:rgba(255,255,255,.5);">Your class code:</span>
+      <span id="teacher-code-display" style="font-family:monospace;font-size:18px;font-weight:700;color:#2ecc71;letter-spacing:3px;">${_tCode}</span>
+      <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${_tCode}').then(function(){showToast('✅ Code copied: ${_tCode}');}).catch(function(){showToast('Code: ${_tCode}');})" style="background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.4);color:#2ecc71;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">📋 Copy</button>
+      <span style="font-size:11px;color:rgba(255,255,255,.3);">Share this with students to join your class</span>
+    </div>` : `
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);border-radius:14px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap;">
+      <span style="font-size:20px;">⚠️</span>
+      <div>
+        <div style="font-size:13px;color:#e74c3c;font-weight:700;">No class created yet</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Go to the <strong style="color:rgba(255,255,255,.6);">Groups</strong> tab → Create a class to get your class code</div>
+      </div>
+    </div>`}
     <!-- Quick stats -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:22px;">
       ${[["👥",totalStudents,"Students","var(--em)"],["🏫",teacherGroups.length,"Groups","#3498db"],["📋",activeA,"Assignments","var(--gold)"],["📊",avgScore+"%","Avg Score","#9b59b6"]].map(([ic,v,l,c])=>`
@@ -7672,10 +7779,25 @@ function saveTeacherReminders(){
 // ── Resolve class code for a contact by name (teacher uses groups, student uses myClassCode) ──
 function _resolveCallCode(targetName){
   if(currentUser && currentUser.role === 'teacher'){
+    // 1. Try group that contains this student and has a code
     var grp = teacherGroups.find(function(g){ return g.students && g.students.includes(targetName) && g.code; });
-    return grp ? grp.code : (teacherGroups.find(function(g){return g.code;})||{}).code || null;
+    if(grp) return grp.code;
+    // 2. Try any group with a code
+    var anyGrp = teacherGroups.find(function(g){ return g.code; });
+    if(anyGrp) return anyGrp.code;
+    // 3. Try teacher's own class code saved on profile
+    if(currentUser.classCode) return currentUser.classCode;
+    // 4. Try myClassCode global
+    if(typeof myClassCode!=='undefined' && myClassCode) return myClassCode;
+    // 5. Try localStorage directly
+    try{
+      var saved = localStorage.getItem('qq_teacher_class_code');
+      if(saved) return saved;
+    }catch(e){}
+    return null;
   }
-  return myClassCode || null;
+  // Student
+  return myClassCode || (currentUser && currentUser.classCode) || null;
 }
 
 // ── Direct call by name — no code required ──
@@ -7693,54 +7815,86 @@ function _getPresenceSnapshot(cb){
 // ── Render teacher call tab: live presence contact list ──
 function renderTeacherCallTab(){
   maybeStartCallPoller();
-  var allStudents = Array.from(new Set(teacherGroups.flatMap(function(g){return g.students||[];})));
-  var now = Date.now();
 
-  // Build presence map from known online cache
-  function _isOnline(name){
-    return !!_presenceKnownOnline[name];
+  // ── Build student list from ALL sources ──
+  // Priority: 1) Supabase live data, 2) local teacherGroups
+  var liveStudents = [];
+  if(_liveClassData && _liveClassData.students){
+    liveStudents = Object.values(_liveClassData.students)
+      .map(function(s){ return (typeof s==='object' ? s.name : s) || ''; })
+      .filter(Boolean);
   }
 
+  // Merge into teacherGroups so future renders work too
+  var myCode = (currentUser&&currentUser.classCode)
+    || (teacherGroups.find(function(g){return g.code;})||{}).code
+    || (function(){ try{ return localStorage.getItem('qq_teacher_class_code'); }catch(e){return null;} })();
+
+  if(myCode && liveStudents.length){
+    var grp = teacherGroups.find(function(g){ return g.code===myCode; });
+    if(!grp){
+      var nid = Math.max(0,...teacherGroups.map(function(g){return g.id||0;}))+1;
+      grp = {id:nid, name:'Class '+myCode, students:[], color:'var(--em)', code:myCode};
+      teacherGroups.push(grp);
+    }
+    liveStudents.forEach(function(n){ if(!grp.students.includes(n)) grp.students.push(n); });
+    saveTData();
+  }
+
+  // Collect from all local groups (deduplicated)
+  var localStudents = Array.from(new Set(teacherGroups.flatMap(function(g){return g.students||[];})));
+
+  // Final merged list — live data wins, then local
+  var allStudents = Array.from(new Set(liveStudents.concat(localStudents)));
+
+  function _isOnline(name){ return !!_presenceKnownOnline[name]; }
   var online  = allStudents.filter(_isOnline);
   var offline = allStudents.filter(function(s){ return !_isOnline(s); });
   var sorted  = online.concat(offline);
 
+  function _getCode(s){
+    var grp2 = teacherGroups.find(function(g){ return g.students&&g.students.includes(s)&&g.code; });
+    return grp2 ? grp2.code : myCode;
+  }
+
   function _contactRow(s, isOnline){
-    var grp  = teacherGroups.find(function(g){ return g.students && g.students.includes(s) && g.code; });
-    var code = grp ? grp.code : null;
-    var initials = s.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-    var avatarBg = isOnline
-      ? 'linear-gradient(135deg,#1a7a3c,#27ae60)'
-      : 'linear-gradient(135deg,#2a3a2a,#3a4a3a)';
-    var statusDot = isOnline
-      ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2ecc71;box-shadow:0 0 8px #2ecc71;flex-shrink:0;" title="Online now"></span>'
-      : '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3a4a3a;flex-shrink:0;" title="Offline"></span>';
-    var statusLabel = isOnline
-      ? '<span style="color:#2ecc71;font-size:10px;font-weight:600;">● Online</span>'
-      : '<span style="color:var(--greyd);font-size:10px;">○ Offline</span>';
+    var code = _getCode(s);
+    var initials = s.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2)||'?';
     return `
     <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);" data-presence-row="${s}">
       <div style="position:relative;flex-shrink:0;">
-        <div style="width:44px;height:44px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;border:2px solid ${isOnline?'rgba(46,204,113,.5)':'transparent'};">${initials}</div>
-        <div style="position:absolute;bottom:1px;right:1px;">${statusDot}</div>
+        <div style="width:44px;height:44px;border-radius:50%;
+          background:${isOnline?'linear-gradient(135deg,#1a7a3c,#27ae60)':'linear-gradient(135deg,#2a3a2a,#3a4a3a)'};
+          display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;
+          border:2px solid ${isOnline?'rgba(46,204,113,.5)':'transparent'};">${initials}</div>
+        <div style="position:absolute;bottom:1px;right:1px;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+            background:${isOnline?'#2ecc71':'#3a4a3a'};
+            ${isOnline?'box-shadow:0 0 8px #2ecc71;':''}flex-shrink:0;"></span>
+        </div>
       </div>
       <div style="flex:1;min-width:0;">
         <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s}</div>
-        <div style="margin-top:2px;">${statusLabel}${code?'<span style="color:var(--greyd);font-size:10px;"> · '+code+'</span>':''}</div>
+        <div style="margin-top:2px;">
+          ${isOnline
+            ?'<span style="color:#2ecc71;font-size:10px;font-weight:600;">● Online</span>'
+            :'<span style="color:var(--greyd);font-size:10px;">○ Offline</span>'}
+          ${code?`<span style="color:var(--greyd);font-size:10px;"> · ${code}</span>`:''}
+        </div>
       </div>
       <div style="display:flex;gap:7px;flex-shrink:0;">
-        <button onclick="callDirect('${s}','voice')" title="Voice call"
-          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;
+        <button onclick="callDirect('${s}','voice')"
+          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;
           background:${isOnline?'linear-gradient(135deg,#1a7a3c,#27ae60)':'rgba(255,255,255,.07)'};
           color:${isOnline?'#fff':'var(--greyd)'};
-          box-shadow:${isOnline?'0 2px 12px rgba(46,204,113,.3)':'none'};">
+          ${isOnline?'box-shadow:0 2px 12px rgba(46,204,113,.3);':''}">
           📞 <span>${isOnline?'Call':'Voice'}</span>
         </button>
-        <button onclick="callDirect('${s}','video')" title="Video call"
-          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;
+        <button onclick="callDirect('${s}','video')"
+          style="display:flex;align-items:center;gap:5px;padding:8px 13px;border-radius:22px;border:none;cursor:pointer;font-size:12px;font-weight:600;
           background:${isOnline?'linear-gradient(135deg,#1a3d7a,#2980b9)':'rgba(255,255,255,.07)'};
           color:${isOnline?'#fff':'var(--greyd)'};
-          box-shadow:${isOnline?'0 2px 12px rgba(41,128,185,.3)':'none'};">
+          ${isOnline?'box-shadow:0 2px 12px rgba(41,128,185,.3);':''}">
           📹 <span>Video</span>
         </button>
       </div>
@@ -7749,87 +7903,55 @@ function renderTeacherCallTab(){
 
   return `
     ${renderTeacherNavTabs()}
-
-    <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
       <div>
         <h3 class="dp" style="color:var(--white);font-size:16px;margin-bottom:3px;">📞 Direct Calls</h3>
-        <p style="color:var(--greyd);font-size:12px;">Call any student directly — no code needed. Green means online now.</p>
+        <p style="color:var(--greyd);font-size:12px;">Call any student directly. Green = online now.</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:20px;padding:6px 14px;">
         <span style="width:8px;height:8px;border-radius:50%;background:#2ecc71;box-shadow:0 0 6px #2ecc71;display:inline-block;"></span>
-        <span style="color:#2ecc71;font-size:12px;font-weight:600;" id="call-tab-online-count">${online.length}</span>
+        <span style="color:#2ecc71;font-size:12px;font-weight:600;">${online.length}</span>
         <span style="color:var(--greyd);font-size:12px;"> online</span>
       </div>
     </div>
 
-    ${allStudents.length===0?`
-    <div class="card" style="padding:40px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:14px;">👥</div>
-      <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">No Students Yet</h4>
-      <p style="color:var(--greyd);font-size:13px;margin-bottom:18px;">Share your class code so students can join your class.</p>
-      <button class="btn btn-g" onclick="teacherSubTab='groups';renderDashboard()">👥 Go to Groups →</button>
-    </div>
-    `:`
-    <!-- Online now banner -->
-    ${online.length>0?`
-    <div style="background:linear-gradient(135deg,rgba(46,204,113,.12),rgba(26,122,60,.08));border:1px solid rgba(46,204,113,.25);border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:22px;">🟢</div>
-      <div>
-        <div style="color:#2ecc71;font-size:12px;font-weight:700;margin-bottom:2px;">${online.length} student${online.length!==1?'s':''} online right now</div>
-        <div style="color:var(--greyd);font-size:11px;">${online.slice(0,3).join(', ')}${online.length>3?' and '+(online.length-3)+' more':''}</div>
+    ${allStudents.length===0 ? `
+      <div class="card" style="padding:40px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:14px;">👥</div>
+        <h4 style="color:var(--goldl);font-size:15px;margin-bottom:8px;">No Students Yet</h4>
+        <p style="color:var(--greyd);font-size:13px;line-height:1.7;margin-bottom:18px;">
+          Students appear here once they join your class.<br>
+          Share your class code: <strong style="color:#2ecc71;font-family:monospace;letter-spacing:2px;">${myCode||'—'}</strong>
+        </p>
+        <button class="btn btn-g" onclick="teacherSubTab='groups';renderDashboard()">👥 Go to Groups →</button>
       </div>
-    </div>
-    `:''}
-
-    <!-- Contact list -->
-    <div class="card" style="padding:6px 20px 4px;">
-      ${online.length>0?`<div style="color:var(--greyd);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 0 6px;">Online Now · ${online.length}</div>`:''}
-      ${online.map(function(s){ return _contactRow(s,true); }).join('')}
-      ${offline.length>0&&online.length>0?`<div style="color:var(--greyd);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:16px 0 6px;">Offline · ${offline.length}</div>`:''}
-      ${offline.map(function(s){ return _contactRow(s,false); }).join('')}
-    </div>
-
-    <!-- Group notify -->
-    ${teacherGroups.filter(function(g){return g.code&&g.students&&g.students.length>0;}).length>0?`
-    <div class="card" style="padding:18px;margin-top:14px;">
-      <h4 style="color:var(--goldl);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">📢 Notify Whole Class</h4>
-      ${teacherGroups.filter(function(g){return g.code&&g.students&&g.students.length>0;}).map(function(g){
-        var onlineInGroup = (g.students||[]).filter(_isOnline).length;
-        return `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border-radius:12px;margin-bottom:8px;">
-          <div style="flex:1;">
-            <div style="color:var(--white);font-size:13px;font-weight:600;">${g.name}</div>
-            <div style="color:var(--greyd);font-size:11px;">${g.students.length} student${g.students.length!==1?'s':''}${onlineInGroup>0?' · <span style="color:#2ecc71;font-weight:600;">'+onlineInGroup+' online</span>':''}</div>
-          </div>
-          <button onclick="sendGroupCallNotification('${g.code}','${g.name}')"
-            style="padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--greyd);font-size:12px;cursor:pointer;">
-            📢 Notify All
-          </button>
-        </div>`;
-      }).join('')}
-    </div>
-    `:''}
+    ` : `
+      ${online.length>0?`
+      <div style="background:linear-gradient(135deg,rgba(46,204,113,.12),rgba(26,122,60,.08));border:1px solid rgba(46,204,113,.25);border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:22px;">🟢</div>
+        <div>
+          <div style="color:#2ecc71;font-size:12px;font-weight:700;margin-bottom:2px;">${online.length} student${online.length!==1?'s':''} online now</div>
+          <div style="color:var(--greyd);font-size:11px;">${online.slice(0,3).join(', ')}${online.length>3?' +more':''}</div>
+        </div>
+      </div>`:''}
+      <div class="card" style="padding:0 18px;">
+        ${sorted.map(function(s){ return _contactRow(s, _isOnline(s)); }).join('')}
+      </div>
     `}`;
 }
 
-function sendGroupCallNotification(classCode, className){
-  var teacherName = currentUser ? currentUser.name : 'Teacher';
-  _fbPush('classes/'+classCode+'/messages', {
-    from: teacherName, role: 'teacher', to: 'all',
-    msg: '📞 ' + teacherName + ' is starting a class session for ' + className + '! Open your dashboard to join.',
-    date: new Date().toISOString().slice(0,10),
-    time: new Date().toLocaleTimeString(),
-    read: false, isCallNotice: true
-  }).then(function(){ showToast('📢 All students in '+className+' have been notified!'); });
-}
 
 // ── Student call tab: teacher presence + direct call ──
 function renderStudentCallTab(){
   maybeStartCallPoller();
   var hasClass   = !!myClassCode;
   var classData  = _liveClassData;
-  var teacherName = classData ? classData.teacher : null;
+  var teacherName = (classData && classData.teacher) ? classData.teacher : null;
+  // Also try from groups
+  if(!teacherName && typeof teacherGroups!=='undefined'){
+    var myGrp = teacherGroups.find(function(g){ return g.code===myClassCode; });
+    if(myGrp && myGrp.teacherName) teacherName = myGrp.teacherName;
+  }
   var teacherOnline = teacherName ? !!_presenceKnownOnline[teacherName] : false;
 
   return `
@@ -19921,6 +20043,13 @@ function maybeStartCallPoller(){
   }
 
   if(!code){
+    // Last resort: check localStorage
+    try{
+      var lsCode=localStorage.getItem('qq_teacher_class_code');
+      if(lsCode) code=lsCode;
+    }catch(e){}
+  }
+  if(!code){
     setTimeout(maybeStartCallPoller,3000);
     return;
   }
@@ -20707,6 +20836,15 @@ function renderAdhkaarPage(catId) {
 (function patchShowPage() {
   var _orig = window.showPage;
   window.showPage = function(page) {
+    if (page === 'contact') {
+      document.querySelectorAll('[id^="page-"]').forEach(function(el) { el.classList.add('hidden'); });
+      var cp = document.getElementById('page-contact');
+      if (cp) cp.classList.remove('hidden');
+      document.querySelectorAll('.nav-pill').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('[data-page="contact"]').forEach(function(b) { b.classList.add('active'); });
+      renderContactPage();
+      return;
+    }
     if (page === 'adhkaar') {
       document.querySelectorAll('[id^="page-"]').forEach(function(el) { el.classList.add('hidden'); });
       var p = document.getElementById('page-adhkaar');
@@ -20830,6 +20968,149 @@ if (typeof _origRTP === 'function') {
     }, 150);
     return r;
   };
+}
+
+
+function renderContactPage() {
+  var page = document.getElementById('page-contact');
+  if (!page) return;
+  page.innerHTML = `
+    <div style="margin-bottom:28px;">
+      <div style="font-family:Cinzel,serif;font-size:24px;color:#c9a84c;margin-bottom:6px;">📬 Contact Us</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.45);">Reach the Abuzayd Institute team</div>
+    </div>
+
+    <!-- Institute card -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px 22px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1a7a3c,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">☽</div>
+        <div>
+          <div style="font-family:Cinzel,serif;font-size:15px;color:#c9a84c;font-weight:700;">Abuzayd Institute</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;">Islamic Education · Qur'ān · Tajweed</div>
+        </div>
+      </div>
+
+      <!-- Contact rows -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+
+        <a href="tel:+2348012345678" style="display:flex;align-items:center;gap:14px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
+          onmouseover="this.style.background='rgba(39,174,96,.16)'" onmouseout="this.style.background='rgba(39,174,96,.08)'">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(39,174,96,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📞</div>
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Phone / WhatsApp</div>
+            <div style="font-size:14px;color:#2ecc71;font-weight:600;">+234 801 234 5678</div>
+          </div>
+        </a>
+
+        <a href="mailto:abuzaydinstitute@gmail.com" style="display:flex;align-items:center;gap:14px;background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
+          onmouseover="this.style.background='rgba(52,152,219,.16)'" onmouseout="this.style.background='rgba(52,152,219,.08)'">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(52,152,219,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">✉️</div>
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Email</div>
+            <div style="font-size:14px;color:#74b9ff;font-weight:600;">abuzaydinstitute@gmail.com</div>
+          </div>
+        </a>
+
+        <a href="https://www.facebook.com/abuzaydinstitute" target="_blank" style="display:flex;align-items:center;gap:14px;background:rgba(59,89,152,.12);border:1px solid rgba(59,89,152,.35);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
+          onmouseover="this.style.background='rgba(59,89,152,.22)'" onmouseout="this.style.background='rgba(59,89,152,.12)'">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(59,89,152,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📘</div>
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Facebook</div>
+            <div style="font-size:14px;color:#6f9fff;font-weight:600;">Abuzayd Institute</div>
+          </div>
+        </a>
+
+        <a href="https://wa.me/2348012345678" target="_blank" style="display:flex;align-items:center;gap:14px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:14px;padding:14px 16px;text-decoration:none;transition:background .15s;"
+          onmouseover="this.style.background='rgba(37,211,102,.16)'" onmouseout="this.style.background='rgba(37,211,102,.08)'">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(37,211,102,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">💬</div>
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">WhatsApp</div>
+            <div style="font-size:14px;color:#25d366;font-weight:600;">Chat on WhatsApp</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Edit hint for teacher -->
+    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:14px;padding:14px 16px;text-align:center;">
+      <div style="font-size:12px;color:rgba(255,255,255,.3);line-height:1.7;">
+        ☽ &nbsp; Qur'ān Quest — Built with love for the Ummah &nbsp; ☽<br>
+        <span style="font-size:11px;color:rgba(255,255,255,.2);">Powered by Abuzayd Institute · Free Islamic Education</span>
+      </div>
+    </div>
+  `;
+}
+
+// PRAYER ALARM SYSTEM
+var _qqAdhanLoop=null,_qqLastFired={};
+function qqToggleAdhan(){
+  var on=localStorage.getItem('qq_adhan_master')!=='off';
+  localStorage.setItem('qq_adhan_master',on?'off':'on');
+  var tog=document.getElementById('hp-adhan-toggle');
+  if(tog) tog.textContent=on?'🔕':'🔔';
+  if(typeof showToast==='function') showToast(on?'🔕 Alarms OFF':'🔔 Alarms ON');
+  ['Fajr','Dhuhr','Asr','Maghrib','Isha'].forEach(function(p){
+    var btn=document.querySelector('[data-p="'+p+'"]');
+    if(!btn) return;
+    var pon=localStorage.getItem('qq_adhan_'+p.toLowerCase())!=='off';
+    var a=pon&&!on;
+    btn.style.background=a?'rgba(26,122,60,.4)':'rgba(255,255,255,.06)';
+    btn.style.color=a?'#2ecc71':'rgba(255,255,255,.3)';
+    btn.textContent=(a?'🔔 ':'🔕 ')+p;
+  });
+}
+function qqTogglePrayer(p){
+  var key='qq_adhan_'+p.toLowerCase();
+  var on=localStorage.getItem(key)!=='off';
+  localStorage.setItem(key,on?'off':'on');
+  var master=localStorage.getItem('qq_adhan_master')!=='off';
+  var btn=document.querySelector('[data-p="'+p+'"]');
+  var nowOn=!on;
+  if(btn){var a=nowOn&&master;btn.style.background=a?'rgba(26,122,60,.4)':'rgba(255,255,255,.06)';btn.style.color=a?'#2ecc71':'rgba(255,255,255,.3)';btn.textContent=(a?'🔔 ':'🔕 ')+p;}
+  if(typeof showToast==='function') showToast(p+(nowOn?' ON 🔔':' OFF 🔕'));
+}
+function qqStartAdhanLoop(times){
+  if(_qqAdhanLoop) clearInterval(_qqAdhanLoop);
+  window._qqPrayerTimes=times;
+  function _check(){
+    if(localStorage.getItem('qq_adhan_master')==='off') return;
+    var now=new Date();
+    var hhmm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    ['Fajr','Dhuhr','Asr','Maghrib','Isha'].forEach(function(p){
+      if(localStorage.getItem('qq_adhan_'+p.toLowerCase())==='off') return;
+      var t=((window._qqPrayerTimes||{})[p]||'').slice(0,5);
+      if(!t||t!==hhmm) return;
+      var fk=p+'_'+now.toDateString();
+      if(_qqLastFired[fk]) return;
+      _qqLastFired[fk]=true;
+      qqFireAdhan(p);
+    });
+  }
+  _check(); _qqAdhanLoop=setInterval(_check,30000);
+}
+function qqFireAdhan(name){
+  var em={Fajr:'🌅',Dhuhr:'🌞',Asr:'🌇',Maghrib:'🌆',Isha:'🌙'}[name]||'🕌';
+  if(typeof showInAppAlert==='function'){
+    showInAppAlert(em+' '+name+' Time!','Allahu Akbar! Time for '+name+' prayer. May Allah accept it.','var(--em)',15000);
+  } else if(typeof showToast==='function') showToast(em+' '+name+' time!');
+  if(window.Notification){
+    if(Notification.permission==='granted'){
+      new Notification(em+' '+name+' — Allahu Akbar!',{body:'Time for '+name+' prayer.',tag:'adhan-'+name,requireInteraction:true});
+    } else if(Notification.permission!=='denied') Notification.requestPermission();
+  }
+  if(window.speechSynthesis){
+    window.speechSynthesis.cancel();
+    var lines=['Allahu Akbar, Allahu Akbar.','Ash-hadu an la ilaha ill Allah.','Time for '+name+' prayer.','May Allah accept your prayer. Ameen.'];
+    var i=0;
+    function next(){
+      if(i>=lines.length||localStorage.getItem('qq_adhan_master')==='off') return;
+      var u=new SpeechSynthesisUtterance(lines[i++]);
+      u.lang='en-US';u.rate=0.78;u.pitch=1.1;u.volume=1;u.onend=next;
+      window.speechSynthesis.speak(u);
+    }
+    next();
+  }
 }
 
 console.log('[QQ v38] Features loaded: Adhkaar · Institution · StopNote · PeerJS');
