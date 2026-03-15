@@ -22,6 +22,8 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--white);font-family:'Lato',sans-serif;overflow-x:hidden;}
+[id^="page-"]{animation:qqFadeIn .25s ease;}
+@keyframes qqFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--em);border-radius:3px;}
 .ar{font-family:'Amiri',serif;direction:rtl;unicode-bidi:bidi-override;}
 .dp{font-family:'Cinzel',serif;}
@@ -67,15 +69,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 .nav-pill-row::-webkit-scrollbar{display:none;}
 /* ── NAV PILL TABS (Tier-2 row) ── */
 .nav-pill{
-  color:var(--grey);font-size:11px;letter-spacing:.9px;text-transform:uppercase;font-weight:700;
-  cursor:pointer;padding:5px 13px;border-radius:20px;border:1px solid transparent;
-  transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;
-  flex-shrink:0;
+  color:var(--text-secondary,#9aab9a);
+  font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:700;
+  cursor:pointer;padding:7px 15px;border-radius:99px;border:1px solid transparent;
+  transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;
+  flex-shrink:0;background:none;font-family:'Lato',sans-serif;
+}
+.nav-pill:hover{
+  background:rgba(255,255,255,.06);
+  color:var(--text-primary,#f0f0ec);
 }
 .nav-pill:hover{color:var(--goldl);background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.18);}
 .nav-pill.active{
-  color:#0a0e0a;background:linear-gradient(135deg,var(--gold),var(--goldl));
-  border-color:transparent;box-shadow:0 2px 10px rgba(201,168,76,.3);
+  background:rgba(26,122,60,.2);
+  border-color:rgba(26,122,60,.45);
+  color:var(--accent-green-l,#2ecc71);
 }
 /* Featured pill colours */
 .nav-pill-blue{
@@ -205,20 +213,30 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 /* Mobile menu */
 .mobile-menu{
-  display:none;position:fixed;top:62px;left:0;right:0;
-  background:rgba(6,10,6,.99);border-bottom:1px solid var(--border);
-  z-index:599;padding:12px 16px 20px;flex-direction:column;gap:3px;
-  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  position:fixed;top:50px;left:0;right:0;
+  background:rgba(8,12,8,.97);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  z-index:599;
+  overflow-y:auto;max-height:calc(100vh - 50px);
+  padding:12px 0 24px;
+  display:none;
 }
-.mobile-menu.open{display:flex;}
+.mobile-menu.open{display:block;}
 .mobile-section-label{
-  color:var(--greyd);font-size:9px;letter-spacing:2px;text-transform:uppercase;
-  font-weight:700;padding:10px 14px 4px;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--greyd,#4a5e4a);padding:14px 20px 6px;
 }
 .mobile-link{
-  color:var(--grey);font-size:13px;letter-spacing:.5px;font-weight:700;
-  cursor:pointer;padding:11px 16px;border-radius:10px;transition:all .2s;
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:12px;
+  color:var(--white);font-size:14px;font-weight:600;
+  cursor:pointer;padding:13px 20px;
+  border-radius:0;
+  transition:background .15s;
+  text-decoration:none;
+}
+.mobile-link:hover,.mobile-link:active{
+  background:rgba(255,255,255,.06);
 }
 .mobile-link:hover,.mobile-link.active{background:rgba(26,122,60,.18);color:var(--goldl);}
 .mobile-link.active{background:rgba(201,168,76,.12);color:var(--goldl);border-left:3px solid var(--gold);padding-left:13px;}
@@ -272,7 +290,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 .divG{height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);margin:20px 0;}
 .divE{height:1px;background:linear-gradient(to right,transparent,var(--em),transparent);margin:24px 0;}
 .geo{background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%231a7a3c' stroke-width='0.5' opacity='0.2'%3E%3Cpolygon points='40,2 78,21 78,59 40,78 2,59 2,21'/%3E%3Cpolygon points='40,16 64,28 64,52 40,64 16,52 16,28'/%3E%3Cline x1='40' y1='2' x2='40' y2='78'/%3E%3Cline x1='2' y1='40' x2='78' y2='40'/%3E%3C/g%3E%3C/svg%3E");background-size:80px 80px;}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.stat-card{
+  background:var(--card-bg,#131a13);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:16px 12px;
+  text-align:center;
+  transition:border-color .18s;
+}
+.stat-card:hover{border-color:rgba(26,122,60,.3);}
 .section-head{text-align:center;margin-bottom:40px;}
 .section-head .badge{margin-bottom:14px;}
 .section-head h2{font-family:'Cinzel',serif;font-size:clamp(18px,4vw,32px);letter-spacing:2px;color:var(--white);margin-bottom:12px;}
@@ -316,15 +341,234 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
 .bq-content{max-width:1080px;margin:0 auto;padding:32px 16px 60px;}
 
 /* Letter card grid */
-.bq-letter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:12px;}
-.bq-letter-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 8px;cursor:pointer;transition:all .25s;text-align:center;position:relative;user-select:none;}
-.bq-letter-card:hover{border-color:var(--em);background:var(--cardh);transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,122,60,.18);}
-.bq-letter-card.mastered{border-color:rgba(46,204,113,.5);background:rgba(46,204,113,.07);}
-.bq-letter-card.active-card{border-color:var(--gold);background:rgba(201,168,76,.08);box-shadow:0 0 0 3px rgba(201,168,76,.2);}
-.bq-letter-card .bq-ar{font-family:'Amiri',serif;font-size:38px;color:var(--white);line-height:1.1;direction:rtl;}
-.bq-letter-card .bq-en{font-size:10px;color:var(--greyd);letter-spacing:.8px;text-transform:uppercase;margin-top:4px;}
-.bq-letter-card .bq-trans{font-size:11px;color:var(--gold);font-weight:700;margin-top:2px;}
-.bq-letter-card .bq-done-badge{position:absolute;top:6px;right:7px;font-size:11px;}
+/* ══ BEGINNER SECTION — Moodle-style card layout ══ */
+
+/* Outer grid — 4 cols desktop, 3 tablet, 2 mobile */
+/* ══════════════════════════════════════════════════
+   BEGINNER SECTION — Moodle-inspired card layout
+   All letter tiles + detail cards + stage nav
+   ══════════════════════════════════════════════════ */
+
+/* ── Section header bar (like Moodle topic heading) ── */
+.bq-section-header{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:#fff;
+  border:1px solid #dde0d8;
+  border-left:6px solid #c9a84c;
+  border-radius:6px;
+  padding:14px 18px;
+  margin-bottom:18px;
+  color:#222;
+}
+.bq-sec-icon{ font-size:26px; flex-shrink:0; }
+.bq-sec-title{
+  font-family:Cinzel,serif;font-size:16px;font-weight:700;
+  color:#1a1a1a;letter-spacing:.5px;
+}
+.bq-sec-sub{ font-size:12px;color:#666;margin-top:3px; }
+
+/* ── Breadcrumb ── */
+.bq-breadcrumb{
+  font-size:11px;color:#888;margin-bottom:14px;padding:0 2px;
+}
+.bq-breadcrumb .active-crumb{ color:#1a7a3c;font-weight:700; }
+
+/* ── Letter tiles grid ── */
+.bq-letter-grid-new{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+@media(max-width:720px){ .bq-letter-grid-new{grid-template-columns:repeat(3,1fr);gap:11px;} }
+@media(max-width:420px){ .bq-letter-grid-new{grid-template-columns:repeat(2,1fr);gap:9px;} }
+
+/* Each letter tile */
+.bq-letter-tile{
+  background:#ffffff;
+  border:1.5px solid #dde0d8;
+  border-top:5px solid #c9a84c;
+  border-radius:6px;
+  padding:0;
+  cursor:pointer;
+  transition:box-shadow .18s,transform .18s,border-top-color .18s;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  user-select:none;
+}
+.bq-letter-tile:hover{
+  box-shadow:0 5px 18px rgba(0,0,0,.12);
+  transform:translateY(-2px);
+}
+.bq-letter-tile.mastered{
+  border-top-color:#2ecc71;
+  background:#f3fbf6;
+  border-color:rgba(46,204,113,.35);
+}
+.bq-letter-tile.selected{
+  border-top-color:var(--gold,#c9a84c);
+  background:#fffdf0;
+  border-color:rgba(201,168,76,.5);
+  box-shadow:0 0 0 3px rgba(201,168,76,.18);
+}
+
+/* Card number (top-left) */
+.tile-num{
+  position:absolute;top:6px;left:7px;
+  font-size:9px;font-weight:700;color:rgba(0,0,0,.25);
+  font-family:Lato,sans-serif;letter-spacing:.3px;line-height:1;
+}
+/* Mastered tick (top-right) */
+.tile-done{
+  position:absolute;top:4px;right:6px;font-size:12px;line-height:1;
+}
+/* Arabic letter */
+.tile-ar{
+  font-family:'Amiri',serif;
+  line-height:1.1;
+  direction:rtl;
+  padding:22px 6px 6px;
+  display:block;
+}
+/* English name */
+.tile-name{
+  font-size:10px;color:#444;
+  letter-spacing:.7px;text-transform:uppercase;
+  font-weight:700;font-family:Lato,sans-serif;
+  padding:0 4px 2px;display:block;
+}
+/* Transliteration */
+.tile-trans{
+  font-size:10px;color:#1a7a3c;
+  font-weight:700;font-family:Lato,sans-serif;
+  padding:0 4px 0;display:block;
+}
+/* Makhraj footer strip */
+.tile-footer{
+  background:#f7f7f5;
+  border-top:1px solid #e8e8e4;
+  padding:4px 5px;
+  font-size:8px;color:#999;
+  letter-spacing:.4px;text-transform:uppercase;
+  font-family:Lato,sans-serif;
+  margin-top:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ── Letter detail card ── */
+.bq-detail{
+  background:#fff;
+  border:1px solid #dde0d8;
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:22px;
+  color:#222;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);
+}
+
+/* ── Forms row ── */
+.bq-forms-row{
+  display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;
+}
+.bq-form-box{
+  background:#f7f7f5;border:1px solid #e0e0da;border-radius:8px;
+  padding:10px 14px;text-align:center;min-width:70px;
+}
+.bq-form-ar{
+  font-family:'Amiri',serif;font-size:28px;color:var(--em,#1a7a3c);
+  direction:rtl;line-height:1.2;
+}
+.bq-form-lbl{
+  font-size:10px;color:#888;margin-top:4px;
+  text-transform:uppercase;letter-spacing:.5px;font-family:Lato,sans-serif;
+}
+
+/* ── Stage navigation bar ── */
+.bq-stage-bar{
+  display:flex;align-items:center;flex-wrap:wrap;
+  gap:4px;justify-content:center;
+  margin-top:16px;
+  background:#fff;
+  border:1px solid #dde0d8;
+  border-radius:8px;
+  padding:10px 14px;
+}
+.bq-stage-pill{ display:flex;align-items:center;gap:4px; }
+.bq-stage-arrow{ color:#bbb;font-size:16px;font-weight:300; }
+.bq-stage-btn{
+  background:#f5f5f3;border:1px solid #ddd;color:#555;
+  border-radius:20px;padding:6px 14px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  font-family:Lato,sans-serif;white-space:nowrap;
+  transition:background .15s,color .15s;
+}
+.bq-stage-btn:hover{ background:#e8e8e4;color:#222; }
+.bq-stage-btn.active{
+  background:#1a7a3c;border-color:#1a7a3c;color:#fff;
+}
+.bq-stage-btn.done{
+  background:#f0fbf4;border-color:rgba(46,204,113,.4);color:#1a7a3c;
+}
+
+/* ── Stage selector (used in other stages) ── */
+.bq-stage-selector{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;
+}
+.bq-stage-sel-btn{
+  background:#f5f5f3;border:1px solid #ddd;color:#555;
+  border-radius:20px;padding:6px 16px;
+  font-size:11px;font-weight:600;cursor:pointer;font-family:Lato,sans-serif;
+}
+.bq-stage-sel-btn.active{ background:#1a7a3c;border-color:#1a7a3c;color:#fff; }
+
+/* ── Quiz card ── */
+.bq-quiz-card{
+  background:#fff;
+  border:1px solid #dde0d8;
+  border-top:5px solid #3498db;
+  border-radius:8px;
+  padding:24px 22px;
+  margin-bottom:18px;
+  color:#222;
+}
+.bq-quiz-opts{ display:flex;flex-direction:column;gap:10px;margin-top:16px; }
+.bq-opts-grid{ display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px; }
+@media(max-width:480px){ .bq-opts-grid{grid-template-columns:1fr;} }
+
+/* ── Hero ── */
+.bq-hero{
+  text-align:center;padding:28px 20px 20px;
+  background:linear-gradient(135deg,rgba(26,122,60,.06) 0%,rgba(201,168,76,.05) 100%);
+  border-radius:12px;margin-bottom:20px;
+}
+
+/* ── Content wrapper ── */
+.bq-content{
+  max-width:900px;margin:0 auto;padding:0 4px 40px;
+}
+
+/* ── Legacy grid (used elsewhere) ── */
+.bq-letter-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+@media(max-width:700px){ .bq-letter-grid{grid-template-columns:repeat(3,1fr);gap:11px;} }
+@media(max-width:420px){ .bq-letter-grid{grid-template-columns:repeat(2,1fr);gap:9px;} }
+.bq-letter-card{
+  background:#fff;border:1.5px solid #dde0d8;border-top:5px solid #c9a84c;
+  border-radius:6px;padding:0;cursor:pointer;
+  transition:box-shadow .18s,transform .18s;
+  text-align:center;position:relative;overflow:hidden;user-select:none;
+}
+.bq-letter-card:hover{ box-shadow:0 5px 18px rgba(0,0,0,.12);transform:translateY(-2px); }
+.bq-letter-card.mastered{ border-top-color:#2ecc71;background:#f3fbf6;border-color:rgba(46,204,113,.35); }
+.bq-letter-card.active-card{ border-top-color:var(--gold,#c9a84c);background:#fffdf0;box-shadow:0 0 0 3px rgba(201,168,76,.18); }
+.bq-letter-card .bq-ar{ font-family:'Amiri',serif;font-size:44px;line-height:1.1;direction:rtl;padding:20px 6px 6px;display:block; }
+.bq-letter-card .bq-en{ font-size:10px;color:#444;letter-spacing:.7px;text-transform:uppercase;font-weight:700;padding:0 4px 2px;display:block; }
+.bq-letter-card .bq-trans{ font-size:10px;color:#1a7a3c;font-weight:700;padding:0 4px 4px;display:block; }
+.bq-letter-card .bq-done-badge{ position:absolute;top:5px;right:6px;font-size:12px; }
+.bq-card-footer{ background:#f7f7f5;border-top:1px solid #e8e8e4;padding:4px 5px;font-size:8px;color:#999;letter-spacing:.4px;text-transform:uppercase; }
 
 /* ── BEGINNER ASSIGNMENT SYSTEM ── */
 .bq-assign-hero{background:linear-gradient(135deg,rgba(201,168,76,.08) 0%,rgba(26,122,60,.12) 100%);border:1px solid rgba(201,168,76,.2);border-radius:16px;padding:24px;margin-bottom:24px;position:relative;overflow:hidden;}
@@ -382,6 +626,273 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   transition:background .2s;
   user-select:none;
 }
+/* ══════════════════════════════════════════════
+   MOODLE-STYLE BEGINNER SECTION LAYOUT
+   ══════════════════════════════════════════════ */
+
+/* Outer page wrapper */
+.bq-page-wrap{
+  max-width:780px;margin:0 auto;padding:0 14px 60px;
+}
+
+/* Section header — like Moodle breadcrumb bar */
+.bq-section-header{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 20px;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:14px;
+}
+.bq-section-header .bq-sec-icon{
+  font-size:28px;flex-shrink:0;
+}
+.bq-section-header .bq-sec-title{
+  font-family:Cinzel,serif;font-size:16px;color:var(--goldl);
+  font-weight:700;letter-spacing:1.5px;margin-bottom:2px;
+}
+.bq-section-header .bq-sec-sub{
+  font-size:12px;color:rgba(255,255,255,.4);line-height:1.4;
+}
+
+/* Numbered question card — the core Moodle unit */
+.bq-qcard{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  margin-bottom:16px;
+  overflow:hidden;
+  transition:border-color .2s;
+}
+.bq-qcard:hover{ border-color:rgba(201,168,76,.3); }
+.bq-qcard.mastered-card{ border-left:4px solid var(--em); }
+.bq-qcard.active-card{ border:2px solid var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,.12); }
+
+/* Card header strip — "Letter 1" / "Question 3" */
+.bq-qcard-header{
+  background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--border);
+  padding:10px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;
+}
+.bq-qcard-num{
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.35);
+  text-transform:uppercase;letter-spacing:1.2px;
+}
+.bq-qcard-status{
+  font-size:11px;font-weight:700;
+}
+.bq-qcard-status.not-answered{ color:rgba(255,255,255,.3); }
+.bq-qcard-status.mastered-status{ color:var(--emb); }
+.bq-qcard-status.active-status{ color:var(--goldl); }
+
+/* Card body */
+.bq-qcard-body{
+  padding:20px 20px 18px;
+}
+
+/* The big Arabic letter display inside a card */
+.bq-qcard-letter{
+  font-family:'Amiri',serif;
+  line-height:1;
+  direction:rtl;
+  text-align:center;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:transform .15s;
+}
+.bq-qcard-letter:hover{ transform:scale(1.05); }
+
+/* Letter meta row: name + transliteration + origin */
+.bq-qcard-meta{
+  display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:8px;margin-bottom:14px;
+}
+.bq-qcard-name{
+  font-family:Cinzel,serif;font-size:15px;color:var(--white);font-weight:700;
+}
+.bq-qcard-trans{
+  background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);
+  color:var(--goldl);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;
+}
+.bq-qcard-cat{
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:rgba(255,255,255,.4);border-radius:20px;padding:3px 10px;font-size:10px;
+}
+
+/* Answer options grid — 2 column like Moodle */
+.bq-opts-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:16px;
+}
+@media(max-width:480px){
+  .bq-opts-grid{ grid-template-columns:1fr; }
+}
+
+/* Single answer option */
+.bq-opt{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.04);
+  border:1.5px solid var(--border);
+  border-radius:10px;padding:11px 14px;
+  cursor:pointer;transition:all .18s;
+  font-size:13px;color:var(--white);
+  text-align:left;
+}
+.bq-opt:hover{ background:rgba(255,255,255,.08);border-color:rgba(201,168,76,.4); }
+.bq-opt.correct{ background:rgba(46,204,113,.12);border-color:var(--em);color:var(--emb); }
+.bq-opt.wrong{   background:rgba(231,76,60,.08); border-color:#e74c3c;color:#e74c3c; }
+.bq-opt.selected{ background:rgba(201,168,76,.1); border-color:var(--gold); }
+
+/* Radio circle like Moodle */
+.bq-opt-radio{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.25);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s;
+}
+.bq-opt:hover .bq-opt-radio{ border-color:var(--gold); }
+.bq-opt.correct .bq-opt-radio{ border-color:var(--em);background:var(--em); }
+.bq-opt.wrong   .bq-opt-radio{ border-color:#e74c3c;background:#e74c3c; }
+.bq-opt.selected .bq-opt-radio{ border-color:var(--gold);background:var(--gold); }
+.bq-opt-radio-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#fff;display:none;
+}
+.bq-opt.correct .bq-opt-radio-dot,
+.bq-opt.wrong   .bq-opt-radio-dot,
+.bq-opt.selected .bq-opt-radio-dot{ display:block; }
+
+/* Arabic option text */
+.bq-opt.arabic-opt{
+  font-family:'Amiri',serif;font-size:26px;
+  direction:rtl;justify-content:center;
+}
+
+/* Action buttons row at bottom of card */
+.bq-qcard-actions{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:14px 20px;
+  border-top:1px solid var(--border);
+  background:rgba(255,255,255,.02);
+}
+
+/* Letter forms table — Moodle-style rows */
+.bq-forms-table{
+  width:100%;border-collapse:separate;border-spacing:0 8px;
+}
+.bq-forms-row{
+  background:var(--card);border-radius:10px;
+}
+.bq-forms-row td{
+  padding:12px 16px;border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.bq-forms-row td:first-child{
+  border-left:1px solid var(--border);border-radius:10px 0 0 10px;
+  border-left:4px solid var(--em);
+}
+.bq-forms-row td:last-child{
+  border-right:1px solid var(--border);border-radius:0 10px 10px 0;
+}
+.bq-forms-row:hover td{ background:rgba(255,255,255,.04); }
+
+/* Stage progress breadcrumb */
+.bq-breadcrumb{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(255,255,255,.35);
+  margin-bottom:20px;flex-wrap:wrap;
+}
+.bq-breadcrumb span{ color:rgba(255,255,255,.55); }
+.bq-breadcrumb .active-crumb{ color:var(--goldl);font-weight:700; }
+
+/* Quiz question card */
+.bq-quiz-qcard{
+  background:rgba(52,152,219,.06);
+  border:1px solid rgba(52,152,219,.2);
+  border-radius:14px;
+  padding:28px 24px;
+  margin-bottom:20px;
+  text-align:center;
+}
+.bq-quiz-prompt{
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.4);
+  text-transform:uppercase;letter-spacing:1.5px;margin-bottom:18px;
+}
+
+/* Letter grid — compact numbered */
+.bq-letter-grid-new{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+  gap:10px;
+  margin-bottom:24px;
+}
+.bq-letter-tile{
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:12px 8px 10px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+}
+.bq-letter-tile:hover{
+  border-color:var(--gold);
+  background:rgba(201,168,76,.06);
+  transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(201,168,76,.12);
+}
+.bq-letter-tile.mastered{
+  border-color:rgba(46,204,113,.5);
+  background:rgba(46,204,113,.06);
+}
+.bq-letter-tile.selected{
+  border-color:var(--gold);
+  background:rgba(201,168,76,.1);
+  box-shadow:0 0 0 3px rgba(201,168,76,.2);
+}
+.bq-letter-tile .tile-num{
+  position:absolute;top:6px;left:8px;
+  font-size:9px;color:rgba(255,255,255,.25);font-weight:700;
+}
+.bq-letter-tile .tile-done{
+  position:absolute;top:5px;right:6px;font-size:10px;
+}
+.bq-letter-tile .tile-ar{
+  font-family:'Amiri',serif;
+  line-height:1;direction:rtl;
+  margin-bottom:6px;
+}
+.bq-letter-tile .tile-name{
+  font-size:9px;color:rgba(255,255,255,.4);
+  text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:2px;
+}
+.bq-letter-tile .tile-trans{
+  font-size:10px;color:var(--goldl);font-weight:700;
+}
+
+/* Harakat group tabs */
+.bq-harak-tabs{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;
+}
+.bq-harak-tab{
+  padding:8px 16px;border-radius:20px;cursor:pointer;
+  font-size:12px;font-weight:700;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);
+  transition:all .18s;
+}
+.bq-harak-tab.active{
+  color:#fff;border-color:transparent;
+}
+
+/* ── END MOODLE BQ CSS ── */
+
 .bq-toolbar-tab:hover{background:rgba(20,34,20,.99);}
 .bq-toolbar-tab-icon{font-size:18px;line-height:1;}
 .bq-toolbar-tab-label{
@@ -553,40 +1064,270 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .hamburger{display:flex!important;}
   .hide-mob{display:none!important;}
 
-  .nav-inner{padding:0 10px!important;height:50px!important;}
+  .nav-inner{padding:0 12px!important;height:50px!important;}
   .logo-text{font-size:13px!important;}
   .logo-icon{font-size:17px!important;}
 
-  /* Scrollable actions row */
+  /* Actions row — flex, no overflow scroll */
   .nav-actions{
-    overflow-x:auto;overflow-y:hidden;
-    scrollbar-width:none;flex-wrap:nowrap;gap:4px!important;
-  }
-  .nav-actions::-webkit-scrollbar{display:none;}
-
-  /* Hamburger fixed right */
-  .hamburger{
-    position:sticky!important;right:0;flex-shrink:0!important;
-    background:var(--bg,#080c08);z-index:2;margin-left:2px;
+    gap:6px!important;
+    flex-wrap:nowrap;
+    flex-shrink:0;
   }
 
-  /* Compact all icon buttons */
+  /* Secondary tools (reciter, DB, teacher) hidden on small screens */
+  .nav-secondary-tools{display:none!important;}
+
+  /* Auth + hamburger always visible */
+  #nav-auth{display:flex!important;align-items:center;gap:5px!important;flex-shrink:0!important;}
+  .hamburger{flex-shrink:0!important;margin-left:4px!important;}
+
+  /* Compact auth buttons — show Login text on all phones */
   .nav-icon-btn,.nav-auth-btn{
-    font-size:9px!important;padding:4px 7px!important;
-    border-radius:6px!important;
+    font-size:10px!important;padding:5px 9px!important;
+    border-radius:7px!important;
   }
 
-  /* Hide text labels on mobile — show icons only */
+  /* Hide labels on nav-secondary-tools only (already hidden), keep login label */
   .nav-label-text{display:none!important;}
+  .nav-login-btn .nav-label-text,
+  .nav-login-btn span:last-child{display:inline!important;}
 
   /* Avatar compact */
-  .avatar{width:26px!important;height:26px!important;font-size:10px!important;}
+  .avatar{width:28px!important;height:28px!important;font-size:11px!important;}
+}
+
+/* Show secondary tools on tablet+ */
+.nav-secondary-tools{display:flex;align-items:center;gap:6px;}
+
+@media(min-width:901px){
+  .nav-secondary-tools{display:flex!important;}
 }
 @media(max-width:400px){
-  .nav-icon-btn,.nav-auth-btn{font-size:8px!important;padding:3px 5px!important;}
-  .logo-text{font-size:11px!important;}
-  .avatar{width:22px!important;height:22px!important;}
+  .nav-icon-btn,.nav-auth-btn{font-size:10px!important;padding:5px 8px!important;}
+  .logo-text{font-size:12px!important;letter-spacing:1px!important;}
+  .avatar{width:26px!important;height:26px!important;}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PRAYER-TIMES-NIGERIA STYLE — MOBILE APP SHELL
+   Bottom tab bar + slide-up drawer + slim top header
+   Only applies on mobile (≤900px). Desktop unchanged.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Bottom Tab Bar ── */
+#qq-bottom-nav{
+  display:none; /* shown via media query */
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:62px;
+  background:rgba(6,10,6,.98);
+  backdrop-filter:blur(24px);
+  border-top:1px solid rgba(255,255,255,.09);
+  z-index:620;
+  align-items:stretch;
+  box-shadow:0 -4px 24px rgba(0,0,0,.5);
+}
+.qq-bn-tab{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:4px;
+  cursor:pointer;
+  position:relative;
+  border:none;background:none;
+  padding:6px 2px 8px;
+  transition:opacity .15s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:'Lato',sans-serif;
+}
+.qq-bn-tab:active{opacity:.7;}
+.qq-bn-icon{
+  font-size:20px;line-height:1;
+  transition:transform .18s;
+}
+.qq-bn-tab.active .qq-bn-icon{
+  transform:translateY(-2px);
+}
+.qq-bn-label{
+  font-size:9px;font-weight:700;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.4);
+  line-height:1;
+}
+.qq-bn-tab.active .qq-bn-label{
+  color:var(--accent-green-l,#2ecc71);
+}
+/* Active indicator dot above tab */
+.qq-bn-tab.active::before{
+  content:'';
+  position:absolute;
+  top:0;left:50%;transform:translateX(-50%);
+  width:28px;height:3px;
+  border-radius:0 0 4px 4px;
+  background:var(--accent-green-l,#2ecc71);
+}
+/* Notification badge on tab */
+.qq-bn-badge{
+  position:absolute;
+  top:5px;right:calc(50% - 14px);
+  min-width:16px;height:16px;
+  background:#e74c3c;color:#fff;
+  border-radius:99px;
+  font-size:8px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;
+  border:2px solid rgba(6,10,6,.98);
+  pointer-events:none;
+}
+
+/* ── Slide-up Drawer (replaces hamburger menu on mobile) ── */
+#qq-drawer-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  z-index:640;
+  backdrop-filter:blur(4px);
+  -webkit-tap-highlight-color:transparent;
+}
+#qq-drawer-overlay.open{display:block;}
+
+#qq-drawer{
+  position:fixed;
+  bottom:-100vh;left:0;right:0;
+  background:rgba(8,12,8,.99);
+  border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(255,255,255,.1);
+  z-index:650;
+  max-height:88vh;
+  overflow-y:auto;
+  padding:0 0 env(safe-area-inset-bottom,16px);
+  transition:bottom .32s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 -12px 48px rgba(0,0,0,.7);
+}
+#qq-drawer.open{bottom:0;}
+
+/* Drawer handle */
+#qq-drawer-handle{
+  width:36px;height:4px;
+  background:rgba(255,255,255,.2);
+  border-radius:2px;
+  margin:12px auto 0;
+}
+
+/* Drawer header */
+.qq-drawer-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px 8px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.qq-drawer-title{
+  font-family:'Cinzel',serif;
+  font-size:13px;color:var(--accent-gold,#c9a84c);
+  letter-spacing:2px;font-weight:700;
+}
+.qq-drawer-close{
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:none;
+  color:rgba(255,255,255,.6);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.qq-drawer-close:hover{background:rgba(255,255,255,.14);}
+
+/* Drawer section label */
+.qq-drawer-section{
+  font-size:9px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;
+  color:rgba(255,255,255,.25);
+  padding:14px 20px 5px;
+}
+
+/* Drawer item (link row) */
+.qq-drawer-item{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 20px;
+  cursor:pointer;
+  transition:background .14s;
+  border:none;background:none;
+  width:100%;text-align:left;
+  font-family:'Lato',sans-serif;
+  color:rgba(255,255,255,.85);
+  font-size:14px;font-weight:600;
+  -webkit-tap-highlight-color:transparent;
+}
+.qq-drawer-item:hover,.qq-drawer-item:active{
+  background:rgba(255,255,255,.06);
+}
+.qq-drawer-item.active{
+  background:rgba(26,122,60,.15);
+  color:var(--accent-green-l,#2ecc71);
+  border-left:3px solid var(--accent-green-l,#2ecc71);
+  padding-left:17px;
+}
+.qq-di-icon{
+  font-size:18px;width:24px;
+  text-align:center;flex-shrink:0;
+}
+.qq-di-badge{
+  margin-left:auto;
+  background:rgba(46,204,113,.2);color:var(--accent-green-l,#2ecc71);
+  font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:10px;
+  letter-spacing:.4px;
+}
+.qq-di-badge.gold{
+  background:rgba(201,168,76,.2);color:var(--accent-gold-l,#e8c86a);
+}
+
+/* Drawer divider */
+.qq-drawer-divider{
+  height:1px;background:rgba(255,255,255,.06);
+  margin:4px 0;
+}
+
+/* Drawer auth section */
+.qq-drawer-auth{
+  margin:8px 16px 16px;
+  background:rgba(201,168,76,.06);
+  border:1px solid rgba(201,168,76,.18);
+  border-radius:14px;
+  padding:14px;
+}
+.qq-drawer-auth p{
+  color:rgba(255,255,255,.4);
+  font-size:11px;text-align:center;
+  margin-bottom:10px;letter-spacing:.3px;
+}
+.qq-drawer-auth-btns{
+  display:flex;gap:8px;
+}
+
+/* ── Page bottom padding on mobile (so content clears bottom tab) ── */
+@media(max-width:900px){
+  .qq-page{ padding-bottom:80px!important; }
+  #page-home{ padding-bottom:80px!important; }
+  /* Hide the old hamburger-triggered menu — drawer replaces it */
+  .mobile-menu{ display:none!important; }
+  .hamburger{ display:none!important; }
+  /* Show bottom nav */
+  #qq-bottom-nav{ display:flex!important; }
+  /* Slim top header height */
+  .nav-inner{ height:48px!important; }
+  nav{ min-height:48px!important; }
+  /* All pages get top padding for slim header */
+  .qq-page{ padding-top:56px!important; }
+  #page-home{ padding-top:56px!important; }
+}
+
+@media(min-width:901px){
+  /* Desktop: hide bottom nav + drawer, keep original hamburger */
+  #qq-bottom-nav{ display:none!important; }
+  #qq-drawer{ display:none!important; }
+  #qq-drawer-overlay{ display:none!important; }
+}
+
 
 
 
@@ -872,6 +1613,475 @@ nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(6,10,6,.98);
   .focus-mode-content{padding:20px 12px 60px!important;}
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════
+   QUR'ĀN QUEST — PROFESSIONAL DESIGN SYSTEM v2
+   Clean, readable, conducive to Islamic learning
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Enhanced CSS variables ── */
+:root{
+  --page-bg:    #0a0f0a;
+  --surface:    #111811;
+  --surface2:   #162016;
+  --surface3:   #1c2a1c;
+  --card-bg:    #131a13;
+  --card-hover: #192219;
+  --divider:    rgba(255,255,255,.07);
+  --text-primary:   #f0f0ec;
+  --text-secondary: #9aab9a;
+  --text-muted:     #5a6e5a;
+  --accent-green:   #1a7a3c;
+  --accent-green-l: #2ecc71;
+  --accent-gold:    #c9a84c;
+  --accent-gold-l:  #e8c86a;
+  --accent-blue:    #3498db;
+  --accent-red:     #e74c3c;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --shadow-sm:  0 2px 8px rgba(0,0,0,.3);
+  --shadow-md:  0 4px 20px rgba(0,0,0,.4);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,.5);
+  --transition: all .2s ease;
+}
+
+/* ── Base body ── */
+body{
+  background:var(--page-bg);
+  color:var(--text-primary);
+  font-family:'Lato',sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Page wrapper — all learning pages ── */
+.qq-page{
+  padding:88px 20px 80px;
+  max-width:960px;
+  margin:0 auto;
+  min-height:100vh;
+}
+@media(max-width:600px){ .qq-page{ padding:80px 14px 70px; } }
+
+/* ── Page title block ── */
+.qq-page-title{
+  margin-bottom:28px;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--divider);
+}
+.qq-page-title h1{
+  font-family:'Cinzel',serif;
+  font-size:clamp(20px,4vw,28px);
+  color:var(--accent-gold-l);
+  letter-spacing:2px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.qq-page-title p{
+  font-size:13px;
+  color:var(--text-secondary);
+  line-height:1.5;
+}
+
+/* ── Learning card — primary content unit ── */
+.qq-card{
+  background:var(--card-bg);
+  border:1px solid var(--divider);
+  border-radius:var(--radius-md);
+  padding:20px;
+  margin-bottom:16px;
+  transition:var(--transition);
+  position:relative;
+  overflow:hidden;
+}
+.qq-card:hover{ border-color:rgba(26,122,60,.4); }
+.qq-card-accent{ border-left:4px solid var(--accent-green); }
+.qq-card-gold{   border-left:4px solid var(--accent-gold); }
+.qq-card-blue{   border-left:4px solid var(--accent-blue); }
+
+/* ── Section header (within a page) ── */
+.qq-section-title{
+  font-family:'Cinzel',serif;
+  font-size:13px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--accent-gold);
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.qq-section-title::after{
+  content:'';flex:1;
+  height:1px;background:var(--divider);
+}
+
+/* ── Arabic text — large and readable ── */
+.qq-arabic{
+  font-family:'Amiri',serif;
+  direction:rtl;
+  line-height:1.8;
+  color:var(--text-primary);
+}
+.qq-arabic-xl{ font-size:clamp(32px,6vw,52px); }
+.qq-arabic-lg{ font-size:clamp(24px,4vw,36px); }
+.qq-arabic-md{ font-size:clamp(18px,3vw,26px); }
+.qq-arabic-sm{ font-size:18px; }
+
+/* ── Translation / transliteration ── */
+.qq-trans{
+  font-size:13px;
+  color:var(--accent-gold);
+  font-style:italic;
+  margin-top:4px;
+}
+.qq-meaning{
+  font-size:13px;
+  color:var(--text-secondary);
+  line-height:1.6;
+  margin-top:6px;
+}
+
+/* ── Stat pill ── */
+.qq-stat{
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  background:var(--surface2);
+  border:1px solid var(--divider);
+  border-radius:var(--radius-sm);
+  padding:10px 16px;
+  min-width:70px;
+}
+.qq-stat-num{
+  font-family:'Cinzel',serif;
+  font-size:22px;
+  font-weight:700;
+  color:var(--accent-green-l);
+  line-height:1;
+}
+.qq-stat-lbl{
+  font-size:10px;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-top:3px;
+}
+
+/* ── Progress bar ── */
+.qq-progress-track{
+  background:rgba(255,255,255,.07);
+  border-radius:99px;height:8px;
+  overflow:hidden;
+  margin:8px 0;
+}
+.qq-progress-fill{
+  height:100%;
+  border-radius:99px;
+  background:linear-gradient(to right, var(--accent-green), var(--accent-green-l));
+  transition:width .8s ease;
+}
+.qq-progress-gold .qq-progress-fill{
+  background:linear-gradient(to right, var(--accent-gold), var(--accent-gold-l));
+}
+
+/* ── Answer / option button (quiz, daily, games) ── */
+.qq-option{
+  width:100%;
+  background:var(--surface2);
+  border:1.5px solid var(--divider);
+  border-radius:var(--radius-sm);
+  padding:14px 18px;
+  color:var(--text-primary);
+  font-size:14px;
+  font-family:'Lato',sans-serif;
+  cursor:pointer;
+  text-align:left;
+  transition:var(--transition);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:8px;
+}
+.qq-option:hover{
+  background:var(--surface3);
+  border-color:var(--accent-green);
+  color:var(--accent-green-l);
+}
+.qq-option.correct{
+  background:rgba(46,204,113,.12);
+  border-color:var(--accent-green-l);
+  color:var(--accent-green-l);
+}
+.qq-option.wrong{
+  background:rgba(231,76,60,.1);
+  border-color:var(--accent-red);
+  color:#e74c3c;
+}
+.qq-option-num{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+  color:var(--text-secondary);
+}
+
+/* ── Info badge ── */
+.qq-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  border-radius:99px;padding:4px 12px;
+  font-size:11px;font-weight:700;
+  letter-spacing:.5px;
+}
+.qq-badge-green{ background:rgba(46,204,113,.12);color:var(--accent-green-l);border:1px solid rgba(46,204,113,.25); }
+.qq-badge-gold{  background:rgba(201,168,76,.12); color:var(--accent-gold-l); border:1px solid rgba(201,168,76,.25); }
+.qq-badge-blue{  background:rgba(52,152,219,.12); color:#74b9ff;              border:1px solid rgba(52,152,219,.25); }
+.qq-badge-red{   background:rgba(231,76,60,.1);   color:#e74c3c;              border:1px solid rgba(231,76,60,.2); }
+
+/* ── Action button row ── */
+.qq-actions{
+  display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;
+}
+.qq-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border-radius:var(--radius-sm);
+  padding:10px 20px;
+  font-size:13px;font-weight:700;
+  font-family:'Lato',sans-serif;
+  cursor:pointer;border:none;
+  transition:var(--transition);
+  white-space:nowrap;
+}
+.qq-btn-primary{
+  background:var(--accent-green);color:#fff;
+}
+.qq-btn-primary:hover{ background:#22924a; }
+.qq-btn-gold{
+  background:rgba(201,168,76,.15);
+  border:1px solid rgba(201,168,76,.35);
+  color:var(--accent-gold-l);
+}
+.qq-btn-gold:hover{ background:rgba(201,168,76,.25); }
+.qq-btn-ghost{
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--divider);
+  color:var(--text-secondary);
+}
+.qq-btn-ghost:hover{ background:rgba(255,255,255,.09);color:var(--text-primary); }
+
+/* ── Divider ── */
+.qq-divider{
+  height:1px;background:var(--divider);
+  margin:20px 0;border:none;
+}
+
+/* ── Empty state ── */
+.qq-empty{
+  text-align:center;padding:60px 20px;
+  color:var(--text-muted);
+}
+.qq-empty-icon{ font-size:48px;margin-bottom:16px; }
+.qq-empty p{ font-size:14px;line-height:1.6; }
+
+/* ── Skeleton loader ── */
+.qq-skeleton{
+  background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);
+  background-size:200% 100%;
+  animation:qqShimmer 1.4s infinite;
+  border-radius:var(--radius-sm);
+}
+@keyframes qqShimmer{ to{ background-position:-200% 0; } }
+
+/* ── Scrollable horizontal row ── */
+.qq-scroll-row{
+  display:flex;gap:12px;
+  overflow-x:auto;padding-bottom:6px;
+  scrollbar-width:none;
+}
+.qq-scroll-row::-webkit-scrollbar{ display:none; }
+
+/* ── Names 99 / list item ── */
+.qq-list-item{
+  display:flex;align-items:center;gap:14px;
+  background:var(--card-bg);
+  border:1px solid var(--divider);
+  border-radius:var(--radius-sm);
+  padding:14px 16px;
+  margin-bottom:10px;
+  transition:var(--transition);
+}
+.qq-list-item:hover{ border-color:rgba(26,122,60,.4);background:var(--card-hover); }
+.qq-list-num{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--accent-gold);
+  flex-shrink:0;font-family:'Cinzel',serif;
+}
+
+/* ── Input ── */
+.qq-input{
+  width:100%;
+  background:var(--surface2);
+  border:1.5px solid var(--divider);
+  border-radius:var(--radius-sm);
+  color:var(--text-primary);
+  padding:12px 16px;
+  font-size:14px;
+  font-family:'Lato',sans-serif;
+  outline:none;
+  transition:border-color .2s;
+}
+.qq-input:focus{ border-color:var(--accent-green); }
+.qq-input::placeholder{ color:var(--text-muted); }
+
+/* ── Toast (already exists, just polish) ── */
+#toast{
+  font-size:13px!important;
+  font-weight:600!important;
+  border-radius:var(--radius-sm)!important;
+  backdrop-filter:blur(10px)!important;
+}
+
+/* ── Responsive grid helpers ── */
+.qq-grid-2{ display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.qq-grid-3{ display:grid;grid-template-columns:repeat(3,1fr);gap:14px; }
+.qq-grid-4{ display:grid;grid-template-columns:repeat(4,1fr);gap:14px; }
+@media(max-width:700px){
+  .qq-grid-3,.qq-grid-4{ grid-template-columns:1fr 1fr; }
+}
+@media(max-width:420px){
+  .qq-grid-2,.qq-grid-3,.qq-grid-4{ grid-template-columns:1fr; }
+}
+
+/* ── Hifdh surah list item ── */
+.qq-surah-row{
+  display:flex;align-items:center;gap:14px;
+  background:var(--card-bg);
+  border:1px solid var(--divider);
+  border-radius:var(--radius-sm);
+  padding:14px 16px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:var(--transition);
+}
+.qq-surah-row:hover{ border-color:rgba(26,122,60,.4);background:var(--card-hover); }
+.qq-surah-num{
+  width:36px;height:36px;flex-shrink:0;
+  border-radius:50%;
+  background:rgba(26,122,60,.15);
+  border:1px solid rgba(26,122,60,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:12px;
+  font-weight:700;color:var(--accent-green-l);
+}
+
+/* ── Tab bar (used in dashboard, hifdh etc) ── */
+.qq-tabs{
+  display:flex;gap:4px;
+  background:var(--surface2);
+  border-radius:var(--radius-md);
+  padding:4px;
+  margin-bottom:20px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.qq-tabs::-webkit-scrollbar{ display:none; }
+.qq-tab{
+  flex:1;min-width:80px;
+  padding:9px 16px;
+  border-radius:var(--radius-sm);
+  border:none;background:none;
+  color:var(--text-secondary);
+  font-size:12px;font-weight:700;
+  font-family:'Lato',sans-serif;
+  cursor:pointer;
+  transition:var(--transition);
+  white-space:nowrap;text-align:center;
+}
+.qq-tab.active{
+  background:var(--accent-green);
+  color:#fff;
+  box-shadow:var(--shadow-sm);
+}
+.qq-tab:hover:not(.active){ color:var(--text-primary); }
+
+/* ── Chat bubble (AI assistant) ── */
+.qq-bubble{
+  max-width:82%;
+  padding:12px 16px;
+  border-radius:var(--radius-md);
+  font-size:13px;line-height:1.6;
+  margin-bottom:10px;
+}
+.qq-bubble-user{
+  background:rgba(26,122,60,.2);
+  border:1px solid rgba(26,122,60,.3);
+  color:var(--text-primary);
+  margin-left:auto;
+  border-bottom-right-radius:4px;
+}
+.qq-bubble-ai{
+  background:var(--surface2);
+  border:1px solid var(--divider);
+  color:var(--text-primary);
+  border-bottom-left-radius:4px;
+}
+
+/* ── Home learning tiles ── */
+.home-tile{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:16px 6px;border-radius:14px;cursor:pointer;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  transition:background .18s, transform .12s, border-color .18s;
+  min-height:82px;width:100%;
+  position:relative;overflow:hidden;
+}
+.home-tile::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%, var(--tile-color,#1a7a3c), transparent 70%);
+  opacity:0;transition:opacity .25s;
+}
+.home-tile:hover,.home-tile:active{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.18);
+  transform:translateY(-2px);
+}
+.home-tile:hover::before{opacity:.18;}
+.home-tile:active{transform:scale(.94);}
+.home-tile-icon{font-size:26px;line-height:1;position:relative;}
+.home-tile-label{
+  font-size:10px;color:rgba(255,255,255,.72);
+  font-weight:700;letter-spacing:.4px;
+  text-align:center;line-height:1.3;
+  text-transform:uppercase;
+  position:relative;
+}
+
+/* ── Home quick-actions row ── */
+.home-qa-row{
+  display:flex;gap:8px;padding:0 14px;margin-bottom:16px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.home-qa-row::-webkit-scrollbar{display:none;}
+.home-qa-btn{
+  flex-shrink:0;display:flex;align-items:center;gap:6px;
+  background:var(--qa-c,rgba(46,204,113,.15));
+  border:1px solid var(--qa-b,rgba(46,204,113,.4));
+  color:var(--qa-t,#2ecc71);
+  border-radius:10px;padding:9px 14px;
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+  font-family:'Lato',sans-serif;
+  transition:filter .18s, transform .12s;
+}
+.home-qa-btn:hover{filter:brightness(1.15);}
+.home-qa-btn:active{transform:scale(.95);}
+
 </style>
 <!-- Firebase: pure REST API — no SDK, no CDN, no blocking -->
 <script>
@@ -1061,6 +2271,25 @@ function fbAddStudent(code, studentName){
     name: studentName, joined: new Date().toISOString().slice(0,10)
   });
 }
+
+function fbAddAssignment(code, assignment){
+  var key = 'asgn_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+  return _fbUpdate('classes/'+code+'/assignments/'+key, assignment);
+}
+
+function fbSendAnnouncement(code, message, teacherName){
+  var key = 'ann_' + Date.now();
+  return _fbUpdate('classes/'+code+'/announcements/'+key, {
+    message: message,
+    from: teacherName || (window.currentUser && window.currentUser.name) || 'Teacher',
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString()
+  });
+}
+
+function fbAddMessage(code, msgObj){
+  return _fbPush('classes/'+code+'/messages', msgObj);
+}
 function fbListenClass(code, cb){
   _fbListen('classes/'+code, function(data){
     if(data) _fbClassCache[code] = data;
@@ -1166,6 +2395,29 @@ window._sbSaveAndTest = function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',injectSbBtn);
   else injectSbBtn();
   setTimeout(injectSbBtn,800);
+
+  // ── Expose all data-layer functions as globals ──
+  window._fbGet          = _fbGet;
+  window._fbSet          = _fbSet;
+  window._fbUpdate       = _fbUpdate;
+  window._fbPush         = _fbPush;
+  window._fbListen       = _fbListen;
+  window._fbUnlisten     = _fbUnlisten;
+  window.fbSetClass      = fbSetClass;
+  window.fbGetClass      = fbGetClass;
+  window.fbAddStudent    = fbAddStudent;
+  window.fbAddAssignment = fbAddAssignment;
+  window.fbSendAnnouncement = fbSendAnnouncement;
+  window.fbAddMessage    = fbAddMessage;
+  window.fbListenClass   = fbListenClass;
+  window.fbUnlistenClass = fbUnlistenClass;
+  // Expose Supabase state via wrapper functions (avoids defineProperty conflicts)
+  window._getSbReady = function(){ return _sbReady; };
+  window._setSbReady = function(v){ _sbReady=v; };
+  window._getSbUrl   = function(){ return _SB_URL; };
+  window._setSbUrl   = function(v){ _SB_URL=v; };
+  window._getSbKey   = function(){ return _SB_KEY; };
+  window._setSbKey   = function(v){ _SB_KEY=v; };
 })();
 
 
@@ -1251,34 +2503,38 @@ window.addEventListener('load',function(){
     <!-- ── Right-side actions ── -->
     <div class="nav-actions" id="nav-actions-bar">
 
-      <!-- Reciter pill -->
-      <button class="nav-icon-btn" id="nav-reciter-btn"
-        onclick="openReciterModal()"
-        title="Choose Reciter"
-        style="display:flex;align-items:center;gap:5px;">
-        <span style="font-size:15px;">🎙</span>
-        <span class="nav-reciter-label nav-label-text">Reciter</span>
-      </button>
+      <!-- Secondary tools — hidden on small phones -->
+      <div class="nav-secondary-tools">
 
-      <!-- Setup DB -->
-      <button id="sb-nav-btn" class="nav-icon-btn nav-db-btn"
-        onclick="if(typeof openSbPanel==='function')openSbPanel()"
-        title="Setup Database"
-        style="background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:#c9a84c;">
-        <span style="font-size:13px;">🟡</span>
-        <span class="nav-label-text">DB</span>
-      </button>
+        <!-- Reciter pill -->
+        <button class="nav-icon-btn" id="nav-reciter-btn"
+          onclick="openReciterModal()"
+          title="Choose Reciter">
+          <span style="font-size:15px;">🎙</span>
+          <span class="nav-label-text">Reciter</span>
+        </button>
 
-      <!-- Teacher Mode toggle -->
-      <button id="tm-toggle-nav" class="nav-icon-btn"
-        onclick="if(typeof tmToggle==='function')tmToggle()"
-        title="Teacher Mode">
-        <span style="font-size:15px;">🏫</span>
-        <span class="nav-label-text">Teacher</span>
-      </button>
+        <!-- Setup DB -->
+        <button id="sb-nav-btn" class="nav-icon-btn nav-db-btn"
+          onclick="if(typeof openSbPanel==='function')openSbPanel()"
+          title="Setup Database"
+          style="background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:#c9a84c;">
+          <span style="font-size:13px;">🟡</span>
+          <span class="nav-label-text">DB</span>
+        </button>
 
-      <!-- Auth area (replaced by JS when logged in) -->
-      <div id="nav-auth" style="display:flex;align-items:center;gap:6px;">
+        <!-- Teacher Mode toggle -->
+        <button id="tm-toggle-nav" class="nav-icon-btn"
+          onclick="if(typeof tmToggle==='function')tmToggle()"
+          title="Teacher Mode">
+          <span style="font-size:15px;">🏫</span>
+          <span class="nav-label-text">Teacher</span>
+        </button>
+
+      </div>
+
+      <!-- Auth area — ALWAYS VISIBLE (replaced by JS when logged in) -->
+      <div id="nav-auth" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <button class="nav-auth-btn nav-login-btn"
           onclick="openAuth('login')"
           style="background:rgba(26,122,60,.2);border:1px solid rgba(46,204,113,.4);color:#2ecc71;">
@@ -1292,7 +2548,7 @@ window.addEventListener('load',function(){
         </button>
       </div>
 
-      <!-- Hamburger (mobile only) -->
+      <!-- Hamburger — ALWAYS VISIBLE on mobile -->
       <div class="hamburger" id="hamburger-btn"
         onclick="if(typeof toggleMobileMenu==='function')toggleMobileMenu()"
         style="flex-shrink:0;">
@@ -1433,11 +2689,34 @@ window.addEventListener('load',function(){
   <span class="mobile-link" onclick="openReciterModal();closeMobileMenu()">
     <span class="ml-icon">🎙</span> Choose Reciter
   </span>
+  <span class="mobile-link" data-page="qibla" onclick="showPage('qibla');closeMobileMenu()">
+    <span class="ml-icon">🧭</span> Qibla Compass
+  </span>
+  <span class="mobile-link" data-page="hijri" onclick="showPage('hijri');closeMobileMenu()">
+    <span class="ml-icon">🌙</span> Hijri Calendar
+  </span>
+  <span class="mobile-link" data-page="tafsir" onclick="showPage('tafsir');closeMobileMenu()">
+    <span class="ml-icon">📗</span> Tafsir
+  </span>
+  <span class="mobile-link" data-page="mosque" onclick="showPage('mosque');closeMobileMenu()">
+    <span class="ml-icon">🕌</span> Nearby Mosques
+  </span>
+  <span class="mobile-link" data-page="names99" onclick="showPage('names99');closeMobileMenu()">
+    <span class="ml-icon">✨</span> 99 Names of Allah
+  </span>
+  <span class="mobile-link" data-page="aiasst" onclick="showPage('aiasst');closeMobileMenu()">
+    <span class="ml-icon">🤖</span> AI Islamic Guide
+  </span>
+
+  <div class="mobile-section-label">Teacher Tools</div>
+  <span class="mobile-link" onclick="if(typeof tmToggle==='function')tmToggle();closeMobileMenu()">
+    <span class="ml-icon">🏫</span> Teacher Mode
+  </span>
+  <span class="mobile-link" onclick="if(typeof openSbPanel==='function')openSbPanel();closeMobileMenu()">
+    <span class="ml-icon">🟡</span> Setup Database
+  </span>
 
   <!-- Auth CTA -->
-  <div <div style="margin-top:8px;padding:10px 14px;">
-    <button onclick="_sbShowSetup&&_sbShowSetup();closeMobileMenu&&closeMobileMenu()" style="width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;">🟡 Setup DB / Database</button>
-  </div>
   <div id="mobile-auth" style="margin-top:8px;padding:14px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;">
     <p style="color:var(--greyd);font-size:11px;text-align:center;margin-bottom:10px;letter-spacing:.5px;">Join thousands of learners worldwide</p>
     <div style="display:flex;gap:8px;">
@@ -1448,28 +2727,28 @@ window.addEventListener('load',function(){
 </div>
 
 <!-- ═══ PAGES ═══ -->
-<div id="page-home" style="padding-top:88px;"></div>
-<div id="page-games" class="hidden" style="padding:88px 16px 60px;"></div>
-<div id="page-hifdh" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
-<div id="page-tajweed" class="hidden" style="padding:88px 16px 60px;max-width:1100px;margin:0 auto;"></div>
-<div id="page-adhkaar" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
-<div id="page-contact" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
-<div id="page-qibla" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-names99" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-bookmarks" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-privacy" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;">
-<div id="page-hijri" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-tafsir" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-aiasst" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div>
-<div id="page-mosque" class="hidden" style="padding:88px 16px 80px;max-width:760px;margin:0 auto;"></div></div></div></div>
-<div id="page-daily" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
-<div id="page-leaderboard" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
-<div id="page-dashboard" class="hidden" style="padding:88px 16px 60px;max-width:1160px;margin:0 auto;"></div>
-<div id="page-beginner" class="hidden" style="padding:80px 0 80px;"></div>
-<div id="page-journey"    class="hidden" style="padding:88px 16px 60px;max-width:900px;margin:0 auto;"></div>
-<div id="page-achievements" class="hidden" style="padding:88px 16px 60px;max-width:860px;margin:0 auto;"></div>
-<div id="page-listenrepeat" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
-<div id="page-recitepractice" class="hidden" style="padding:88px 16px 60px;max-width:760px;margin:0 auto;"></div>
+<div id="page-home" class="hidden qq-page" style="max-width:1200px;margin:0 auto;padding-top:88px;"></div>
+<div id="page-games" class="hidden qq-page"></div>
+<div id="page-hifdh" class="hidden qq-page" style="max-width:1100px;margin:0 auto;"></div>
+<div id="page-tajweed" class="hidden qq-page" style="max-width:1100px;margin:0 auto;"></div>
+<div id="page-adhkaar" class="hidden qq-page"></div>
+<div id="page-contact" class="hidden qq-page">
+<div id="page-qibla" class="hidden qq-page"></div>
+<div id="page-names99" class="hidden qq-page"></div>
+<div id="page-bookmarks" class="hidden qq-page"></div>
+<div id="page-privacy" class="hidden qq-page"></div>
+<div id="page-hijri" class="hidden qq-page"></div>
+<div id="page-tafsir" class="hidden qq-page"></div>
+<div id="page-aiasst" class="hidden qq-page"></div>
+<div id="page-mosque" class="hidden qq-page"></div></div></div></div>
+<div id="page-daily" class="hidden qq-page"></div>
+<div id="page-leaderboard" class="hidden qq-page" style="max-width:860px;margin:0 auto;"></div>
+<div id="page-dashboard" class="hidden qq-page" style="max-width:1160px;margin:0 auto;"></div>
+<div id="page-beginner" class="hidden qq-page" style="padding-left:0;padding-right:0;"></div>
+<div id="page-journey" class="hidden qq-page" style="max-width:900px;margin:0 auto;"></div>
+<div id="page-achievements" class="hidden qq-page" style="max-width:860px;margin:0 auto;"></div>
+<div id="page-listenrepeat" class="hidden qq-page"></div>
+<div id="page-recitepractice" class="hidden qq-page"></div>
 
 <!-- Auth Modal -->
 <div id="auth-modal" class="overlay hidden" onclick="closeAuth(event)">
@@ -1528,7 +2807,17 @@ window.addEventListener('load',function(){
 
 
 
-<script>
+<script>// ══ FB-function shim: re-expose S2 IIFE exports as local names ══
+var fbSetClass         = window.fbSetClass         || fbSetClass;
+var fbGetClass         = window.fbGetClass         || (typeof fbGetClass!=='undefined'?fbGetClass:null);
+var fbAddStudent       = window.fbAddStudent       || (typeof fbAddStudent!=='undefined'?fbAddStudent:null);
+var fbAddAssignment    = window.fbAddAssignment    || (typeof fbAddAssignment!=='undefined'?fbAddAssignment:null);
+var fbSendAnnouncement = window.fbSendAnnouncement || (typeof fbSendAnnouncement!=='undefined'?fbSendAnnouncement:null);
+var fbAddMessage       = window.fbAddMessage       || (typeof fbAddMessage!=='undefined'?fbAddMessage:null);
+var fbListenClass      = window.fbListenClass      || (typeof fbListenClass!=='undefined'?fbListenClass:null);
+var fbUnlistenClass    = window.fbUnlistenClass    || (typeof fbUnlistenClass!=='undefined'?fbUnlistenClass:null);
+
+
 /* ===============================================
    QUR'AN QUEST -- Complete Platform v3
    All 114 Surahs | 80+ Tajweed Qs | Voice/TTS
@@ -2685,23 +3974,25 @@ function updateNavAuth(){
     const badge = `<span style="font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:10px;background:${isStu?'rgba(46,204,113,.2)':'rgba(201,168,76,.2)'};color:${isStu?'var(--emb)':'var(--goldl)'};">${isStu?'STUDENT':'TEACHER'}</span>`;
     const navH = `<div style="display:flex;align-items:center;gap:6px;">
       <div class="avatar" style="background:${isStu?'linear-gradient(135deg,var(--em),var(--eml))':'linear-gradient(135deg,var(--gold),var(--goldl))'};color:${isStu?'#fff':'#0a0e0a'};">${currentUser.name[0].toUpperCase()}</div>
-      <div class="hide-mob" style="display:flex;flex-direction:column;gap:1px;line-height:1.2;">
+      <div style="display:flex;flex-direction:column;gap:2px;line-height:1.2;">
         <span style="color:var(--white);font-size:11px;font-weight:700;">${currentUser.name.split(' ')[0]}</span>
         ${badge}
+        <button class="nav-auth-btn" onclick="logoutUser()" style="background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.3);color:#e74c3c;font-size:9px;padding:2px 6px;border-radius:5px;cursor:pointer;margin-top:1px;">⏏ Logout</button>
       </div>
-      <button class="nav-auth-btn" onclick="logoutUser()"
-        style="background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);color:#e74c3c;">
-        ⏏ <span class="nav-label-text">Out</span>
-      </button>
     </div>`;
     html('nav-auth', navH);
-    html('mobile-auth',`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
-      <div class="avatar" style="background:${isStu?'linear-gradient(135deg,var(--em),var(--eml))':'linear-gradient(135deg,var(--gold),var(--goldl))'};color:${isStu?'#fff':'#0a0e0a'};">${currentUser.name[0].toUpperCase()}</div>
-      <div style="flex:1;">
-        <div style="color:var(--white);font-weight:700;font-size:13px;">${currentUser.name}</div>
-        <div style="color:var(--greyd);font-size:10px;">${isStu?'Student Account':'Teacher Account'}</div>
+    html('mobile-auth',`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px 16px;margin:8px 16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div class="avatar" style="width:42px;height:42px;font-size:17px;flex-shrink:0;background:${isStu?'linear-gradient(135deg,var(--em),var(--eml))':'linear-gradient(135deg,var(--gold),var(--goldl))'};color:${isStu?'#fff':'#0a0e0a'};">${currentUser.name[0].toUpperCase()}</div>
+        <div style="min-width:0;">
+          <div style="color:var(--white);font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${currentUser.name}</div>
+          <div style="color:${isStu?'var(--emb)':'var(--goldl)'};font-size:10px;font-weight:700;margin-top:3px;">${isStu?'🎓 Student Account':'🏫 Teacher Account'}</div>
+        </div>
       </div>
-      <button class="btn btn-r btn-sm" onclick="logoutUser();closeMobileMenu()">Sign Out</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-o btn-sm" style="flex:1;" onclick="showPage('dashboard');closeMobileMenu()">📊 Dashboard</button>
+        <button class="btn btn-r btn-sm" style="flex:1;" onclick="logoutUser();closeMobileMenu()">⏏ Logout</button>
+      </div>
     </div>`);
   } else {
     html('nav-auth',`
@@ -2713,7 +4004,13 @@ function updateNavAuth(){
     style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;">
     📝
   </button>`);
-    html('mobile-auth',`<div style="display:flex;gap:8px;margin-top:4px;"><button class="btn btn-o btn-sm" style="flex:1;" onclick="openAuth('login');closeMobileMenu()">Sign In</button><button class="btn btn-g btn-sm" style="flex:1;" onclick="openAuth('register');closeMobileMenu()">Register</button></div>`);
+    html('mobile-auth',`<div style="padding:0 16px 8px;">
+      <p style="color:rgba(255,255,255,.35);font-size:11px;text-align:center;margin-bottom:10px;letter-spacing:.3px;">Join thousands of learners worldwide</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-o btn-sm" style="flex:1;" onclick="openAuth('login');closeMobileMenu()">🔑 Login</button>
+        <button class="btn btn-gold btn-sm" style="flex:1.6;" onclick="openAuth('register','student');closeMobileMenu()">✨ Free Account</button>
+      </div>
+    </div>`);
   }
 }
 
@@ -2843,7 +4140,10 @@ function _presencePollPeers(){
     });
   }
   doPoll();
-  _presencePollTimer = setInterval(doPoll, 8000); // fast poll — WhatsApp-style online indicators
+  _presencePollTimer = setInterval(function(){
+    if(typeof _callState!='undefined'&&_callState!='idle') return;
+    doPoll();
+  }, 8000); // fast poll — paused during calls — WhatsApp-style online indicators
 }
 
 function _showPresenceToast(name, role, isOnline){
@@ -3049,17 +4349,10 @@ function renderHome(){
   ];
 
   const tileHTML = TILES.map(t=>`
-    <button onclick="showPage('${t.page}')" style="
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:7px;padding:16px 8px;border-radius:16px;cursor:pointer;
-      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
-      transition:background .15s,transform .12s;min-height:80px;
-      " onmouseover="this.style.background='rgba(255,255,255,.09)'"
-        onmouseout="this.style.background='rgba(255,255,255,.04)'"
-        ontouchstart="this.style.transform='scale(.94)'"
-        ontouchend="this.style.transform='scale(1)'">
-      <span style="font-size:26px;line-height:1;">${t.icon}</span>
-      <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:600;letter-spacing:.3px;text-align:center;line-height:1.3;">${t.label}</span>
+    <button onclick="showPage('${t.page}')" class="home-tile"
+      style="--tile-color:${t.color}">
+      <span class="home-tile-icon">${t.icon}</span>
+      <span class="home-tile-label">${t.label}</span>
     </button>`).join('');
 
   el.innerHTML = `
@@ -3092,16 +4385,18 @@ function renderHome(){
     </div>
 
     <!-- ── QUICK ACTIONS ROW ── -->
-    <div style="display:flex;gap:10px;padding:0 14px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;">
-      <button onclick="showPage('beginner')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:#2ecc71;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🌱 Start Learning</button>
-      <button onclick="showPage('hifdh')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(26,122,60,.15);border:1px solid rgba(26,122,60,.4);color:#27ae60;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📿 Begin Hifdh</button>
-      <button onclick="showPage('games')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(142,68,173,.15);border:1px solid rgba(142,68,173,.4);color:#9b59b6;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🎮 Play &amp; Learn</button>
-      <button onclick="showPage('daily')" style="flex-shrink:0;display:flex;align-items:center;gap:7px;background:rgba(41,128,185,.15);border:1px solid rgba(41,128,185,.4);color:#3498db;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">⚡ Daily Ayah</button>
+    <div class="home-qa-row">
+      <button onclick="showPage('beginner')" class="home-qa-btn" style="--qa-c:rgba(46,204,113,.2);--qa-b:rgba(46,204,113,.4);--qa-t:#2ecc71;">🌱 Start Learning</button>
+      <button onclick="showPage('listenrepeat')" class="home-qa-btn" style="--qa-c:rgba(41,128,185,.2);--qa-b:rgba(41,128,185,.4);--qa-t:#3498db;">🎧 Listen &amp; Repeat</button>
+      <button onclick="showPage('hifdh')" class="home-qa-btn" style="--qa-c:rgba(26,122,60,.2);--qa-b:rgba(26,122,60,.4);--qa-t:#27ae60;">📿 Begin Hifdh</button>
+      <button onclick="showPage('games')" class="home-qa-btn" style="--qa-c:rgba(142,68,173,.2);--qa-b:rgba(142,68,173,.4);--qa-t:#9b59b6;">🎮 Play &amp; Learn</button>
+      <button onclick="showPage('daily')" class="home-qa-btn" style="--qa-c:rgba(41,128,185,.15);--qa-b:rgba(52,152,219,.35);--qa-t:#74b9ff;">⚡ Daily Ayah</button>
+      <button onclick="showPage('tafsir')" class="home-qa-btn" style="--qa-c:rgba(201,168,76,.12);--qa-b:rgba(201,168,76,.35);--qa-t:#c9a84c;">📗 Tafsir</button>
     </div>
 
     <!-- ── MAIN GRID (Muslim Pocket style) ── -->
     <div style="padding:0 14px;margin-bottom:18px;">
-      <div style="font-size:11px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Islamic Learning</div>
+      <div class="qq-section-title" style="margin-bottom:10px;">Islamic Learning</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
         ${tileHTML}
       </div>
@@ -6470,6 +7765,10 @@ function renderProgressTab(done,total,quizAvg,streak){
     {ic:'⚡',nm:'Quiz Master',e:quizAvg>=90}
   ];
   return `
+    <div class="qq-page-title" style="margin-bottom:20px;">
+      <h1 style="font-size:18px;">📊 My Learning Progress</h1>
+      <p>Track your Hifdh, quizzes, streaks and achievements</p>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
       ${[['📖','Surahs',done+'/'+total,'var(--em)'],['🔥','Streak',streak+' days','#e67e22'],['💡','Quiz Avg',quizAvg+'%','#3498db'],['⭐','Points',(sessionPoints+4250).toLocaleString(),'var(--goldl)']].map(([ic,lb,vl,col])=>`
         <div class="stat-card" style="text-align:center;">
@@ -8292,8 +9591,8 @@ function renderHomePortalCTA(){
           +'<button class="btn btn-g" onclick="showPage(\'dashboard\')" style="font-weight:700;padding:11px 24px;">'
             +(isT?'🏫 My Teacher Portal':'📊 My Dashboard')+'</button>'
           +(isT
-            ?'<button class="btn btn-o btn-sm" onclick="showPage(\'dashboard\');setTimeout(function(){dashTab=\'teacher\';renderDashboard();},120)">📋 My Classes</button>'
-            :'<button class="btn btn-o btn-sm" onclick="showPage(\'dashboard\');setTimeout(function(){_sstab=\'class\';renderDashboard();},120)">📚 My Class</button>'
+            ?'<button class="btn btn-o btn-sm" onclick="showPage(\'dashboard\');setTimeout(function(){dashTab=\'teacher\';renderDashboard();},120)">📋 Teacher Portal</button>'
+            :''
           )
         +'</div>'
       +'</div>';
@@ -12685,24 +13984,36 @@ function bqRenderSectionQuizQuestion(stageId){
       </div>
     </div>
     <div class="pb" style="margin-bottom:16px;"><div class="pf" style="width:${pct}%;"></div></div>
-    <div class="bq-quiz-card" style="border-top:3px solid ${q.displayColor||'var(--em)'};padding:16px;">
-      <div style="color:var(--greyd);font-size:11px;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">${q.prompt.replace(/<[^>]*>/g,'')}</div>
+    <div class="bq-qcard" style="border-top:3px solid ${q.displayColor||'var(--em)'};">
+      <div class="bq-qcard-header">
+        <div class="bq-qcard-num">Question ${qs.idx+1}</div>
+        <div class="bq-qcard-status ${q.answered?(q.answered===q.answer?'mastered-status':'not-answered'):'not-answered'}">
+          ${q.answered?(q.answered===q.answer?'✅ Correct':'❌ Incorrect'):'Not yet answered'}
+        </div>
+      </div>
+      <div class="bq-qcard-body">
+      <div class="bq-quiz-prompt">${q.prompt.replace(/<[^>]*>/g,'')}</div>
       <div style="text-align:center;margin-bottom:16px;">
         ${q.displayIsAr===false?
           `<div style="color:${q.displayColor};font-size:34px;font-weight:700;">${q.display}</div>`:
           `<div style="font-family:Amiri,serif;font-size:clamp(60px,12vw,90px);color:${q.displayColor||'var(--goldl)'};direction:rtl;line-height:1;">${q.display}</div>`
         }
       </div>
-      <div class="bq-quiz-opts">
+      <div class="bq-opts-grid">
         ${q.opts.map(opt=>{
-          let cls='qopt';
-          if(q.answered){ if(opt===q.answer)cls+=' ok'; else if(opt===q.answered&&opt!==q.answer)cls+=' no'; }
-          var _btnSt = q.optsAr ? "font-family:Amiri,serif;font-size:24px;direction:rtl;padding:12px 8px;" : "font-size:13px;padding:11px 8px;";
-          return `<button class="${cls}" style="${_btnSt}" onclick="bqAnswerSection('${opt.replace(/'/g,"&#39;")}')" ${q.answered?"disabled":""}>${opt}</button>`;
+          let cls='bq-opt'+(q.optsAr?' arabic-opt':'');
+          if(q.answered){ if(opt===q.answer)cls+=' correct'; else if(opt===q.answered&&opt!==q.answer)cls+=' wrong'; }
+          return `<button class="${cls}"
+            style="${q.optsAr?'font-family:Amiri,serif;font-size:28px;direction:rtl;justify-content:center;':''}"
+            onclick="bqAnswerSection('${opt.replace(/'/g,"&#39;")}')" ${q.answered?"disabled":""}>
+            <span class="bq-opt-radio"><span class="bq-opt-radio-dot"></span></span>
+            <span>${opt}</span>
+          </button>`;
         }).join('')}
       </div>
+      </div><!-- end bq-qcard-body -->
       ${q.answered?`
-      <div style="text-align:center;margin-top:16px;">
+      <div style="padding:16px 20px;border-top:1px solid var(--border);text-align:center;">
         <div style="font-size:${isCorrect?'28px':'22px'};margin-bottom:6px;">${isCorrect?'🎉':'❌'}</div>
         <div style="color:${isCorrect?'var(--emb)':'#e74c3c'};font-size:15px;font-weight:700;margin-bottom:4px;">${isCorrect?'Allāhu Akbar! Correct!':'Wrong — try to remember!'}</div>
         ${isWrong?`<div style="color:var(--grey);font-size:12px;margin-bottom:4px;">Answer: <span style="color:var(--goldl);font-family:${q.optsAr?"Amiri,serif":"inherit"};font-size:${q.optsAr?"20px":"14px"};">${q.answer}</span></div>`:''}
@@ -13214,19 +14525,35 @@ function bqSetStage(s){
 function bqRenderAlphabet(){
   const detail = bqSelLetter!==null ? bqRenderLetterDetail(bqSelLetter) : '';
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+    <!-- Section header -->
+    <div class="bq-section-header">
+      <div class="bq-sec-icon">🔤</div>
       <div>
-        <h2 class="dp" style="color:var(--white);font-size:20px;letter-spacing:1.5px;direction:rtl;">الحروف الهجائية — Arabic Alphabet</h2>
-        <p style="color:var(--greyd);font-size:12px;margin-top:4px;">اضغط على أي حرف · Tap any letter to explore its detail</p>
+        <div class="bq-sec-title">Arabic Alphabet — الحروف الهجائية</div>
+        <div class="bq-sec-sub">28 letters · Tap any letter to open its detail card · اضغط على أي حرف</div>
       </div>
-      <button class="btn btn-g btn-sm" onclick="bqSetStage('forms')">Next: Letter Forms →</button>
+      <button class="btn btn-g btn-sm" style="margin-left:auto;flex-shrink:0;" onclick="bqSetStage('forms')">Next: Forms →</button>
     </div>
+
+    <!-- Breadcrumb -->
+    <div class="bq-breadcrumb">
+      <span>Stage 1</span> › <span class="active-crumb">Arabic Alphabet</span>
+    </div>
+
+    <!-- Detail panel (when a letter is selected) -->
     ${detail}
-    <div class="bq-letter-grid" style="direction:rtl;">
+
+    <!-- Numbered letter tiles grid -->
+    <div class="bq-letter-grid-new">
       ${BQ_LETTERS.map((l,i)=>`
-        <div class="bq-letter-card ${bqMastered[l.name]?'mastered':''} ${bqSelLetter===i?'active-card':''}" onclick="bqSelectLetter(${i})" title="${l.name}">
-          ${bqMastered[l.name]?'<div class="bq-done-badge" style="inset-inline-start:7px;inset-inline-end:auto;">✅</div>':''  }
-          <div class="bq-ar" style="color:${l.color};font-size:48px;">${l.ar}</div>
+        <div class="bq-letter-tile ${bqMastered[l.name]?'mastered':''} ${bqSelLetter===i?'selected':''}"
+             onclick="bqSelectLetter(${i})" title="${l.name}">
+          <div class="tile-num">${i+1}</div>
+          ${bqMastered[l.name]?'<div class="tile-done">✅</div>':''}
+          <span class="tile-ar" style="color:${l.color};font-size:44px;">${l.ar}</span>
+          <span class="tile-name">${l.name}</span>
+          <span class="tile-trans">${l.trans||''}</span>
+          <div class="tile-footer">${l.makh.split('(')[0].trim()}</div>
         </div>`).join('')}
     </div>
 
@@ -13244,7 +14571,16 @@ function bqRenderLetterDetail(i){
   const l = BQ_LETTERS[i];
   const prev = i>0?i-1:null; const next = i<BQ_LETTERS.length-1?i+1:null;
   return `
-    <div class="bq-detail" style="border-color:${l.color}33;margin-bottom:20px;">
+    <div class="bq-detail" style="border-color:${l.color}33;margin-bottom:24px;background:#fff;border-radius:8px;border:1px solid #ddd;border-top:5px solid ${l.color};overflow:hidden;color:#222;">
+      <!-- Moodle-style card header -->
+      <div style="background:#f5f5f5;border-bottom:1px solid #e0e0e0;padding:10px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="background:${l.color};color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:4px;padding:3px 10px;text-transform:uppercase;">Arabic Letter</span>
+        <span style="font-family:Cinzel,serif;font-weight:700;font-size:15px;color:#333;">${l.name} &nbsp;·&nbsp; <span style="font-family:Amiri,serif;font-size:20px;">${l.ar}</span></span>
+        <span style="background:${bqMastered[l.name]?'rgba(46,204,113,.15)':'#f0f0f0'};border:1px solid ${bqMastered[l.name]?'rgba(46,204,113,.5)':'#ccc'};border-radius:20px;padding:2px 10px;font-size:11px;color:${bqMastered[l.name]?'#1a7a3c':'#888'};">
+          ${bqMastered[l.name]?'✅ Mastered':'Not yet mastered'}
+        </span>
+      </div>
+      <div style="padding:18px 20px;">
       <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
         <!-- Big letter -->
         <div style="text-align:center;flex-shrink:0;">
@@ -13474,12 +14810,19 @@ function bqScanAbuZaydSolution(){
 // ── Stage 2: Letter Forms ──
 function bqRenderForms(){
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+    <div class="bq-section-header">
+      <div class="bq-sec-icon">🔡</div>
       <div>
-        <h2 class="dp" style="color:var(--white);font-size:20px;letter-spacing:1.5px;">Letter Forms — أشكال الحروف</h2>
-        <p style="color:var(--greyd);font-size:12px;margin-top:4px;">Each Arabic letter changes shape depending on where it appears in a word</p>
+        <div class="bq-sec-title">Letter Forms — أشكال الحروف</div>
+        <div class="bq-sec-sub">Each letter has 4 shapes: Isolated · Initial · Medial · Final</div>
       </div>
-      <div style="display:flex;gap:8px;"><button class="btn btn-o btn-sm" onclick="bqSetStage('alphabet')">← Letters</button><button class="btn btn-g btn-sm" onclick="bqSetStage('harakat')">Next: Vowels →</button></div>
+    </div>
+    <div class="bq-breadcrumb">
+      <span>Stage 2</span> › <span class="active-crumb">Letter Forms</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="btn btn-o btn-sm" onclick="bqSetStage('alphabet')">← Letters</button>
+      <button class="btn btn-g btn-sm" onclick="bqSetStage('harakat')">Next: Vowels →</button>
     </div>
     <!-- Stage 2: 28 Arabic letters WITH English names + transliteration -->
     <!-- Each row: Letter name (EN) | Isolated | Initial | Medial | Final -->
@@ -13566,15 +14909,19 @@ function bqRenderHarakat(){
   const hk = g.marks[bqHarakCard];
 
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+    <div class="bq-section-header">
+      <div class="bq-sec-icon">🔊</div>
       <div>
-        <h2 class="dp" style="color:var(--white);font-size:20px;letter-spacing:1.5px;">Vowel Marks — الحركات</h2>
-        <p style="color:var(--greyd);font-size:12px;margin-top:4px;">Choose a group — study each mark one at a time</p>
+        <div class="bq-sec-title">Vowel Marks — الحركات</div>
+        <div class="bq-sec-sub">Choose a group · Study each mark one at a time · Listen and repeat</div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-o btn-sm" onclick="bqSetStage('forms')">← Forms</button>
-        <button class="btn btn-g btn-sm" onclick="bqSetStage('harakat2')">Next: Using Harakāt →</button>
-      </div>
+    </div>
+    <div class="bq-breadcrumb">
+      <span>Stage 3</span> › <span class="active-crumb">Vowel Marks</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="btn btn-o btn-sm" onclick="bqSetStage('forms')">← Forms</button>
+      <button class="btn btn-g btn-sm" onclick="bqSetStage('harakat2')">Next: Using Harakāt →</button>
     </div>
 
     <!-- Group tabs -->
@@ -13996,11 +15343,23 @@ function bqRenderQuizQuestion(){
       </div>
     </div>
     <!-- Progress bar -->
-    <div class="pb" style="margin-bottom:22px;"><div class="pf" style="width:${pct}%;"></div></div>
+    <!-- Moodle breadcrumb -->
+    <div class="bq-breadcrumb" style="margin-bottom:12px;">
+      <span>Stage 7</span> › <span>Quiz</span> › <span class="active-crumb">Question ${qs.idx+1} of ${qs.questions.length}</span>
+    </div>
+    <div class="pb" style="margin-bottom:20px;"><div class="pf" style="width:${pct}%;"></div></div>
 
-    <div class="bq-quiz-card" style="border-top:3px solid ${q.displayColor||'var(--em)'};">
+    <div class="bq-qcard" style="border-top:3px solid ${q.displayColor||'var(--em)'};">
+      <!-- Moodle-style card header -->
+      <div class="bq-qcard-header">
+        <div class="bq-qcard-num">Question ${qs.idx+1}</div>
+        <div class="bq-qcard-status ${q.answered?(q.answered===q.answer?'mastered-status':'not-answered'):'not-answered'}">
+          ${q.answered?(q.answered===q.answer?'✅ Correct':'❌ Incorrect'):'Not yet answered'}
+        </div>
+      </div>
+      <div class="bq-qcard-body">
       <!-- Prompt -->
-      <div style="color:var(--greyd);font-size:12px;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:16px;">${q.prompt}</div>
+      <div class="bq-quiz-prompt">${q.prompt}</div>
 
       <!-- Display -->
       <div style="text-align:center;margin-bottom:20px;">
@@ -14012,13 +15371,13 @@ function bqRenderQuizQuestion(){
         }
       </div>
 
-      <!-- Answer options -->
-      <div class="bq-quiz-opts" style="${q.optsAr?'grid-template-columns:1fr 1fr;':'grid-template-columns:1fr 1fr;'  }">
-        ${q.opts.map(opt=>{
-          let cls='qopt';
+      <!-- Answer options — Moodle-style radio cards -->
+      <div class="bq-opts-grid">
+        ${q.opts.map((opt,oi)=>{
+          let cls='bq-opt'+(q.optsAr?' arabic-opt':'');
           if(q.answered){
-            if(opt===q.answer) cls+=' ok';
-            else if(opt===q.answered && opt!==q.answer) cls+=' no';
+            if(opt===q.answer) cls+=' correct';
+            else if(opt===q.answered && opt!==q.answer) cls+=' wrong';
           }
           return `<button class="${cls}"
             style="${q.optsAr?'font-family:Amiri,serif;font-size:28px;direction:rtl;padding:14px 8px;':'font-size:14px;padding:12px 10px;'}"
@@ -19831,11 +21190,15 @@ var _ringOscInterval=null, _pendingOffer=null;
 var _screenShareStream=null, _screenShareSender=null;
 var _speakerOn=true, _facingMode='user';
 
-var ICE_SERVERS={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'},
-  {urls:'stun:stun.cloudflare.com:3478'}
-]};
+var ICE_SERVERS={
+  iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun.cloudflare.com:3478'},
+    {urls:'stun:stun.relay.metered.ca:80'}
+  ],
+  iceCandidatePoolSize:2   // pre-gather fewer candidates = faster connect + less CPU
+};
 
 // ── Peer ID: simple, consistent, no collision suffix ──
 function _peerId(classCode, userName){
@@ -19950,6 +21313,24 @@ function callShowRinging(title,subtitle,buttons){
   if(badge) badge.textContent=(_callType==='video'?'📹 Video Call':'📞 Voice Call');
 }
 function callShowActive(peerName,isVideo){
+  // Suspend non-critical background work during call
+  if(window._bgPollInterval){ clearInterval(window._bgPollInterval); window._bgPollInterval=null; }
+  // ── Performance: pause non-call work while on a call ──
+  try{
+    // Pause Supabase pollers
+    if(typeof _sbPollers==='object'){
+      Object.keys(_sbPollers).forEach(function(k){
+        if(_sbPollers[k]) { clearInterval(_sbPollers[k]); _sbPollers[k]=null; }
+      });
+    }
+    // Pause prayer alarm loop
+    if(typeof _qqAdhanLoop!=='undefined' && _qqAdhanLoop){ clearInterval(_qqAdhanLoop); window._qqAdhanLoop=null; }
+    // Pause PeerJS keep-alive (60s ping) — call is already connected
+    if(typeof _peerKeepalive!=='undefined' && _peerKeepalive){ clearInterval(_peerKeepalive); _peerKeepalive=null; }
+    // Stop any running adhkaar audio
+    if(typeof _adhkaarSpeaking!=='undefined' && _adhkaarSpeaking){ try{window.speechSynthesis.cancel();}catch(e){} }
+  }catch(e){}
+
   var rs=document.getElementById('call-state-ringing'), as=document.getElementById('call-state-active');
   if(rs) rs.style.display='none'; if(as) as.style.display='';
   var an=document.getElementById('call-active-name'); if(an) an.textContent=peerName;
@@ -19960,8 +21341,13 @@ function callShowActive(peerName,isVideo){
   if(isVideo&&_localStream){ var lv=document.getElementById('local-video'); if(lv&&!lv.srcObject) lv.srcObject=_localStream; }
   _callSeconds=0;
   if(_callTimerInterval) clearInterval(_callTimerInterval);
-  _callTimerInterval=setInterval(function(){ _callSeconds++; var el=document.getElementById('call-timer'); if(el) el.textContent=_fmtTime(_callSeconds); },1000);
-  _initPipDrag();
+  _callTimerInterval=setInterval(function(){
+    _callSeconds++;
+    var el=document.getElementById('call-timer');
+    if(el) el.textContent=_fmtTime(_callSeconds);
+  },1000);
+  // Only init PiP drag once
+  if(!window._pipDragInit){ _initPipDrag(); window._pipDragInit=true; }
 }
 
 function _attachRemoteStream(stream){
@@ -20031,8 +21417,18 @@ async function callStart(targetName, classCode, type){
   // Get mic/cam FIRST before network ops
   try{
     _localStream=await navigator.mediaDevices.getUserMedia({
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
-      video:_callType==='video'
+      audio:{
+        echoCancellation:true,
+        noiseSuppression:true,
+        autoGainControl:true,
+        sampleRate:16000,       // lower sample rate = less CPU
+        channelCount:1          // mono audio = half the data
+      },
+      video:_callType==='video' ? {
+        width:{ideal:320, max:480},
+        height:{ideal:240, max:360},
+        frameRate:{ideal:15, max:20}
+      } : false
     });
   }catch(err){
     callEnd();
@@ -20087,8 +21483,18 @@ async function callAccept(){
   var cab=document.getElementById('call-action-btns'); if(cab) cab.innerHTML='<div style="color:#aaa;font-size:13px;">Connecting…</div>';
   try{
     _localStream=await navigator.mediaDevices.getUserMedia({
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
-      video:_callType==='video'
+      audio:{
+        echoCancellation:true,
+        noiseSuppression:true,
+        autoGainControl:true,
+        sampleRate:16000,       // lower sample rate = less CPU
+        channelCount:1          // mono audio = half the data
+      },
+      video:_callType==='video' ? {
+        width:{ideal:320, max:480},
+        height:{ideal:240, max:360},
+        frameRate:{ideal:15, max:20}
+      } : false
     });
     if(_callType==='video'){ var lv=document.getElementById('local-video'); if(lv) lv.srcObject=_localStream; }
     _peerConn.answer(_localStream);
@@ -20162,6 +21568,19 @@ function callEnd(){
   }catch(e){}
 
   if(dur!=='00:00') showToast('📵 Call ended · '+dur);
+
+  // ── Performance: resume background work after call ──
+  try{
+    // Restart prayer alarm loop if enabled
+    if(typeof qqStartAdhanLoop==='function' && typeof fetchPrayers==='function'){
+      var master=localStorage.getItem('qq_adhan_master');
+      if(master!=='off') setTimeout(fetchPrayers, 500);
+    }
+    // Restart class listener if student/teacher
+    if(window.currentUser && typeof _startClassListener==='function' && window.myClassCode){
+      setTimeout(function(){ _startClassListener(window.myClassCode); }, 1000);
+    }
+  }catch(e){}
 }
 
 // ══ CLEANUP ══
@@ -20221,7 +21640,7 @@ async function callFlipCamera(){
   if(!_localStream){ showToast('❌ No active camera'); return; }
   _facingMode=_facingMode==='user'?'environment':'user';
   try{
-    var ns=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:_facingMode}});
+    var ns=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:_facingMode,width:{ideal:320,max:480},height:{ideal:240,max:360},frameRate:{ideal:15,max:20}}});
     var nvt=ns.getVideoTracks()[0], ovt=_localStream.getVideoTracks()[0];
     if(ovt){ _localStream.removeTrack(ovt); ovt.stop(); }
     _localStream.addTrack(nvt);
@@ -20806,19 +22225,21 @@ window.callCleanupConnection=function(){UI_DONE=false;if(typeof _oCCC==='functio
 var _oGUM=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
 navigator.mediaDevices.getUserMedia=function(c){
   if(c){
-    if(c.audio===true)c.audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000,channelCount:1};
-    else if(c.audio&&typeof c.audio==='object')c.audio=Object.assign({echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:48000},c.audio);
+    var _mob=/Mobi|Android|iPhone/i.test(navigator.userAgent);
+    var _sr=_mob?16000:32000; // lower on mobile = less CPU
+    if(c.audio===true) c.audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:_sr,channelCount:1};
+    else if(c.audio&&typeof c.audio==='object') c.audio=Object.assign({echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:_sr},c.audio);
+    // Mobile video: cap at 320x240 @ 15fps to prevent overheating
+    if(c.video&&typeof c.video==='object'&&_mob){
+      c.video.width=c.video.width||{ideal:320,max:480};
+      c.video.height=c.video.height||{ideal:240,max:360};
+      c.video.frameRate=c.video.frameRate||{ideal:15,max:20};
+    }
   }
   return _oGUM(c);
 };
 
-/* ── STUN augmentation ── */
-(function(){
-  if(typeof ICE_SERVERS==='undefined')return;
-  var add=[{urls:'stun:stun3.l.google.com:19302'},{urls:'stun:stun4.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}];
-  var ex=(ICE_SERVERS.iceServers||[]).map(function(s){return s.urls;});
-  add.forEach(function(e){if(ex.indexOf(e.urls)===-1)ICE_SERVERS.iceServers.push(e);});
-})();
+/* STUN: using ICE_SERVERS defined in call engine */
 
 /* ── Teacher toolbar: inject 🎬 recordings button ── */
 function injTMBtn(){
@@ -22166,6 +23587,215 @@ qqApplyTheme(_qqTheme);
 
 console.log('[QQ v38] Features loaded: Adhkaar · Institution · StopNote · PeerJS');
 </script>
+
+<script>
+/* ═══ BOTTOM NAV + DRAWER — Prayer Times Nigeria style ═══ */
+
+function qqBnSetActive(tabId){
+  document.querySelectorAll('.qq-bn-tab').forEach(function(t){t.classList.remove('active');});
+  var t=document.getElementById(tabId);
+  if(t) t.classList.add('active');
+}
+
+var _qqBnPageTabMap={
+  'home':'bn-home',
+  'beginner':'bn-learn','hifdh':'bn-learn','tajweed':'bn-learn',
+  'games':'bn-learn','daily':'bn-learn','listenrepeat':'bn-learn',
+  'recitepractice':'bn-learn','journey':'bn-learn','achievements':'bn-learn',
+  'adhkaar':'bn-tools','qibla':'bn-tools','names99':'bn-tools',
+  'hijri':'bn-tools','tafsir':'bn-tools','mosque':'bn-tools',
+  'aiasst':'bn-tools','bookmarks':'bn-tools','privacy':'bn-tools',
+  'contact':'bn-tools',
+  'leaderboard':'bn-community',
+  'dashboard':'bn-me'
+};
+
+/* Hook showPage to sync tab active state */
+(function(){
+  var _orig=window.showPage;
+  if(typeof _orig==='function'){
+    window.showPage=function(page){
+      _orig.apply(this,arguments);
+      var tid=_qqBnPageTabMap[page]||'bn-home';
+      qqBnSetActive(tid);
+      qqBnCloseDrawer();
+    };
+  }
+})();
+
+/* Drawer content config */
+var _qqDC={
+  learn:{
+    title:'📚 Learn',
+    sections:[
+      {label:'Start Here',items:[
+        {icon:'🌱',label:'Beginners / Kids',badge:'Start',page:'beginner'},
+        {icon:'🎧',label:'Listen & Repeat', badge:'NEW',  page:'listenrepeat'},
+        {icon:'🎙',label:'Recite & Compare',badge:'NEW',  page:'recitepractice'}
+      ]},
+      {label:'Deep Study',items:[
+        {icon:'📿',label:'Hifdh — Juz Amma',badge:'Memorise',page:'hifdh'},
+        {icon:'🎵',label:'Tajweed Rules',   page:'tajweed'},
+        {icon:'🎮',label:'Games & Quizzes', page:'games'},
+        {icon:'⚡',label:'Daily Ayah',      page:'daily'},
+        {icon:'📿',label:'Adhk\u0101r',     page:'adhkaar'}
+      ]},
+      {label:'Track Progress',items:[
+        {icon:'🗺️',label:'Learning Journey',badge:'NEW',page:'journey'},
+        {icon:'🏅',label:'Achievements',    badge:'NEW',page:'achievements'}
+      ]}
+    ]
+  },
+  tools:{
+    title:'🧭 Islamic Tools',
+    sections:[
+      {label:'Study',items:[
+        {icon:'📗',label:'Tafsir',           page:'tafsir'},
+        {icon:'✨',label:'99 Names of Allah',page:'names99'},
+        {icon:'🤖',label:'AI Islamic Guide', page:'aiasst'},
+        {icon:'🔖',label:'Saved Items',      page:'bookmarks'}
+      ]},
+      {label:'Daily',items:[
+        {icon:'🧭',label:'Qibla Compass',  page:'qibla'},
+        {icon:'🌙',label:'Hijri Calendar', page:'hijri'},
+        {icon:'🕌',label:'Nearby Mosques', page:'mosque'},
+        {icon:'📬',label:'Contact Us',     page:'contact'},
+        {icon:'📜',label:'About & Privacy',page:'privacy'}
+      ]},
+      {label:'Settings',items:[
+        {icon:'🎙',label:'Choose Reciter', action:"openReciterModal()"},
+        {icon:'🏫',label:'Teacher Mode',   action:"if(typeof tmToggle==='function')tmToggle()"},
+        {icon:'🟡',label:'Setup Database', action:"if(typeof openSbPanel==='function')openSbPanel()"}
+      ]}
+    ]
+  },
+  community:{
+    title:'🌍 Community',
+    sections:[
+      {label:'Rankings',items:[
+        {icon:'🏆',label:'Leaderboard',page:'leaderboard'}
+      ]},
+      {label:'Account',items:[
+        {icon:'📊',label:'My Dashboard',page:'dashboard'}
+      ]}
+    ]
+  }
+};
+
+function qqBnOpenDrawer(section){
+  var cfg=_qqDC[section];
+  if(!cfg) return;
+  var h='<div class="qq-drawer-header">'
+    +'<span class="qq-drawer-title">'+cfg.title+'</span>'
+    +'<button class="qq-drawer-close" onclick="qqBnCloseDrawer()">&#x2715;</button>'
+    +'</div>';
+  cfg.sections.forEach(function(sec){
+    h+='<div class="qq-drawer-section">'+sec.label+'</div>';
+    sec.items.forEach(function(item){
+      var badge=item.badge?'<span class="qq-di-badge">'+item.badge+'</span>':'';
+      var oc=item.page
+        ? "showPage('"+item.page+"')"
+        : item.action+';qqBnCloseDrawer()';
+      h+='<button class="qq-drawer-item" onclick="'+oc+'">'
+        +'<span class="qq-di-icon">'+item.icon+'</span>'
+        +item.label+badge
+        +'</button>';
+    });
+    h+='<div class="qq-drawer-divider"></div>';
+  });
+  /* Auth footer — account card when logged in, login buttons when logged out */
+  var cu=(typeof currentUser!=='undefined')?currentUser:null;
+  if(cu){
+    var _isStu=cu.role==='student';
+    var _bg=_isStu?'linear-gradient(135deg,#1a7a3c,#2ecc71)':'linear-gradient(135deg,#c9a84c,#e8c86a)';
+    var _fc=_isStu?'#fff':'#0a0e0a';
+    var _rc=_isStu?'#2ecc71':'#c9a84c';
+    var _rl=_isStu?'&#x1F393; Student Account':'&#x1F3EB; Teacher Account';
+    h+='<div class="qq-drawer-auth">'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
+      +'<div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:'+_bg+';display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:'+_fc+';">'+cu.name[0].toUpperCase()+'</div>'
+      +'<div style="min-width:0;">'
+      +'<div style="color:#f0f0ec;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+cu.name+'</div>'
+      +'<div style="color:'+_rc+';font-size:11px;font-weight:700;margin-top:3px;">'+_rl+'</div>'
+      +'</div></div>'
+      +'<div class="qq-drawer-auth-btns">'
+      +'<button class="btn btn-o btn-sm" style="flex:1" onclick="qqBnDash()">&#x1F4CA; Dashboard</button>'
+      +'<button class="btn btn-r btn-sm" style="flex:1" onclick="logoutUser();qqBnCloseDrawer()">&#x23CF; Logout</button>'
+      +'</div></div>';
+  } else {
+    h+='<div class="qq-drawer-auth">'
+      +'<p>Join thousands of learners worldwide</p>'
+      +'<div class="qq-drawer-auth-btns">'
+      +'<button class="btn btn-o btn-sm" style="flex:1" onclick="qqBnLogin()">&#x1F511; Login</button>'
+      +'<button class="btn btn-gold btn-sm" style="flex:1.6" onclick="qqBnRegister()">&#10024; Free Account</button>'
+      +'</div></div>';
+  }
+  document.getElementById('qq-drawer-body').innerHTML=h;
+  document.getElementById('qq-drawer-overlay').classList.add('open');
+  document.getElementById('qq-drawer').classList.add('open');
+  /* Mark tab active */
+  document.querySelectorAll('.qq-bn-tab').forEach(function(t){t.classList.remove('active');});
+  var tmap={learn:'bn-learn',tools:'bn-tools',community:'bn-community'};
+  if(tmap[section]) document.getElementById(tmap[section]).classList.add('active');
+}
+
+function qqBnCloseDrawer(){
+  document.getElementById('qq-drawer-overlay').classList.remove('open');
+  document.getElementById('qq-drawer').classList.remove('open');
+}
+
+function qqBnLogin(){if(typeof openAuth==='function')openAuth('login');qqBnCloseDrawer();}
+function qqBnRegister(){if(typeof openAuth==='function')openAuth('register','student');qqBnCloseDrawer();}
+
+/* Swipe down to close */
+(function(){
+  var sy=0,dr=document.getElementById('qq-drawer');
+  if(!dr) return;
+  dr.addEventListener('touchstart',function(e){sy=e.touches[0].clientY;},{passive:true});
+  dr.addEventListener('touchend',function(e){if(e.changedTouches[0].clientY-sy>80)qqBnCloseDrawer();},{passive:true});
+})();
+</script>
+
+
+
+<!-- ═══════════════════════════════════════
+     BOTTOM TAB BAR — Prayer Times Nigeria style
+     Only visible on mobile (≤900px)
+     ═══════════════════════════════════════ -->
+<div id="qq-bottom-nav" role="navigation" aria-label="Main navigation">
+  <button class="qq-bn-tab active" id="bn-home"
+    onclick="showPage('home');qqBnSetActive('bn-home')">
+    <span class="qq-bn-icon">🏠</span>
+    <span class="qq-bn-label">Home</span>
+  </button>
+  <button class="qq-bn-tab" id="bn-learn"
+    onclick="qqBnOpenDrawer('learn')">
+    <span class="qq-bn-icon">📚</span>
+    <span class="qq-bn-label">Learn</span>
+  </button>
+  <button class="qq-bn-tab" id="bn-tools"
+    onclick="qqBnOpenDrawer('tools')">
+    <span class="qq-bn-icon">🧭</span>
+    <span class="qq-bn-label">Tools</span>
+  </button>
+  <button class="qq-bn-tab" id="bn-community"
+    onclick="qqBnOpenDrawer('community')">
+    <span class="qq-bn-icon">🌍</span>
+    <span class="qq-bn-label">Community</span>
+  </button>
+  <button class="qq-bn-tab" id="bn-me"
+    onclick="showPage('dashboard');qqBnSetActive('bn-me')">
+    <span class="qq-bn-icon">👤</span>
+    <span class="qq-bn-label">Me</span>
+  </button>
+</div>
+
+<!-- Drawer overlay + panel -->
+<div id="qq-drawer-overlay" onclick="qqBnCloseDrawer()"></div>
+<div id="qq-drawer">
+  <div id="qq-drawer-handle"></div>
+  <div id="qq-drawer-body"></div>
+</div>
 
 </body>
 </html
