@@ -16,23 +16,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lato:wght@300;400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
-  <!-- Core & Reset Styles -->
+  <!-- Core & Reset Styles (includes theme variables + base components) -->
   <link rel="stylesheet" href="css/core.css">
   
   <!-- Navigation & Header -->
   <link rel="stylesheet" href="css/nav.css">
-  
-  <!-- Teacher Mode -->
-  <link rel="stylesheet" href="css/teacher-mode.css">
-  
-  <!-- Beginner Section & Cards -->
-  <link rel="stylesheet" href="css/beginner-section.css">
-  
-  <!-- Components (buttons, inputs, modals) -->
+
+  <!-- Buttons, cards, progress bars, modals, etc. -->
   <link rel="stylesheet" href="css/components.css">
-  
-  <!-- Responsive & Utilities -->
-  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Apply saved theme before first paint to avoid a flash of the wrong theme -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('qg_theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
   <!-- Navigation will be rendered here by JS -->
@@ -57,7 +57,11 @@
   <!-- Modals & Overlays -->
   <div id="presence-toast" class="presence-toast"></div>
   
-  <!-- Main application script -->
+  <!-- Application scripts (order matters: data/theme/components before router/app) -->
+  <script src="js/data-manager.js" defer></script>
+  <script src="js/theme.js" defer></script>
+  <script src="js/components.js" defer></script>
+  <script src="js/router.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,202 @@
+/* ============================================================
+   THEME VARIABLES
+   Dark is the default/original palette. Light is a new palette
+   that keeps the same emerald/gold brand accents but flips the
+   surfaces so text stays readable. Toggled via [data-theme] on
+   <html>, set by js/theme.js.
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  --bg: #080c08;
+  --card: #0f140f;
+  --cardh: #141f14;
+  --em: #1a7a3c;
+  --eml: #22a050;
+  --emb: #2ecc71;
+  --gold: #c9a84c;
+  --goldl: #e8c86a;
+  --goldb: #f5d98a;
+  --white: #f0f0f0;
+  --grey: #94a894;
+  --greyd: #4a5e4a;
+  --border: #1c2c1c;
+
+  --text-secondary: #9aab9a;
+  --accent-green-l: #2ecc71;
+
+  --nav-bg: rgba(6, 10, 6, 0.98);
+  --nav-shadow: rgba(0, 0, 0, 0.5);
+  --panel-bg: rgba(8, 12, 8, 0.98);
+
+  --surface-tint-bg: rgba(255, 255, 255, 0.05);
+  --surface-tint-bg-hover: rgba(255, 255, 255, 0.1);
+  --surface-tint-border: rgba(255, 255, 255, 0.1);
+  --surface-tint-text: rgba(255, 255, 255, 0.75);
+
+  --shadow-color: rgba(0, 0, 0, 0.45);
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #f6f8f4;
+  --card: #ffffff;
+  --cardh: #eef4ec;
+  --em: #15753a;
+  --eml: #1a8f46;
+  --emb: #1a9c4a;
+  --gold: #a9822f;
+  --goldl: #8a6a1f;
+  --goldb: #6e5418;
+  --white: #14201a;
+  --grey: #5b6f5b;
+  --greyd: #8a9a8a;
+  --border: #dde5da;
+
+  --text-secondary: #55684f;
+  --accent-green-l: #178a44;
+
+  --nav-bg: rgba(255, 255, 255, 0.97);
+  --nav-shadow: rgba(20, 40, 20, 0.08);
+  --panel-bg: rgba(255, 255, 255, 0.98);
+
+  --surface-tint-bg: rgba(20, 32, 20, 0.04);
+  --surface-tint-bg-hover: rgba(20, 32, 20, 0.08);
+  --surface-tint-border: rgba(20, 32, 20, 0.12);
+  --surface-tint-text: rgba(20, 32, 20, 0.75);
+
+  --shadow-color: rgba(20, 40, 20, 0.1);
+  --overlay-bg: rgba(20, 30, 20, 0.4);
+
+  color-scheme: light;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  transition: background-color 0.2s ease;
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Lato', sans-serif;
+  overflow-x: hidden;
+  padding-top: 96px; /* fixed nav height (56px identity row + 38px pill row + border) */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+[id^="page-"],
+.page {
+  animation: qqFadeIn 0.25s ease;
+}
+
+@keyframes qqFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--em);
+  border-radius: 3px;
+}
+
+/* Typography utilities */
+.ar {
+  font-family: 'Amiri', serif;
+  direction: rtl;
+  unicode-bidi: bidi-override;
+}
+
+.dp {
+  font-family: 'Cinzel', serif;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Common animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.fadeUp {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+.pop {
+  animation: pop 0.3s ease forwards;
+}
+
+/* Page shell */
+.page-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 100px;
+}
+
+.page-header {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 8px;
+}
+
+.page-header h1 {
+  font-family: 'Cinzel', serif;
+  color: var(--goldl);
+  font-size: 22px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
